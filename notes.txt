@@ -1,0 +1,43 @@
+Steps to setup:
+1. To run the project:
+Clone project. If there are missing packages/vendor folder, use "go mod tidy" to install them.
+
+2. To create new CRUD/module etc:
+  i. Database
+    a. Make new migration inside sql/schemas e.g sql/schemas/ (e.g sql/schemas e.g sql/schemas/001_users.sql) and define what goose up
+       and goose down commands should do
+    b. Open the terminal. Go to the sql/schema(or what you defined in sqlc.yaml file) folder and use 
+       "goose postgres://postgres:@localhost:5432/golang_web_server up" to run all migrations.
+       ** Worth mentioning that "goose postgres://postgres:@localhost:5432/golang_web_server down" rolls back one migration(sql) file at a time
+    c. Create sql file inside sql/queries(e.g sql/queries/users.sql), follow sqlc formatting and define queries(so it can generate corresponding 
+       repository fns properly) for the CRUD and other functionalities. Go back to root folder and run "sqlc generate" to generate said
+       functions(will be stored in internal/db or per what you defined in sqlc.yaml)
+
+
+
+go-rss-agg/
+│
+├── cmd/
+│   └── api/
+│       └── main.go          # entry point only
+│
+├── internal/
+│   ├── server/
+│   │   └── router.go        # chi router setup
+│   │
+│   ├── handler/
+│   │   └── health.go        # handlerReadiness
+│   │
+│   ├── middleware/
+│   │   ├── cors.go
+│   │   └── ratelimiter.go   # httprate logic
+│   │
+│   ├── response/
+│   │   └── json.go          # respondWithJSON
+│   │
+│   └── config/
+│       └── env.go           # env loading
+│
+├── go.mod
+├── go.sum
+└── .env

@@ -1,0 +1,9 @@
+version: "2"
+sql:
+  - engine: "postgresql"
+    queries: "sql/queries" # Where you write raw queries
+    schema: "sql/schema" # Where you define tables
+    gen:
+      go:
+        package: "db" # Name of the package that will be used to generate the queries code
+        out: "internal/db" # The folder where we will be generating the output(migrations from schema and queries)
