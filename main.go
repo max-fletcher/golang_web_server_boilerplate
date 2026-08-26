@@ -59,9 +59,10 @@ func main() {
 	srv := server.New(DBConn) // Server struct coming from server.go
 
 	// On windows, to start the server, use "go build -o {filename}.exe" then ".\{filename}.exe"
-	log.Printf("Server started on port %v", portString)
-	err = http.ListenAndServe(":"+portString, srv.Router) // start/initialize server
+	log.Printf("Server startng on port %v", portString)
+	err = http.ListenAndServe(":"+portString, srv.Router) // start/initialize server using router coming from server.go
 	if err != nil {                                       // throws an error if the server fails
 		log.Fatal(err)
 	}
+	log.Printf("Server started on port %v", portString)
 }

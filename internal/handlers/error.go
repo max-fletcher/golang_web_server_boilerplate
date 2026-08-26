@@ -1,0 +1,12 @@
+package handlers
+
+import (
+	"net/http"
+
+	"github.com/max-fletcher/golang_web_server_boilerplate/helpers/responses"
+)
+
+// This function will return an error response no matter what.
+func (handler *Handler) HandlerError(w http.ResponseWriter, r *http.Request) {
+	responses.RespondWithError(w, 500, "Something went wrong.")
+}
