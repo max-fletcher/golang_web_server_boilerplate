@@ -21,17 +21,11 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/go-chi/chi/v5"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/db"
-	"github.com/max-fletcher/golang_web_server_boilerplate/middleware"
+	"github.com/max-fletcher/golang_web_server_boilerplate/internal/server"
 )
-
-// Reference to a DB connection. Will be used to query data form DB.
-type apiConfig struct {
-	DB *db.Queries
-}
 
 func main() {
 	fmt.Println("Web Server made in GO. Starting...")
@@ -60,54 +54,14 @@ func main() {
 	if err != nil {
 		log.Fatal("DB not reachable:", err)
 	}
-	apiCfg := apiConfig{
-		DB: db.New(conn),
-	}
 
-	fmt.Printf("PORT: %v", portString)
+	DBConn := db.New(conn)    // connection database to sqlc's queries
+	srv := server.New(DBConn) // Server struct coming from server.go
 
-	router := chi.NewRouter()
-	router.Use(middleware.CORS())              // Rate limiter
-	router.Use(middleware.RateLimiter(100, 1)) // CORS
-
-	// router.Get("/", func(w http.ResponseWriter, r *http.Request) {
-	// 	w.Write([]byte("Hello World!"))
-	// })
-
-	// Making a sub-router
-	v1router := chi.NewRouter()
-
-	// Another way to use an auth middleware
-	// v1router.Use(auth.AuthenticatedMiddleware(apiCfg.DB))
-	// v1router.Get("/users2", apiCfg.handlerGetUserByAPIKey2) // route for getting user by apiKey header in DB
-
-	v1router.Get("/healthz", handlerReadiness)
-
-	v1router.Get("/error", handlerError)
-
-	v1router.Post("/users", apiCfg.handlerCreateUser)                                     // route for creating users in DB
-	v1router.Get("/users", apiCfg.authenticatedMiddleware(apiCfg.handlerGetUserByAPIKey)) // route for getting user by apiKey header in DB
-
-	v1router.Get("/feeds", apiCfg.handlerGetFeeds)                                    // route for getting all feed in DB
-	v1router.Post("/feeds", apiCfg.authenticatedMiddleware(apiCfg.handlerCreateFeed)) // route for creating a feed in DB
-
-	v1router.Post("/feed_follows", apiCfg.authenticatedMiddleware(apiCfg.handlerCreateFeedFollow))                      // route for creating a feed follow in DB
-	v1router.Get("/feed_follows_by_user", apiCfg.authenticatedMiddleware(apiCfg.handlerGetFeedFollowsByUserID))         // route for getting all feed follows in DB
-	v1router.Delete("/feed_follows/{feedFollowId}", apiCfg.authenticatedMiddleware(apiCfg.handleDeleteFeedFollowsById)) // route for deleting feed follow for a user in DB
-
-	v1router.Get("/posts", apiCfg.authenticatedMiddleware(apiCfg.handlerGetPostsForUser)) // route for getting all posts for a feed if the user is following that feed
-	router.Mount("/v1", v1router)
-
-	// Server options like router and port
-	// On windows, to start the server, use "go build -o {filename}.exe" then ".\go-rss-agg.exe"
-	server := &http.Server{
-		Handler: router,
-		Addr:    ":" + portString,
-	}
-
-	log.Printf("Server starting on port %v", portString)
-	err = server.ListenAndServe() // initialize server
-	if err != nil {               // throws an error if the server fails
+	// On windows, to start the server, use "go build -o {filename}.exe" then ".\{filename}.exe"
+	log.Printf("Server started on port %v", portString)
+	err = http.ListenAndServe(":"+portString, srv.Router) // start/initialize server
+	if err != nil {                                       // throws an error if the server fails
 		log.Fatal(err)
 	}
 }
