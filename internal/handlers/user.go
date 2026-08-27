@@ -13,7 +13,7 @@ import (
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/db"
 )
 
-func (handler *Handler) HandlerCreateUser(w http.ResponseWriter, r *http.Request) {
+func (handler *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
 		Name     string `json:"name"`
 		Email    string `json:"email"`
@@ -53,5 +53,22 @@ func (handler *Handler) HandlerCreateUser(w http.ResponseWriter, r *http.Request
 		Code:   201,
 		Status: "ok",
 		Data:   formatters.DatabaseUserToUser(user),
+	})
+}
+
+// handler method that handles fetching all users. The addition of (handler *Handler)
+// turns it into a method for handler.
+func (handler *Handler) GetAllUsers(w http.ResponseWriter, r *http.Request) {
+	// 1st param: context for the request
+	users, err := handler.DB.GetUsers(r.Context())
+	if err != nil {
+		responses.RespondWithError(w, 400, fmt.Sprintf("Failed to fetch users: %v", err))
+		return
+	}
+
+	responses.RespondWithJSON(w, 200, responses.SuccessResponse{
+		Code:   200,
+		Status: "ok",
+		Data:   formatters.DatabaseUsersToUsers(users),
 	})
 }

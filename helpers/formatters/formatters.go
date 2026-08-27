@@ -35,6 +35,30 @@ func DatabaseUserToUser(dbUser db.User) User {
 	}
 }
 
+func DatabaseUsersToUsers(dbUsers []db.User) []User {
+	users := []User{}
+
+	// var description *string // a var containing a pointer to a string
+	for _, dbUser := range dbUsers {
+		// if dbUser.Description.Valid {
+		// 	description = &dbUser.Description.String
+		// }
+		users = append(users, User{
+			ID:    dbUser.ID,
+			Name:  dbUser.Name,
+			Email: dbUser.Email,
+			// Avatar: dbUser.Avatar,
+			CreatedAt: dbUser.CreatedAt,
+			UpdatedAt: dbUser.UpdatedAt,
+		})
+
+		// This also works if you want to reuse functionality i.e replace above block with the line below
+		// posts = append(posts, DatabasePostsToPost(dbFeed))
+	}
+
+	return users
+}
+
 type Post struct {
 	ID    uuid.UUID `json:"id"`
 	Title string    `json:"title"`
@@ -44,53 +68,49 @@ type Post struct {
 	// and if a pointer points to a string, it will return string in that json field. Otherwise, if we directly used post.Description,
 	// due to the, dbFeed.description struct containing nested fields(sql.NullString obj) it will be marshalled to
 	// "description": { "String" : "Some des", Valid : true }
-	Content     *string   `json:"description"`
-	PublishedAt time.Time `json:"published_at"`
-	Url         string    `json:"url"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
+	// Description   *string   `json:"description"`
+	Content string `json:"content"`
+	// Avatar    string    `json:"avatar"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
-// func DatabasePostsToPost(dbPost database.Post) Post {
-// 	var description *string // a var containing a pointer to a string
-// 	if dbPost.Description.Valid {
-// 		description = &dbPost.Description.String
-// 	}
+func DatabasePostsToPost(dbPost db.Post) Post {
+	// var description *string // a var containing a pointer to a string
+	// if dbPost.Content.Valid {
+	// 	description = &dbPost.Description.String
+	// }
 
-// 	return Post{
-// 		ID:          dbPost.ID,
-// 		FeedID:      dbPost.FeedID,
-// 		Title:       dbPost.Title,
-// 		Description: description,
-// 		PublishedAt: dbPost.PublishedAt,
-// 		Url:         dbPost.Url,
-// 		CreatedAt:   dbPost.CreatedAt,
-// 		UpdatedAt:   dbPost.UpdatedAt,
-// 	}
-// }
+	return Post{
+		ID:      dbPost.ID,
+		Title:   dbPost.Title,
+		Content: dbPost.Content,
+		// Avatar:         dbPost.Avatar,
+		CreatedAt: dbPost.CreatedAt,
+		UpdatedAt: dbPost.UpdatedAt,
+	}
+}
 
-// func DatabasePostsToPosts(dbPosts []database.Post) []Post {
-// 	posts := []Post{}
+func DatabasePostsToPosts(dbPosts []db.Post) []Post {
+	posts := []Post{}
 
-// 	var description *string // a var containing a pointer to a string
-// 	for _, dbPost := range dbPosts {
-// 		if dbPost.Description.Valid {
-// 			description = &dbPost.Description.String
-// 		}
-// 		posts = append(posts, Post{
-// 			ID:          dbPost.ID,
-// 			FeedID:      dbPost.FeedID,
-// 			Title:       dbPost.Title,
-// 			Description: description,
-// 			PublishedAt: dbPost.PublishedAt,
-// 			Url:         dbPost.Url,
-// 			CreatedAt:   dbPost.CreatedAt,
-// 			UpdatedAt:   dbPost.UpdatedAt,
-// 		})
+	// var description *string // a var containing a pointer to a string
+	for _, dbPost := range dbPosts {
+		// if dbPost.Description.Valid {
+		// 	description = &dbPost.Description.String
+		// }
+		posts = append(posts, Post{
+			ID:      dbPost.ID,
+			Title:   dbPost.Title,
+			Content: dbPost.Content,
+			// Avatar: dbPost.Avatar,
+			CreatedAt: dbPost.CreatedAt,
+			UpdatedAt: dbPost.UpdatedAt,
+		})
 
-// 		// This also works if you want to reuse functionality i.e replace above block with the line below
-// 		// posts = append(posts, DatabasePostsToPost(dbFeed))
-// 	}
+		// This also works if you want to reuse functionality i.e replace above block with the line below
+		// posts = append(posts, DatabasePostsToPost(dbFeed))
+	}
 
-// 	return posts
-// }
+	return posts
+}

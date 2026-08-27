@@ -7,7 +7,7 @@ import (
 )
 
 // This function will take a payload(struct) and malshal it into a JSON string that will be sent as bytes of data
-func (handler *Handler) HandleReadiness(w http.ResponseWriter, r *http.Request) {
+func (handler *Handler) HealthCheck(w http.ResponseWriter, r *http.Request) {
 	responses.RespondWithJSON(w, 200, responses.Response{
 		Code:    200,
 		Status:  "ok",

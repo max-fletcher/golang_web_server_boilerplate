@@ -12,7 +12,7 @@ FROM posts
 WHERE id = $1
 LIMIT 1;
 
--- name: GetPosts :one
+-- name: GetPosts :many
 SELECT * 
 FROM posts 
 ORDER BY created_at DESC;

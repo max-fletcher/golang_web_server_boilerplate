@@ -7,6 +7,6 @@ import (
 )
 
 // This function will return an error response no matter what.
-func (handler *Handler) HandlerError(w http.ResponseWriter, r *http.Request) {
+func (handler *Handler) ErrorResponse(w http.ResponseWriter, r *http.Request) {
 	responses.RespondWithError(w, 500, "Something went wrong.")
 }

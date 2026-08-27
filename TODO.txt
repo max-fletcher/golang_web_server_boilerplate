@@ -1,0 +1,38 @@
+# File upload
+# Route not found response
+# validation
+# store encrypted/hashed password instead of raw password(DONE)
+# user registration & login route with access and refresh tokens
+# Add rate limiter(DONE)
+# Add cors(DONE)
+# Add logger
+# Add custom exception handler
+# Relations
+# Nested Relations
+# Pagination for getAll calls
+# DB Transactions when disjointing relational data
+# Authorization and Access Control
+# PDF/Invoice generation
+# Scheduled Tasks/ CRON job
+# Formatted responses
+# Redis
+# Queue (BullMQ + Redis)(e.g for email delivery) + Implement email service(NEEDS RIGOROUS TESTING. TS PROBLEMS.)
+# Simplify exception pipeling(all-exception filter, main: app.useGlobalPipes(new ValidationPipe...), zodValidationPipe)
+# Add Swagger
+# Add health check endpoint(DONE)
+# Add request logging middleware
+# Abstract each CRUD(users, posts etc) into separate folders and abstract formatter(break into separate ones) to those folders
+
+
+Possible path:  
+# Learn nginx as reverse proxy + load balancer
+# Learn CI/CD (GitHub Actions)
+# Learn Kubernetes basics
+# Learn microservices with NestJS
+# Learn CQRS pattern
+    ↓
+  Months
+    ↓
+# Learn AWS/GCP basics (EC2, RDS, ElastiCache, S3)
+# Learn monitoring (Prometheus + Grafana)
+# Learn distributed tracing (OpenTelemetry)

@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/max-fletcher/golang_web_server_boilerplate/helpers/responses"
 	"github.com/max-fletcher/golang_web_server_boilerplate/middleware"
 )
 
@@ -15,12 +16,38 @@ func (server *Server) routes() http.Handler {
 	router.Use(middleware.RateLimiter(100, 1))
 	router.Use(middleware.CORS())
 
-	router.Route("/v1", func(v1router chi.Router) {
-		// Public
-		v1router.Get("/healthz", server.Handler.HandleReadiness)
-		v1router.Get("/error", server.Handler.HandlerError)
+	// Not found route
+	router.NotFound(func(w http.ResponseWriter, r *http.Request) {
+		responses.RespondWithJSON(w, http.StatusNotFound, responses.ErrorResponse{
+			Code:   http.StatusNotFound,
+			Status: "error",
+			Error:  "Route not found",
+		})
+	})
 
-		v1router.Post("/users", server.Handler.HandlerCreateUser)
+	router.MethodNotAllowed(func(w http.ResponseWriter, r *http.Request) {
+		responses.RespondWithJSON(w, http.StatusMethodNotAllowed, responses.ErrorResponse{
+			Code:   http.StatusMethodNotAllowed,
+			Status: "error",
+			Error:  "Method not allowed",
+		})
+	})
+
+	router.Route("/v1", func(v1router chi.Router) {
+		// v1router.MethodNotAllowed(func(w http.ResponseWriter, r *http.Request) {
+		// 	responses.RespondWithJSON(w, http.StatusMethodNotAllowed, responses.ErrorResponse{
+		// 		Code:   http.StatusMethodNotAllowed,
+		// 		Status: "error",
+		// 		Error:  "Method not allowed",
+		// 	})
+		// })
+
+		// Public
+		v1router.Get("/healthz", server.Handler.HealthCheck)
+		v1router.Get("/error", server.Handler.ErrorResponse)
+
+		v1router.Get("/users", server.Handler.GetAllUsers)
+		v1router.Post("/users", server.Handler.CreateUser)
 
 		// Authenticated
 		// v1router.Group(func(v1router chi.Router) {
@@ -45,8 +72,8 @@ func (server *Server) routes() http.Handler {
 	// 	w.Write([]byte("Hello World!"))
 	// })
 
-	// v1router.Get("/healthz", server.Handler.HandleReadiness)
-	// v1router.Get("/error", server.Handler.HandlerError)
+	// v1router.Get("/healthz", server.Handler.HealthCheck)
+	// v1router.Get("/error", server.Handler.ErrorResponse)
 
 	// v1router.Post("/users", server.handleCreateUser)
 	// v1router.Get("/users", server.handleGetUserByAPIKey)
@@ -54,9 +81,9 @@ func (server *Server) routes() http.Handler {
 	// v1router.Post("/feeds", server.handleCreateFeed)
 	////////////////////////
 	// v1router.Get("/healthz", handlerReadiness)
-	// v1router.Get("/error", handlerError)
+	// v1router.Get("/error", ErrorResponse)
 
-	// v1router.Post("/users", apiCfg.handlerCreateUser)                                     // route for creating users in DB
+	// v1router.Post("/users", apiCfg.CreateUser)                                     // route for creating users in DB
 	// v1router.Get("/users", apiCfg.authenticatedMiddleware(apiCfg.handlerGetUserByAPIKey)) // route for getting user by apiKey header in DB
 
 	// v1router.Get("/posts", apiCfg.authenticatedMiddleware(apiCfg.handlerGetPostsForUser)) // route for getting all posts for a feed if the user is following that feed
