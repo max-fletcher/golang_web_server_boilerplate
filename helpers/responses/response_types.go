@@ -16,13 +16,13 @@ type Response struct {
 type SuccessResponse struct {
 	Code    int         `json:"code"`
 	Status  string      `json:"status"`
-	Message string      `json:"error,omitempty"`
+	Message string      `json:"message,omitempty"`
 	Data    interface{} `json:"data,omitempty"`
 }
 
 type ErrorResponse struct {
 	Code    int    `json:"code"`
 	Status  string `json:"status"`
-	Message string `json:"error,omitempty"`
+	Message string `json:"message,omitempty"`
 	Errors  any    `json:"errors,omitempty"`
 }

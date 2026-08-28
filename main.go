@@ -37,29 +37,22 @@ func main() {
 		log.Println("No .env file found, using environment variables")
 	}
 
+	// using Load function to fetch any variables we need from .env(all of them are stored inside cfg struct)
 	cfg, err := config.Load()
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	// portString := os.Getenv("PORT")
-	// if portString == "" {
-	// 	log.Fatal("Port is not found in the .env file")
-	// }
-
-	// dbURL := os.Getenv("DB_URL")
-	// if dbURL == "" {
-	// 	log.Fatal("DB_URL is not found in env")
-	// }
 
 	// using go's sql package from its standard library to establish connection
 	conn, err := sql.Open("postgres", cfg.DbURL)
 	if err != nil {
 		log.Fatal("Can't connect to the database", err)
 	}
+	defer conn.Close()
+
 	err = conn.Ping()
 	if err != nil {
-		log.Fatal("DB not reachable:", err)
+		log.Fatal("Database not reachable:", err)
 	}
 
 	DBConn := db.New(conn)    // connection database to sqlc's queries

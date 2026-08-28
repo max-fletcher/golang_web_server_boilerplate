@@ -1,10 +1,13 @@
 package users
 
 import (
+	"database/sql"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/max-fletcher/golang_web_server_boilerplate/helpers/crypto"
 	"github.com/max-fletcher/golang_web_server_boilerplate/helpers/formatters"
@@ -29,7 +32,7 @@ func (handler *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 
 	hashedPassword, err := crypto.HashPassword(params.Password)
 	if err != nil {
-		responses.RespondWithError(w, 400, fmt.Sprintf("Error hashing password: %v", err))
+		responses.BadRequestError(w, fmt.Sprintf("Error hashing password: %v", err))
 		return
 	}
 
@@ -49,7 +52,7 @@ func (handler *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	responses.RespondWithSuccess(w, http.StatusOK, "Created successfully", formatters.DatabaseUserToUser(user))
+	responses.RespondWithSuccess(w, http.StatusCreated, "Created successfully", formatters.DatabaseUserToUser(user))
 }
 
 // handler method that handles fetching all users. The addition of (handler *Handler)
@@ -70,14 +73,37 @@ func (handler *Handler) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 	// 1st param: context for the request
 	users, err := handler.DB.GetUsers(r.Context(), params)
 	if err != nil {
-		responses.RespondWithError(w, 400, fmt.Sprintf("Failed to fetch users: %v", err))
+		responses.InternalServerError(w, fmt.Sprintf("Failed to fetch users: %v", err))
 		return
 	}
 
-	responses.RespondWithJSON(w, 200, responses.SuccessResponse{
-		Code:    200,
-		Status:  "ok",
-		Message: "Fetched successfully",
-		Data:    formatters.DatabaseUsersToUsers(users),
-	})
+	responses.RespondWithSuccess(w, http.StatusOK, "Fetched successfully", formatters.DatabaseUsersToUsers(users))
+}
+
+func (handler *Handler) GetSingleUser(w http.ResponseWriter, r *http.Request) {
+	userId := chi.URLParam(r, "id")
+	id, err := uuid.Parse(userId)
+	if err != nil {
+		responses.BadRequestError(w, "Invalid user ID")
+		return
+	}
+
+	// 1st param: context for the request
+	// 2nd param: id(type uuid) param
+	user, err := handler.DB.GetUserById(r.Context(), id)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) { // check if error is of type sql.ErrNoRows
+			responses.RespondWithError(
+				w,
+				http.StatusNotFound,
+				fmt.Sprintf("User with ID %s not found", id),
+			)
+			return
+		}
+
+		responses.InternalServerError(w, fmt.Sprintf("Failed to fetch user: %v", err))
+		return
+	}
+
+	responses.RespondWithSuccess(w, http.StatusOK, "Fetched successfully", formatters.DatabaseUserToUser(user))
 }

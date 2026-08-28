@@ -41,6 +41,7 @@ func (server *Server) routes() http.Handler {
 		router.Route("/users", func(router chi.Router) {
 			router.Get("/", server.UsersHandler.GetAllUsers)
 			router.Post("/", server.UsersHandler.CreateUser)
+			router.Get("/{id}", server.UsersHandler.GetSingleUser)
 		})
 
 		// Authenticated
