@@ -1,0 +1,58 @@
+package users
+
+import (
+	"errors"
+
+	validation "github.com/go-ozzo/ozzo-validation/v4"
+	"github.com/go-ozzo/ozzo-validation/v4/is"
+)
+
+// Struct to be validated
+type CreateUserRequest struct {
+	Name            string `json:"name"`
+	Email           string `json:"email"`
+	Password        string `json:"password"`
+	ConfirmPassword string `json:"confirm_password"`
+}
+
+// Rules
+func (params CreateUserRequest) Validate() error {
+	return validation.ValidateStruct(&params,
+		validation.Field(
+			&params.Name,
+			validation.Required.Error("name is required"),
+			validation.Length(2, 100).Error("name must be between 2 and 100 characters"),
+		),
+		validation.Field(
+			&params.Email,
+			validation.Required.Error("Email is required"),
+			is.Email.Error("Email must be a valid email address"),
+		),
+		validation.Field(
+			&params.Password,
+			validation.Required.Error("Password is required"),
+			validation.Length(8, 100).Error("Password must be at least 8 characters"),
+		),
+		validation.Field(
+			&params.ConfirmPassword,
+			validation.Required.Error("Confirm password is required"),
+			passwordsMatch(params.Password),
+		),
+	)
+}
+
+// custom validation rule used above
+func passwordsMatch(password string) validation.Rule {
+	return validation.By(func(value interface{}) error {
+		confirmPassword, ok := value.(string)
+		if !ok {
+			return errors.New("invalid password confirmation")
+		}
+
+		if confirmPassword != password {
+			return errors.New("passwords do not match")
+		}
+
+		return nil
+	})
+}

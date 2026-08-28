@@ -12,8 +12,17 @@ Clone project. If there are missing packages/vendor folder, use "go mod tidy" to
     c. Create sql file inside sql/queries(e.g sql/queries/users.sql), follow sqlc formatting and define queries(so it can generate corresponding 
        repository fns properly) for the CRUD and other functionalities. Go back to root folder and run "sqlc generate" to generate said
        functions(will be stored in internal/db or per what you defined in sqlc.yaml)
-
-
+  ii. Module(for current abstraction)
+    a. Add new folder inside modules folder named {your_module_name}
+    b. Make new handler.go, services.go and structs.go file inside {your_module_name} folder and give them all the same(but unique in your project)
+       package name.
+    c. Copy handler template(Handler struct and New method) from other modules. Add anything else that needs to be a method for the handler struct 
+       if need be.
+    d. Create any structs + validations that you need inside structs.go
+    e. Create any services(leveraging the structs + validations if needed), but remember to declare them as a method of the handler defined 
+       in handler.go
+    f. Bind the new handler (i.e {your_module_name}/handler.go) to your internal/server/server.go file
+    g. Use the new handler to create new routes
 
 go-rss-agg/
 │

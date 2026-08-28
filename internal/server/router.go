@@ -33,13 +33,15 @@ func (server *Server) routes() http.Handler {
 		})
 	})
 
-	router.Route("/v1", func(v1router chi.Router) {
+	router.Route("/v1", func(router chi.Router) {
 		// Public
-		v1router.Get("/healthz", server.Handler.HealthCheck)
-		v1router.Get("/error", server.Handler.ErrorResponse)
+		router.Get("/healthz", server.CommonHandler.HealthCheck)
+		router.Get("/error", server.CommonHandler.ErrorResponse)
 
-		v1router.Get("/users", server.Handler.GetAllUsers)
-		v1router.Post("/users", server.Handler.CreateUser)
+		router.Route("/users", func(router chi.Router) {
+			router.Get("/", server.UsersHandler.GetAllUsers)
+			router.Post("/", server.UsersHandler.CreateUser)
+		})
 
 		// Authenticated
 		// v1router.Group(func(v1router chi.Router) {

@@ -19,10 +19,10 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
+	"github.com/max-fletcher/golang_web_server_boilerplate/internal/config"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/db"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/server"
 )
@@ -33,20 +33,27 @@ func main() {
 	// We are using this because we need to set a bridge, When we use "os.Getenv" it only checks the os's
 	// env variables and not the .env file. In golang .env is not automatically loaded into the os's
 	// environment variables.
-	godotenv.Load()
-
-	portString := os.Getenv("PORT")
-	if portString == "" {
-		log.Fatal("Port is not found in the .env file")
+	if err := godotenv.Load(); err != nil {
+		log.Println("No .env file found, using environment variables")
 	}
 
-	dbURL := os.Getenv("DB_URL")
-	if dbURL == "" {
-		log.Fatal("DB_URL is not found in env")
+	cfg, err := config.Load()
+	if err != nil {
+		log.Fatal(err)
 	}
+
+	// portString := os.Getenv("PORT")
+	// if portString == "" {
+	// 	log.Fatal("Port is not found in the .env file")
+	// }
+
+	// dbURL := os.Getenv("DB_URL")
+	// if dbURL == "" {
+	// 	log.Fatal("DB_URL is not found in env")
+	// }
 
 	// using go's sql package from its standard library to establish connection
-	conn, err := sql.Open("postgres", dbURL)
+	conn, err := sql.Open("postgres", cfg.DbURL)
 	if err != nil {
 		log.Fatal("Can't connect to the database", err)
 	}
@@ -61,10 +68,10 @@ func main() {
 	// Server options like router and port
 	// On windows, to run without compiling the server, use "go run ."
 	// On windows, to compile(for prod) and run binaries, use "go build -o {filename}.exe" then ".\{filename}.exe"
-	log.Printf("Server startng on port %v", portString)
-	err = http.ListenAndServe(":"+portString, srv.Router) // start/initialize server using router coming from server.go
-	if err != nil {                                       // throws an error if the server fails
+	log.Printf("Server startng on port %v", cfg.Port)
+	err = http.ListenAndServe(":"+cfg.Port, srv.Router) // start/initialize server using router coming from server.go
+	if err != nil {                                     // throws an error if the server fails
 		log.Fatal(err)
 	}
-	log.Printf("Server started on port %v", portString)
+	log.Printf("Server started on port %v", cfg.Port)
 }
