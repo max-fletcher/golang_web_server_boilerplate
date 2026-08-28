@@ -35,8 +35,8 @@ func RateLimiter(requestsCount int, windowMins int) func(http.Handler) http.Hand
 		// ),
 		httprate.WithLimitHandler(func(w http.ResponseWriter, r *http.Request) {
 			responses.RespondWithJSON(w, http.StatusTooManyRequests, responses.Response{
-				Code:    http.StatusTooManyRequests,
-				Status:  "ok",
+				Code:    http.StatusTooManyRequests, // 429 status code
+				Status:  "error",
 				Message: "Too many requests. Rate limit exceeded.",
 			})
 		}),

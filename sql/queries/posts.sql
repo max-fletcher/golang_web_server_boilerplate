@@ -15,7 +15,9 @@ LIMIT 1;
 -- name: GetPosts :many
 SELECT * 
 FROM posts 
-ORDER BY created_at DESC;
+ORDER BY created_at DESC
+LIMIT $1
+OFFSET $2;
 
 -- name: UpdatePost :one
 UPDATE posts

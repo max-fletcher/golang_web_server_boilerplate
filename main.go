@@ -58,7 +58,9 @@ func main() {
 	DBConn := db.New(conn)    // connection database to sqlc's queries
 	srv := server.New(DBConn) // Server struct coming from server.go
 
-	// On windows, to start the server, use "go build -o {filename}.exe" then ".\{filename}.exe"
+	// Server options like router and port
+	// On windows, to run without compiling the server, use "go run ."
+	// On windows, to compile(for prod) and run binaries, use "go build -o {filename}.exe" then ".\{filename}.exe"
 	log.Printf("Server startng on port %v", portString)
 	err = http.ListenAndServe(":"+portString, srv.Router) // start/initialize server using router coming from server.go
 	if err != nil {                                       // throws an error if the server fails

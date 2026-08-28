@@ -14,14 +14,15 @@ type Response struct {
 }
 
 type SuccessResponse struct {
-	Code   int         `json:"code"`
-	Status string      `json:"status"`
-	Data   interface{} `json:"data,omitempty"`
+	Code    int         `json:"code"`
+	Status  string      `json:"status"`
+	Message string      `json:"error,omitempty"`
+	Data    interface{} `json:"data,omitempty"`
 }
 
-// #TODO: do I even need this ??
 type ErrorResponse struct {
-	Code   int    `json:"code"`
-	Status string `json:"status"`
-	Error  string `json:"error,omitempty"`
+	Code    int    `json:"code"`
+	Status  string `json:"status"`
+	Message string `json:"error,omitempty"`
+	Errors  any    `json:"errors,omitempty"`
 }

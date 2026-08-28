@@ -114,10 +114,17 @@ const getUsers = `-- name: GetUsers :many
 SELECT id, name, email, password, avatar, created_at, updated_at 
 FROM users 
 ORDER BY created_at DESC
+LIMIT $1
+OFFSET $2
 `
 
-func (q *Queries) GetUsers(ctx context.Context) ([]User, error) {
-	rows, err := q.db.QueryContext(ctx, getUsers)
+type GetUsersParams struct {
+	Limit  int32
+	Offset int32
+}
+
+func (q *Queries) GetUsers(ctx context.Context, arg GetUsersParams) ([]User, error) {
+	rows, err := q.db.QueryContext(ctx, getUsers, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}

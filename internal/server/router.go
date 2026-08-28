@@ -19,29 +19,21 @@ func (server *Server) routes() http.Handler {
 	// Not found route
 	router.NotFound(func(w http.ResponseWriter, r *http.Request) {
 		responses.RespondWithJSON(w, http.StatusNotFound, responses.ErrorResponse{
-			Code:   http.StatusNotFound,
-			Status: "error",
-			Error:  "Route not found",
+			Code:    http.StatusNotFound, // 404 status code
+			Status:  "error",
+			Message: "Route not found",
 		})
 	})
 
 	router.MethodNotAllowed(func(w http.ResponseWriter, r *http.Request) {
 		responses.RespondWithJSON(w, http.StatusMethodNotAllowed, responses.ErrorResponse{
-			Code:   http.StatusMethodNotAllowed,
-			Status: "error",
-			Error:  "Method not allowed",
+			Code:    http.StatusMethodNotAllowed, // 405 status code
+			Status:  "error",
+			Message: "Method not allowed",
 		})
 	})
 
 	router.Route("/v1", func(v1router chi.Router) {
-		// v1router.MethodNotAllowed(func(w http.ResponseWriter, r *http.Request) {
-		// 	responses.RespondWithJSON(w, http.StatusMethodNotAllowed, responses.ErrorResponse{
-		// 		Code:   http.StatusMethodNotAllowed,
-		// 		Status: "error",
-		// 		Error:  "Method not allowed",
-		// 	})
-		// })
-
 		// Public
 		v1router.Get("/healthz", server.Handler.HealthCheck)
 		v1router.Get("/error", server.Handler.ErrorResponse)

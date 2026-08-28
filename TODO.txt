@@ -1,15 +1,20 @@
 # File upload
-# Route not found response
-# validation
+# Route not found response(DONE)
+# validation(needs abstraction on: 
+  1.separate modules(e.g users, posts) 
+  2.break modules into struct and hanlder files 
+  3.custom validation rules for common use) 
+  4. manual validation for query strings
+# Handle JSON marshalling error(DONE)
 # store encrypted/hashed password instead of raw password(DONE)
 # user registration & login route with access and refresh tokens
 # Add rate limiter(DONE)
 # Add cors(DONE)
 # Add logger
-# Add custom exception handler
+# Add custom exception handler(DONE)(Added custom error responses)
 # Relations
 # Nested Relations
-# Pagination for getAll calls
+# Pagination for getAll calls(DONE)
 # DB Transactions when disjointing relational data
 # Authorization and Access Control
 # PDF/Invoice generation

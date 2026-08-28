@@ -88,10 +88,17 @@ const getPosts = `-- name: GetPosts :many
 SELECT id, title, content, user_id, created_at, updated_at 
 FROM posts 
 ORDER BY created_at DESC
+LIMIT $1
+OFFSET $2
 `
 
-func (q *Queries) GetPosts(ctx context.Context) ([]Post, error) {
-	rows, err := q.db.QueryContext(ctx, getPosts)
+type GetPostsParams struct {
+	Limit  int32
+	Offset int32
+}
+
+func (q *Queries) GetPosts(ctx context.Context, arg GetPostsParams) ([]Post, error) {
+	rows, err := q.db.QueryContext(ctx, getPosts, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
