@@ -1,10 +1,10 @@
 # File upload
 # Route not found response(DONE)
-# validation(needs abstraction on: 
-  1.separate modules(e.g users, posts) 
-  2.break modules into struct and hanlder files 
-  3.custom validation rules for common use) 
-  4. manual validation for query strings
+# validation(needs abstraction on:
+  1.separate modules(e.g users, posts)
+  2.break modules into struct and handler files
+  3.custom validation rules for common use)
+  4.validation for query strings(DONE)
 # Handle JSON marshalling error(DONE)
 # store encrypted/hashed password instead of raw password(DONE)
 # user registration & login route with access and refresh tokens

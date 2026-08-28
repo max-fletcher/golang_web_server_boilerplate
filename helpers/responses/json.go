@@ -81,7 +81,7 @@ func ValidationError(w http.ResponseWriter, msg string) { // 422 error
 
 func ValidationErrorWithFields(w http.ResponseWriter, err any) { // 422 error
 	RespondWithJSON(w, http.StatusBadRequest, ErrorResponse{
-		Code:    http.StatusBadRequest,
+		Code:    http.StatusUnprocessableEntity,
 		Status:  "error",
 		Message: "Validation failed",
 		Errors:  err,
