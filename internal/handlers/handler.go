@@ -1,6 +1,8 @@
 package handlers
 
-import "github.com/max-fletcher/golang_web_server_boilerplate/internal/db"
+import (
+	"github.com/max-fletcher/golang_web_server_boilerplate/internal/db"
+)
 
 type Handler struct {
 	DB *db.Queries // Reference to a DB connection. Will be used to query data form DB.

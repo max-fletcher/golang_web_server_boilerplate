@@ -11,9 +11,8 @@ func RespondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
 	data, err := json.Marshal(payload)
 
 	if err != nil {
-		log.Printf("Failed to marshal json response: %v", payload)
+		log.Printf("Error payload inside RespondWithJSON: %v", payload)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		// w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
@@ -80,7 +79,7 @@ func ValidationError(w http.ResponseWriter, msg string) { // 422 error
 }
 
 func ValidationErrorWithFields(w http.ResponseWriter, err any) { // 422 error
-	RespondWithJSON(w, http.StatusBadRequest, ErrorResponse{
+	RespondWithJSON(w, http.StatusUnprocessableEntity, ErrorResponse{
 		Code:    http.StatusUnprocessableEntity,
 		Status:  "error",
 		Message: "Validation failed",
@@ -90,4 +89,8 @@ func ValidationErrorWithFields(w http.ResponseWriter, err any) { // 422 error
 
 func InternalServerError(w http.ResponseWriter, msg string) { // 500 error
 	RespondWithError(w, http.StatusInternalServerError, msg)
+}
+
+func InternalServerErrorSWW(w http.ResponseWriter) { // 500 error
+	InternalServerError(w, "Something went wrong. Please try again.")
 }

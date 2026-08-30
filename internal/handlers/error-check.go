@@ -8,5 +8,5 @@ import (
 
 // This function will return an error response no matter what.
 func (handler *Handler) ErrorResponse(w http.ResponseWriter, r *http.Request) {
-	responses.InternalServerError(w, "Something went wrong.")
+	responses.InternalServerErrorSWW(w)
 }

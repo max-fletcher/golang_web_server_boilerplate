@@ -16,7 +16,7 @@ func (server *Server) routes() http.Handler {
 	router.Use(middleware.RateLimiter(100, 1))
 	router.Use(middleware.CORS())
 
-	// Not found route
+	// Route not found
 	router.NotFound(func(w http.ResponseWriter, r *http.Request) {
 		responses.RespondWithJSON(w, http.StatusNotFound, responses.ErrorResponse{
 			Code:    http.StatusNotFound, // 404 status code
@@ -39,9 +39,9 @@ func (server *Server) routes() http.Handler {
 		router.Get("/error", server.CommonHandler.ErrorResponse)
 
 		router.Route("/users", func(router chi.Router) {
-			router.Get("/", server.UsersHandler.GetAllUsers)
-			router.Post("/", server.UsersHandler.CreateUser)
-			router.Get("/{id}", server.UsersHandler.GetSingleUser)
+			router.Get("/", server.UsersHandler.GetAll)
+			router.Post("/", server.UsersHandler.Create)
+			router.Get("/{id}", server.UsersHandler.GetByID)
 		})
 
 		// Authenticated

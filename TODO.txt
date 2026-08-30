@@ -1,3 +1,6 @@
+Simplify pagination helpe(use int32 there)
+Where to log internal errors
+
 # File upload
 # Route not found response(DONE)
 # validation(needs abstraction on:
