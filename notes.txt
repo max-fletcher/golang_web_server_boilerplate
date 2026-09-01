@@ -14,15 +14,18 @@ Clone project. If there are missing packages/vendor folder, use "go mod tidy" to
        functions(will be stored in internal/db or per what you defined in sqlc.yaml)
   ii. Module(for current abstraction)
     a. Add new folder inside modules folder named {your_module_name}
-    b. Make new handler.go, services.go and structs.go file inside {your_module_name} folder and give them all the same(but unique in your project)
-       package name.
-    c. Copy handler template(Handler struct and New method) from other modules. Add anything else that needs to be a method for the handler struct 
-       if need be.
-    d. Create any structs + validations that you need inside structs.go
-    e. Create any services(leveraging the structs + validations if needed), but remember to declare them as a method of the handler defined 
-       in handler.go
-    f. Bind the new handler (i.e {your_module_name}/handler.go) to your internal/server/server.go file
-    g. Use the new handler to create new routes
+    b. Make new handler.go, services.go, repository.go, structs.go and errors.go file inside {your_module_name} folder. Remember that 
+       they must have the same package name(i.e unique name per folder).
+    c. Copy handler template(Handler struct and New method) from other modules and write your logic. Each handler method must return error or nil.
+       They must also have a response writer(for returning JSON responses) and a return nil at the very end.
+       In order to write your logic here:
+         * Create/write any structs + validations that you need inside {your_module_name}/structs.go
+         * Create any errors that you wanna throw inside {your_module_name}/errors.go
+         * Create(copy template for ease) any services you want to call from the handler inside services.go
+         * Create(copy template for ease) any repositories you want to call from the services inside repository.go
+    e. Bind the new handler (i.e {your_module_name}/handler.go) to your internal/server/server.go file
+    f. Use the new handler to create new routes, but remember to wrap them in server.Handle(...) so you can log all errors in the
+       global error logger
 
 go-rss-agg/
 │

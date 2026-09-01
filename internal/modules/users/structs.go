@@ -5,6 +5,8 @@ import (
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
+	validator "github.com/max-fletcher/golang_web_server_boilerplate/helpers/validation"
+	common_errors "github.com/max-fletcher/golang_web_server_boilerplate/internal/errors"
 )
 
 // Struct to be validated
@@ -17,7 +19,7 @@ type CreateUserRequest struct {
 
 // Rules
 func (params CreateUserRequest) Validate() error {
-	return validation.ValidateStruct(&params,
+	err := validation.ValidateStruct(&params,
 		validation.Field(
 			&params.Name,
 			validation.Required.Error("name is required"),
@@ -39,40 +41,16 @@ func (params CreateUserRequest) Validate() error {
 			passwordsMatch(params.Password),
 		),
 	)
+
+	formattedErrors, ok := validator.FormatValidationErrors(err)
+	if !ok {
+		return nil
+	}
+
+	return common_errors.ErrValidationError{
+		Errors: formattedErrors,
+	}
 }
-
-// func (params CreateUserRequest) Validate() error {
-// 	err := validation.ValidateStruct(&params,
-// 		validation.Field(
-// 			&params.Name,
-// 			validation.Required.Error("name is required"),
-// 			validation.Length(2, 100).Error("name must be between 2 and 100 characters"),
-// 		),
-// 		validation.Field(
-// 			&params.Email,
-// 			validation.Required.Error("Email is required"),
-// 			is.Email.Error("Email must be a valid email address"),
-// 		),
-// 		validation.Field(
-// 			&params.Password,
-// 			validation.Required.Error("Password is required"),
-// 			validation.Length(8, 100).Error("Password must be at least 8 characters"),
-// 		),
-// 		validation.Field(
-// 			&params.ConfirmPassword,
-// 			validation.Required.Error("Confirm password is required"),
-// 			passwordsMatch(params.Password),
-// 		),
-// 	)
-
-// 	if err == nil {
-// 		return nil
-// 	}
-
-// 	return common_errors.ValidationError{
-// 		Errors: validator.FormatValidationErrors(err),
-// 	}
-// }
 
 // custom validation rule used above
 func passwordsMatch(password string) validation.Rule {

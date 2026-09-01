@@ -7,24 +7,23 @@ import (
 )
 
 // NOTE: rule of thumb for defining custom errors:
-// 1. Define error interfaces for dynamic errors(errors that need to be constructed using variables)(see below example)
-// 2. Define static errors for static strings(see below example)
+// 1. Define static errors for static strings(see below example)
+// 2. Define error interfaces for dynamic errors(errors that need to be constructed using variables)(see below example)
 // rule of thumb for handling custom errors:
-// 1. use "if err != nil{...}" for static one-off errors(error that contain only string and you don't intend to return it
-//    conditionally e.g you don't want to determine which status code should be thrown)
-// 2. use "if errors.Is(err, ErrUserNotFound) {...}" for error static errors that you want to return conditionally(i.e you
-//    want to determine what status code should be returned with response from handler/controller)
-// 3. use
-// "if err != nil {
+// 1. use "if errors.Is(err, ErrUserNotFound) {...}" for static errors to figure out what type of error it is and determine what status
+// code should be conditionally returned with the response from handler/controller/topmost func)
+// 2. use (handler/controller/topmost func):
 // 	var emailExistsErr users.ErrUserWithEmailAlreadyExists
 // 	if errors.As(err, &emailExistsErr) {
+//    // log error e.g server.Logger.Error(...)
 // 		responses.ConflictError(w, emailExistsErr.Error())
 // 		return
 // 	}
-//  ...
-// }"
-// for dynamic errors and you want to return response conditionally(i.e determine which status code to throw based on what
-// error type). errors.As stores the err into &emailExistsErr if the type matches and from there, you can throw it how you please
+// for dynamic errors and you want to determine which status code to throw based on error type.
+// errors.As stores the err into &emailExistsErr if the type matches and from there, you can throw it how you please.
+// You can have multiple methods for this error type and format and log/respond with whatever you want(unlike the
+// static error mentioned above).
+// In this project, we are handling all errors in HandleError func from internal/server/errors.go
 
 // Dynamic errors
 type ErrUserWithEmailAlreadyExists struct {
@@ -56,10 +55,10 @@ type ErrUsersFetchFailed struct {
 }
 
 func (e ErrUsersFetchFailed) Error() string {
-	return fmt.Sprintf("Failed to fetch users")
+	return "Failed to fetch users"
 }
 
-func (e ErrUsersFetchFailed) Unwrap() error {
+func (e ErrUsersFetchFailed) Unwrap() error { // Unwrap shows underlying details of errors
 	return e.fetchErr
 }
 
@@ -68,10 +67,10 @@ type ErrUserFetchFailed struct {
 }
 
 func (e ErrUserFetchFailed) Error() string {
-	return fmt.Sprintf("Failed to fetch user")
+	return "Failed to fetch user"
 }
 
-func (e ErrUserFetchFailed) Unwrap() error {
+func (e ErrUserFetchFailed) Unwrap() error { // Unwrap shows underlying details of errors
 	return e.fetchErr
 }
 
@@ -80,7 +79,7 @@ type ErrUserCreateFailed struct {
 }
 
 func (e ErrUserCreateFailed) Error() string {
-	return fmt.Sprintf("Failed to create user")
+	return "Failed to create user"
 }
 
 func (e ErrUserCreateFailed) Unwrap() error {

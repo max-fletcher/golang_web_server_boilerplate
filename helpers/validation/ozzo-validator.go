@@ -2,24 +2,49 @@
 package validator
 
 import (
+	"errors"
+
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 )
 
-func Validate(value validation.Validatable) map[string]string {
+func Validate(value validation.Validatable) error {
 	err := value.Validate()
 	if err == nil {
 		return nil
 	}
 
-	validationErrors, ok := err.(validation.Errors)
-	if !ok {
-		return nil
+	return err
+}
+
+func FormatValidationErrors(err error) (map[string]string, bool) {
+	if err == nil {
+		return nil, false
 	}
 
-	errors := make(map[string]string)
+	// check if error matches type validation.Errors which is an interface for the errors that come from validating validatables
+	var validationErrors validation.Errors
+	if !errors.As(err, &validationErrors) {
+		return nil, false
+	}
+
+	formattedErrors := make(map[string]string)
 	for field, err := range validationErrors {
-		errors[field] = err.Error()
+		formattedErrors[field] = err.Error()
 	}
 
-	return errors
+	return formattedErrors, true
+}
+
+func ValidateAndFormatValidationErrors(value validation.Validatable) (map[string]string, bool) {
+	err := Validate(value)
+	if err == nil {
+		return nil, false
+	}
+
+	formattedErrors, ok := FormatValidationErrors(err)
+	if !ok {
+		return nil, false
+	}
+
+	return formattedErrors, true
 }

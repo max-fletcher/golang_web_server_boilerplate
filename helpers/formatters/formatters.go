@@ -8,8 +8,8 @@ import (
 )
 
 // NOTE: Exporting type fields
-// Turns out any type that has fields that are not exported as pascal-case(or at least starts with a capital case) is
-// not exported. So if you used id instead of ID, the returned struct(and consequently the JSON) will be missing that field.
+// Turns out any type that has fields that are not exported as capital case(i.e first char of name is capital) is
+// not exported in golang. So if you used id instead of ID, the returned struct(and consequently the JSON) will be missing that field.
 type User struct {
 	ID        uuid.UUID `json:"id"`
 	Name      string    `json:"name"`

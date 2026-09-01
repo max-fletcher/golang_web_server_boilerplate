@@ -1,17 +1,24 @@
 package requests
 
 import (
-	"encoding/json"
-	"errors"
 	"fmt"
 )
+
+type ErrInvalidUUIDParam struct {
+	Param string
+	Err   error
+}
+
+func (e ErrInvalidUUIDParam) Error() string {
+	return fmt.Sprintf("Invalid UUID for route param %v: %v", e.Param, e.Err.Error())
+}
 
 type ErrInvalidJSON struct {
 	Err error
 }
 
 func (e ErrInvalidJSON) Error() string {
-	return fmt.Sprintf("invalid JSON: %v", e.Err)
+	return fmt.Sprintf("Invalid JSON: %v", e.Err)
 }
 
 func (e ErrInvalidJSON) Unwrap() error {
@@ -31,14 +38,8 @@ func (e ErrInvalidFieldType) Error() string {
 	)
 }
 
-func NewInvalidFieldTypeError(err error) error {
-	var typeError *json.UnmarshalTypeError
-	if !errors.As(err, &typeError) {
-		return nil
-	}
-
-	return ErrInvalidFieldType{
-		Field: typeError.Field,
-		Type:  typeError.Type.String(),
+func (e ErrInvalidFieldType) FormatInvalidFieldTypeError() map[string]string {
+	return map[string]string{
+		e.Field: e.Error(),
 	}
 }

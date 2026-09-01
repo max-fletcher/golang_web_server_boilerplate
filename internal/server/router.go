@@ -35,13 +35,13 @@ func (server *Server) routes() http.Handler {
 
 	router.Route("/v1", func(router chi.Router) {
 		// Public
-		router.Get("/healthz", server.CommonHandler.HealthCheck)
-		router.Get("/error", server.CommonHandler.ErrorResponse)
+		router.Get("/healthz", server.Handle(server.CommonHandler.HealthCheck))
+		router.Get("/error", server.Handle(server.CommonHandler.ErrorResponse))
 
 		router.Route("/users", func(router chi.Router) {
-			router.Get("/", server.UsersHandler.GetAll)
-			router.Post("/", server.UsersHandler.Create)
-			router.Get("/{id}", server.UsersHandler.GetByID)
+			router.Get("/", server.Handle(server.UsersHandler.GetAll))
+			router.Post("/", server.Handle(server.UsersHandler.Create))
+			router.Get("/{id}", server.Handle(server.UsersHandler.GetByID))
 		})
 
 		// Authenticated
@@ -59,32 +59,6 @@ func (server *Server) routes() http.Handler {
 		// 	v1router.Get("/", s.Handler.HandleGetUser)
 		// })
 	})
-
-	// V1 API
-	// v1router := chi.NewRouter()
-
-	// v1router.Get("/", func(w http.ResponseWriter, r *http.Request) {
-	// 	w.Write([]byte("Hello World!"))
-	// })
-
-	// v1router.Get("/healthz", server.Handler.HealthCheck)
-	// v1router.Get("/error", server.Handler.ErrorResponse)
-
-	// v1router.Post("/users", server.handleCreateUser)
-	// v1router.Get("/users", server.handleGetUserByAPIKey)
-
-	// v1router.Post("/feeds", server.handleCreateFeed)
-	////////////////////////
-	// v1router.Get("/healthz", handlerReadiness)
-	// v1router.Get("/error", ErrorResponse)
-
-	// v1router.Post("/users", apiCfg.CreateUser)                                     // route for creating users in DB
-	// v1router.Get("/users", apiCfg.authenticatedMiddleware(apiCfg.handlerGetUserByAPIKey)) // route for getting user by apiKey header in DB
-
-	// v1router.Get("/posts", apiCfg.authenticatedMiddleware(apiCfg.handlerGetPostsForUser)) // route for getting all posts for a feed if the user is following that feed
-	// router.Mount("/v1", v1router)
-
-	// router.Mount("/v1", v1router)
 
 	return router
 }

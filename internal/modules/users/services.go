@@ -74,8 +74,6 @@ func (service *service) Create(ctx context.Context, params CreateUserRequest) (d
 	return user, nil
 }
 
-// handler method that handles fetching all users. The addition of (handler *Handler)
-// turns it into a method for handler.
 func (service *service) GetAll(ctx context.Context, params db.GetUsersParams) ([]db.User, error) {
 	// 1st param: context for the request
 	users, err := service.repository.GetAll(ctx, params)

@@ -7,6 +7,8 @@ import (
 )
 
 // This function will return an error response no matter what.
-func (handler *Handler) ErrorResponse(w http.ResponseWriter, r *http.Request) {
+func (handler *Handler) ErrorResponse(w http.ResponseWriter, r *http.Request) error {
 	responses.InternalServerErrorSWW(w)
+
+	return nil
 }
