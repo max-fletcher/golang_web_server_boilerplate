@@ -123,6 +123,30 @@ func (server *Server) HandleError(w http.ResponseWriter, err error) {
 		return
 	}
 
+	var userUpdateFailedErr users.ErrUserUpdateFailed
+	if errors.As(err, &userUpdateFailedErr) {
+		server.Logger.Error(
+			"++++ Failed to update user ++++",
+			"error", userUpdateFailedErr.Error(),
+			"cause", userUpdateFailedErr.Unwrap(),
+		)
+
+		responses.InternalServerErrorSWW(w)
+		return
+	}
+
+	var userDeleteFailedErr users.ErrUserDeleteFailed
+	if errors.As(err, &userDeleteFailedErr) {
+		server.Logger.Error(
+			"++++ Failed to delete user ++++",
+			"error", userDeleteFailedErr.Error(),
+			"cause", userDeleteFailedErr.Unwrap(),
+		)
+
+		responses.InternalServerErrorSWW(w)
+		return
+	}
+
 	// Unknown/unexpected error.
 	server.Logger.Error("++++ Unhandled application error ++++", "error", err)
 	responses.InternalServerErrorSWW(w)

@@ -14,10 +14,11 @@ import (
 
 type Service interface {
 	Create(ctx context.Context, params CreateUserRequest) (db.User, error)
-	GetAll(ctx context.Context, params db.GetUsersParams) ([]db.User, error)
+	GetAll(ctx context.Context, limit int, offset int) ([]db.User, error)
 	GetByID(ctx context.Context, id uuid.UUID) (db.User, error)
 	GetByEmail(ctx context.Context, email string) (db.User, error)
-	// Delete(ctx context.Context, id uuid.UUID) error
+	Update(ctx context.Context, id uuid.UUID, params UpdateUserRequest) (db.User, error)
+	Delete(ctx context.Context, id uuid.UUID) (db.User, error)
 }
 
 type service struct {
@@ -74,9 +75,9 @@ func (service *service) Create(ctx context.Context, params CreateUserRequest) (d
 	return user, nil
 }
 
-func (service *service) GetAll(ctx context.Context, params db.GetUsersParams) ([]db.User, error) {
+func (service *service) GetAll(ctx context.Context, limit int, offset int) ([]db.User, error) {
 	// 1st param: context for the request
-	users, err := service.repository.GetAll(ctx, params)
+	users, err := service.repository.GetAll(ctx, limit, offset)
 	if err != nil {
 		return []db.User{}, ErrUsersFetchFailed{
 			fetchErr: err,
@@ -118,6 +119,70 @@ func (service *service) GetByEmail(ctx context.Context, email string) (db.User, 
 
 		return db.User{}, ErrUserFetchFailed{
 			fetchErr: err,
+		}
+	}
+
+	return user, nil
+}
+
+func (service *service) Update(ctx context.Context, id uuid.UUID, params UpdateUserRequest) (db.User, error) {
+	_, err := service.GetByID(ctx, id)
+	if err != nil {
+		return db.User{}, err
+	}
+
+	existingUser, err := service.GetByEmail(ctx, params.Email)
+	if err == nil && existingUser.ID != id {
+		return db.User{}, ErrUserWithEmailAlreadyExists{
+			Email: params.Email,
+		}
+	}
+
+	// If error exists but doesn't match the errors that GetByEmail() sends back
+	var userWithEmailNotFoundErr ErrUserWithEmailNotFound
+	var userFetchFailedErr ErrUserFetchFailed
+	if err != nil && !errors.As(err, &userWithEmailNotFoundErr) && !errors.As(err, &userFetchFailedErr) {
+		return db.User{}, ErrUserFetchFailed{
+			fetchErr: err,
+		}
+	}
+
+	hashedPassword, err := crypto.HashPassword(params.Password)
+	if err != nil {
+		return db.User{}, common_errors.ErrHashingPassword{
+			HashErr: err,
+		}
+	}
+	params.Password = hashedPassword
+
+	// 1st param: context for the request
+	// 2nd param: the struct that we want to pass so it saves the underlying data in DB
+	user, err := service.repository.Update(ctx, db.UpdateUserParams{
+		ID:        id,
+		Name:      params.Name,
+		Email:     params.Email,
+		Password:  hashedPassword,
+		UpdatedAt: time.Now().UTC(),
+	})
+	if err != nil {
+		return db.User{}, ErrUserUpdateFailed{
+			updateUser: err,
+		}
+	}
+
+	return user, nil
+}
+
+func (service *service) Delete(ctx context.Context, id uuid.UUID) (db.User, error) {
+	user, err := service.GetByID(ctx, id)
+	if err != nil {
+		return db.User{}, err
+	}
+
+	_, err = service.repository.Delete(ctx, id)
+	if err != nil {
+		return db.User{}, ErrUserDeleteFailed{
+			deleteErr: err,
 		}
 	}
 

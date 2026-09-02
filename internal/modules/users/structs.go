@@ -18,7 +18,7 @@ type CreateUserRequest struct {
 }
 
 // Rules
-func (params CreateUserRequest) Validate() error {
+func (params CreateUserRequest) ValidateCreateUserData() error {
 	err := validation.ValidateStruct(&params,
 		validation.Field(
 			&params.Name,
@@ -52,6 +52,45 @@ func (params CreateUserRequest) Validate() error {
 	}
 }
 
+type UpdateUserRequest struct {
+	Name            string `json:"name,omitempty"`
+	Email           string `json:"email,omitempty"`
+	Password        string `json:"password,omitempty"`
+	ConfirmPassword string `json:"confirm_password,omitempty"`
+}
+
+func (params UpdateUserRequest) ValidateUpdateUserData() error {
+	err := validation.ValidateStruct(&params,
+		validation.Field(
+			&params.Name,
+			validation.Length(2, 100).Error("name must be between 2 and 100 characters"),
+		),
+		validation.Field(
+			&params.Email,
+			is.Email.Error("Email must be a valid email address"),
+		),
+		validation.Field(
+			&params.Password,
+			validation.Required.Error("Password is required"),
+			validation.Length(8, 100).Error("Password must be at least 8 characters"),
+		),
+		validation.Field(
+			&params.ConfirmPassword,
+			ConfirmPasswordRequiredOnPasswordProvided(params.Password),
+			passwordsMatch(params.Password),
+		),
+	)
+
+	formattedErrors, ok := validator.FormatValidationErrors(err)
+	if !ok {
+		return nil
+	}
+
+	return common_errors.ErrValidationError{
+		Errors: formattedErrors,
+	}
+}
+
 // custom validation rule used above
 func passwordsMatch(password string) validation.Rule {
 	return validation.By(func(value interface{}) error {
@@ -66,4 +105,8 @@ func passwordsMatch(password string) validation.Rule {
 
 		return nil
 	})
+}
+
+func ConfirmPasswordRequiredOnPasswordProvided(password string) validation.Rule {
+	return validation.When(password != "", validation.Required.Error("Confirm password is required"))
 }

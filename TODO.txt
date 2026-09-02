@@ -1,14 +1,16 @@
-Simplify pagination helper(use int32 there)
-
 # File upload
 # Route not found response(DONE)
-# validation(needs abstraction on:
-  1.separate modules(e.g users, posts)
-  2.break modules into struct and handler files
-  3.custom validation rules for common use)
+# Validation(DONE. Need to check conditional validation and database query validation though)
+# Needs abstraction on:
+  1.separate modules(e.g users, posts)(DONE)
+  2.break modules into struct and handler files(DONE)
+  3.custom validation rules for common use(DONE)
   4.validation for query strings(DONE)
+  5. abstract formatter(break into separate ones) to those folders(DONE. Decided against it due to reasons)
+  (Partly DONE. Abstract formatters left)
 # Handle JSON marshalling error(DONE)
 # store encrypted/hashed password instead of raw password(DONE)
+# Go for a better abstraction for dealing with and logging errors globally
 # user registration & login route with access and refresh tokens
 # Add rate limiter(DONE)
 # Add cors(DONE)
@@ -26,8 +28,6 @@ Simplify pagination helper(use int32 there)
 # Queue (BullMQ + Redis)(e.g for email delivery) + Implement email service(NEEDS RIGOROUS TESTING. TS PROBLEMS.)
 # Add health check endpoint(DONE)
 # Add request logging middleware
-# Abstract each CRUD(users, posts etc) into separate folders and abstract formatter(break into separate ones) to those folders
-  (Partly DONE. Abstract formatters left)
 
 
 Possible path:  

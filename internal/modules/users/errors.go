@@ -86,6 +86,30 @@ func (e ErrUserCreateFailed) Unwrap() error {
 	return e.createErr
 }
 
+type ErrUserUpdateFailed struct {
+	updateUser error
+}
+
+func (e ErrUserUpdateFailed) Error() string {
+	return "Failed to update user"
+}
+
+func (e ErrUserUpdateFailed) Unwrap() error {
+	return e.updateUser
+}
+
+type ErrUserDeleteFailed struct {
+	deleteErr error
+}
+
+func (e ErrUserDeleteFailed) Error() string {
+	return "Failed to delete user"
+}
+
+func (e ErrUserDeleteFailed) Unwrap() error {
+	return e.deleteErr
+}
+
 // Static errors
 var (
 // ErrUserWithIdNotFound   = errors.New("User with this id doesn't exist")

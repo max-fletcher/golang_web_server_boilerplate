@@ -42,6 +42,8 @@ func (server *Server) routes() http.Handler {
 			router.Get("/", server.Handle(server.UsersHandler.GetAll))
 			router.Post("/", server.Handle(server.UsersHandler.Create))
 			router.Get("/{id}", server.Handle(server.UsersHandler.GetByID))
+			router.Patch("/{id}", server.Handle(server.UsersHandler.Update))
+			router.Delete("/{id}", server.Handle(server.UsersHandler.Delete))
 		})
 
 		// Authenticated
