@@ -4,150 +4,48 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/max-fletcher/golang_web_server_boilerplate/helpers/requests"
 	"github.com/max-fletcher/golang_web_server_boilerplate/helpers/responses"
 	common_errors "github.com/max-fletcher/golang_web_server_boilerplate/internal/errors"
-	"github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/users"
 )
 
-// A method for Server struct. HandleError accepts a writer and an error, logs it if its unknown and returns a response
 func (server *Server) HandleError(w http.ResponseWriter, err error) {
-	// -------- Common errors --------
-
-	var invalidUUIDParamErr requests.ErrInvalidUUIDParam
-	if errors.As(err, &invalidUUIDParamErr) {
-		responses.BadRequestError(w, invalidUUIDParamErr.Error())
-		return
-	}
-
-	// Invalid JSON field type
-	var fieldTypeErr requests.ErrInvalidFieldType
-	if errors.As(err, &fieldTypeErr) {
+	// Errors generated from validation or invalid JSON that contains map of key-values
+	var httpErrorMapErr common_errors.ErrHTTPWithErrorMap
+	if errors.As(err, &httpErrorMapErr) {
 		responses.RespondWithDetailedErrors(
 			w,
-			http.StatusBadRequest,
-			"Invalid field type",
-			fieldTypeErr.FormatInvalidFieldTypeError(),
+			httpErrorMapErr.StatusCode(),
+			httpErrorMapErr.ClientMsg(),
+			httpErrorMapErr.ErrorMap(),
 		)
 		return
 	}
 
-	// Invalid/malformed JSON
-	var invalidJSONErr requests.ErrInvalidJSON
-	if errors.As(err, &invalidJSONErr) {
+	// Errors generated from server that must contain the entire error(logging it for easier debugging)
+	var httpServerErr common_errors.ErrHTTPServerError
+	if errors.As(err, &httpServerErr) {
 		server.Logger.Error(
-			"++++ Invalid JSON Error: ++++",
-			"error", invalidJSONErr.Error(),
-			"cause", invalidJSONErr.Unwrap(),
-		)
-		responses.RespondWithError(w, http.StatusBadRequest, "Invalid JSON in request body")
-		return
-	}
-
-	// Validation error
-	var validationErr common_errors.ErrValidationError
-	if errors.As(err, &validationErr) {
-		responses.RespondWithDetailedErrors(
-			w,
-			http.StatusUnprocessableEntity,
-			validationErr.Error(),
-			validationErr.ErrorMap(),
-		)
-		return
-	}
-
-	// Hashing password error
-	var passwordHashErr common_errors.ErrHashingPassword
-	if errors.As(err, &passwordHashErr) {
-		server.Logger.Error(
-			"++++ Failed to hash password: ++++",
-			"error", passwordHashErr.Error(),
-			"cause", passwordHashErr.Unwrap(),
-		)
-		responses.InternalServerErrorSWW(w)
-		return
-	}
-
-	// -------- Users module errors --------
-	var emailExistsErr users.ErrUserWithEmailAlreadyExists
-	if errors.As(err, &emailExistsErr) {
-		responses.ConflictError(w, emailExistsErr.Error())
-		return
-	}
-
-	var userWithIdNotFoundErr users.ErrUserWithIdNotFound
-	if errors.As(err, &userWithIdNotFoundErr) {
-		responses.NotFoundError(w, userWithIdNotFoundErr.Error())
-		return
-	}
-
-	var userWithEmailNotFoundErr users.ErrUserWithEmailNotFound
-	if errors.As(err, &userWithEmailNotFoundErr) {
-		responses.NotFoundError(w, userWithEmailNotFoundErr.Error())
-		return
-	}
-
-	var usersFetchFailedErr users.ErrUsersFetchFailed
-	if errors.As(err, &usersFetchFailedErr) {
-		server.Logger.Error(
-			"++++ Failed to fetch users ++++",
-			"error", usersFetchFailedErr.Error(),
-			"cause", usersFetchFailedErr.Unwrap(),
+			"++++"+httpServerErr.Error()+"++++",
+			"error", httpServerErr.Error(),
+			"cause", httpServerErr.Unwrap(),
 		)
 
-		responses.InternalServerErrorSWW(w)
+		responses.RespondWithError(w, httpServerErr.StatusCode(), httpServerErr.ClientMsg())
 		return
 	}
 
-	var userFetchFailedErr users.ErrUserFetchFailed
-	if errors.As(err, &userFetchFailedErr) {
-		server.Logger.Error(
-			"++++ Failed to fetch single user ++++",
-			"error", userFetchFailedErr.Error(),
-			"cause", userFetchFailedErr.Unwrap(),
-		)
-
-		responses.InternalServerErrorSWW(w)
+	// Generic errors
+	var httpBaseErr common_errors.ErrHTTPBaseError
+	if errors.As(err, &httpBaseErr) {
+		responses.RespondWithError(w, httpBaseErr.StatusCode(), httpBaseErr.ClientMsg())
 		return
 	}
 
-	var userCreateFailedErr users.ErrUserCreateFailed
-	if errors.As(err, &userCreateFailedErr) {
-		server.Logger.Error(
-			"++++ Failed to create user ++++",
-			"error", userCreateFailedErr.Error(),
-			"cause", userCreateFailedErr.Unwrap(),
-		)
+	server.Logger.Error(
+		"++++ Internal server error ++++",
+		"error", err.Error(),
+		"cause", err,
+	)
 
-		responses.InternalServerErrorSWW(w)
-		return
-	}
-
-	var userUpdateFailedErr users.ErrUserUpdateFailed
-	if errors.As(err, &userUpdateFailedErr) {
-		server.Logger.Error(
-			"++++ Failed to update user ++++",
-			"error", userUpdateFailedErr.Error(),
-			"cause", userUpdateFailedErr.Unwrap(),
-		)
-
-		responses.InternalServerErrorSWW(w)
-		return
-	}
-
-	var userDeleteFailedErr users.ErrUserDeleteFailed
-	if errors.As(err, &userDeleteFailedErr) {
-		server.Logger.Error(
-			"++++ Failed to delete user ++++",
-			"error", userDeleteFailedErr.Error(),
-			"cause", userDeleteFailedErr.Unwrap(),
-		)
-
-		responses.InternalServerErrorSWW(w)
-		return
-	}
-
-	// Unknown/unexpected error.
-	server.Logger.Error("++++ Unhandled application error ++++", "error", err)
 	responses.InternalServerErrorSWW(w)
 }

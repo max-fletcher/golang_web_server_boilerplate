@@ -1,5 +1,7 @@
 package common_errors
 
+import "net/http"
+
 // NOTE: rule of thumb for defining custom errors:
 // 1. Define static errors for static strings(see below example)
 // 2. Define error interfaces for dynamic errors(errors that need to be constructed using variables)(see below example)
@@ -19,6 +21,22 @@ package common_errors
 // static error mentioned above).
 // In this project, we are handling all errors in HandleError func from internal/server/errors.go
 
+type ErrHTTPBaseError interface { // All errors should implement this
+	Error() string
+	StatusCode() int
+	ClientMsg() string
+}
+
+type ErrHTTPServerError interface { // Errors generated from server that must contain stack trace
+	ErrHTTPBaseError
+	Unwrap() error
+}
+
+type ErrHTTPWithErrorMap interface { // Errors generated from validation or invalid JSON that contains map of key-values
+	ErrHTTPBaseError
+	ErrorMap() map[string]string
+}
+
 type ErrValidationError struct {
 	Errors map[string]string
 }
@@ -27,9 +45,19 @@ func (e ErrValidationError) Error() string {
 	return "Validation failed"
 }
 
+func (e ErrValidationError) StatusCode() int {
+	return http.StatusUnprocessableEntity
+}
+
+func (e ErrValidationError) ClientMsg() string {
+	return "Validation failed"
+}
+
 func (e ErrValidationError) ErrorMap() map[string]string {
 	return e.Errors
 }
+
+var _ ErrHTTPWithErrorMap = ErrValidationError{}
 
 type ErrHashingPassword struct {
 	HashErr error
@@ -39,9 +67,19 @@ func (e ErrHashingPassword) Error() string {
 	return "Failed to hash password"
 }
 
+func (e ErrHashingPassword) StatusCode() int {
+	return http.StatusInternalServerError
+}
+
+func (e ErrHashingPassword) ClientMsg() string {
+	return "Failed to hash password"
+}
+
 func (e ErrHashingPassword) Unwrap() error {
 	return e.HashErr
 }
+
+var _ ErrHTTPServerError = ErrHashingPassword{}
 
 var (
 // common

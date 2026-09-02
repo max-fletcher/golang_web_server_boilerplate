@@ -51,7 +51,6 @@ func (handler *Handler) Create(w http.ResponseWriter, r *http.Request) error {
 
 func (handler *Handler) GetAll(w http.ResponseWriter, r *http.Request) error {
 	pagination, validationErrors := validator.BaseValidatePagination(r.URL.Query())
-
 	if len(validationErrors) > 0 {
 		return common_errors.ErrValidationError{
 			Errors: validationErrors,

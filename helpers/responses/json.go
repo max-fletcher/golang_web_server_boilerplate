@@ -46,8 +46,8 @@ func RespondWithError(w http.ResponseWriter, code int, msg string) {
 }
 
 func RespondWithDetailedErrors(w http.ResponseWriter, code int, message string, err any) {
-	RespondWithJSON(w, http.StatusBadRequest, ErrorResponse{
-		Code:    http.StatusBadRequest,
+	RespondWithJSON(w, code, ErrorResponse{
+		Code:    code,
 		Status:  "error",
 		Message: message,
 		Errors:  err,
