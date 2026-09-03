@@ -6,6 +6,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	id_helpers "github.com/max-fletcher/golang_web_server_boilerplate/helpers/ID"
 	"github.com/max-fletcher/golang_web_server_boilerplate/helpers/formatters"
+	"github.com/max-fletcher/golang_web_server_boilerplate/helpers/pagination"
 	"github.com/max-fletcher/golang_web_server_boilerplate/helpers/requests"
 	"github.com/max-fletcher/golang_web_server_boilerplate/helpers/responses"
 	validator "github.com/max-fletcher/golang_web_server_boilerplate/helpers/validation"
@@ -45,12 +46,11 @@ func (handler *Handler) Create(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	responses.RespondWithSuccess(w, http.StatusCreated, "Created successfully", formatters.DatabaseUserToUser(user))
-
 	return nil
 }
 
 func (handler *Handler) GetAll(w http.ResponseWriter, r *http.Request) error {
-	pagination, validationErrors := validator.BaseValidatePagination(r.URL.Query())
+	validatedQSData, validationErrors := validator.ValidatePaginationQS(r.URL.Query())
 	if len(validationErrors) > 0 {
 		return common_errors.ErrValidationError{
 			Errors: validationErrors,
@@ -58,13 +58,14 @@ func (handler *Handler) GetAll(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	// 1st param: context for the request
-	users, err := handler.service.GetAll(r.Context(), pagination.Limit, pagination.Offset)
+	users, total, err := handler.service.GetAll(r.Context(), validatedQSData.FilterString, validatedQSData.Limit, validatedQSData.Offset)
 	if err != nil {
 		return err
 	}
+	formattedUserData := formatters.DatabaseUsersToUsers(users)
+	paginatedData := pagination.GeneratePaginationFormat(validatedQSData, total, formattedUserData)
 
-	responses.RespondWithSuccess(w, http.StatusOK, "Fetched successfully", formatters.DatabaseUsersToUsers(users))
-
+	responses.RespondWithSuccess(w, http.StatusOK, "Fetched successfully", paginatedData)
 	return nil
 }
 
@@ -82,7 +83,6 @@ func (handler *Handler) GetByID(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	responses.RespondWithSuccess(w, http.StatusOK, "Fetched successfully", formatters.DatabaseUserToUser(user))
-
 	return nil
 }
 
@@ -110,7 +110,6 @@ func (handler *Handler) Update(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	responses.RespondWithSuccess(w, http.StatusOK, "Updated successfully", formatters.DatabaseUserToUser(user))
-
 	return nil
 }
 
@@ -128,6 +127,5 @@ func (handler *Handler) Delete(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	responses.RespondWithSuccess(w, http.StatusOK, "Deleted successfully", formatters.DatabaseUserToUser(user))
-
 	return nil
 }

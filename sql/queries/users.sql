@@ -15,9 +15,19 @@ LIMIT 1;
 -- name: GetUsers :many
 SELECT * 
 FROM users 
+WHERE
+    ($1 = '' OR name ILIKE '%' || $1 || '%')
+    OR ($1 = '' OR email ILIKE '%' || $1 || '%')
 ORDER BY created_at DESC
-LIMIT $1
-OFFSET $2;
+LIMIT $2
+OFFSET $3;
+
+-- name: GetUsersCount :one
+SELECT COUNT(*)
+FROM users 
+WHERE
+    ($1 = '' OR name ILIKE '%' || $1 || '%')
+    OR ($1 = '' OR email ILIKE '%' || $1 || '%');
 
 -- name: UpdateUser :one
 UPDATE users

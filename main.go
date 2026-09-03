@@ -61,7 +61,7 @@ func main() {
 	// Server options like router and port
 	// On windows, to run without compiling the server, use "go run ."
 	// On windows, to compile(for prod) and run binaries, use "go build -o {filename}.exe" then ".\{filename}.exe"
-	log.Printf("Server startng on port %v", cfg.Port)
+	log.Printf("Server starting on port %v", cfg.Port)
 	err = http.ListenAndServe(":"+cfg.Port, srv.Router) // start/initialize server using router coming from server.go
 	if err != nil {                                     // throws an error if the server fails
 		log.Fatal(err)

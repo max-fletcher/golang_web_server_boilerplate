@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -14,7 +15,7 @@ import (
 
 type Service interface {
 	Create(ctx context.Context, params CreateUserRequest) (db.User, error)
-	GetAll(ctx context.Context, limit int, offset int) ([]db.User, error)
+	GetAll(ctx context.Context, filterString string, limit int, offset int) ([]db.User, int, error)
 	GetByID(ctx context.Context, id uuid.UUID) (db.User, error)
 	GetByEmail(ctx context.Context, email string) (db.User, error)
 	Update(ctx context.Context, id uuid.UUID, params UpdateUserRequest) (db.User, error)
@@ -75,16 +76,29 @@ func (service *service) Create(ctx context.Context, params CreateUserRequest) (d
 	return user, nil
 }
 
-func (service *service) GetAll(ctx context.Context, limit int, offset int) ([]db.User, error) {
+func (service *service) GetAll(ctx context.Context, filterString string, limit int, offset int) ([]db.User, int, error) {
 	// 1st param: context for the request
-	users, err := service.repository.GetAll(ctx, limit, offset)
+	users, err := service.repository.GetAll(ctx, filterString, limit, offset)
 	if err != nil {
-		return []db.User{}, ErrUsersFetchFailed{
+		return []db.User{}, 0, ErrUsersFetchFailed{
 			fetchErr: err,
 		}
 	}
 
-	return users, nil
+	total, err := service.repository.GetAllCount(ctx, filterString)
+	if err != nil {
+
+		var bigInt64ToIntError common_errors.ErrBigInt64ToIntError
+		if errors.As(err, &bigInt64ToIntError) {
+			return []db.User{}, 0, fmt.Errorf("Limit and/or offset value out of range")
+		}
+
+		return []db.User{}, 0, ErrUsersFetchFailed{
+			fetchErr: err,
+		}
+	}
+
+	return users, total, nil
 }
 
 func (service *service) GetByID(ctx context.Context, id uuid.UUID) (db.User, error) {

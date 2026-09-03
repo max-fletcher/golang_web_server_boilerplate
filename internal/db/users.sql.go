@@ -113,18 +113,22 @@ func (q *Queries) GetUserById(ctx context.Context, id uuid.UUID) (User, error) {
 const getUsers = `-- name: GetUsers :many
 SELECT id, name, email, password, avatar, created_at, updated_at 
 FROM users 
+WHERE
+    ($1 = '' OR name ILIKE '%' || $1 || '%')
+    OR ($1 = '' OR email ILIKE '%' || $1 || '%')
 ORDER BY created_at DESC
-LIMIT $1
-OFFSET $2
+LIMIT $2
+OFFSET $3
 `
 
 type GetUsersParams struct {
-	Limit  int32
-	Offset int32
+	Column1 interface{}
+	Limit   int32
+	Offset  int32
 }
 
 func (q *Queries) GetUsers(ctx context.Context, arg GetUsersParams) ([]User, error) {
-	rows, err := q.db.QueryContext(ctx, getUsers, arg.Limit, arg.Offset)
+	rows, err := q.db.QueryContext(ctx, getUsers, arg.Column1, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
@@ -152,6 +156,21 @@ func (q *Queries) GetUsers(ctx context.Context, arg GetUsersParams) ([]User, err
 		return nil, err
 	}
 	return items, nil
+}
+
+const getUsersCount = `-- name: GetUsersCount :one
+SELECT COUNT(*)
+FROM users 
+WHERE
+    ($1 = '' OR name ILIKE '%' || $1 || '%')
+    OR ($1 = '' OR email ILIKE '%' || $1 || '%')
+`
+
+func (q *Queries) GetUsersCount(ctx context.Context, dollar_1 interface{}) (int64, error) {
+	row := q.db.QueryRowContext(ctx, getUsersCount, dollar_1)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
 }
 
 const updateUser = `-- name: UpdateUser :one

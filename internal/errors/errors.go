@@ -37,6 +37,7 @@ type ErrHTTPWithErrorMap interface { // Errors generated from validation or inva
 	ErrorMap() map[string]string
 }
 
+// Validation Errors
 type ErrValidationError struct {
 	Errors map[string]string
 }
@@ -59,6 +60,7 @@ func (e ErrValidationError) ErrorMap() map[string]string {
 
 var _ ErrHTTPWithErrorMap = ErrValidationError{}
 
+// Hashing/encryption rrors
 type ErrHashingPassword struct {
 	HashErr error
 }
@@ -80,6 +82,25 @@ func (e ErrHashingPassword) Unwrap() error {
 }
 
 var _ ErrHTTPServerError = ErrHashingPassword{}
+
+// Number conversion Errors
+type ErrBigInt64ToIntError struct {
+	Err error
+}
+
+func (e ErrBigInt64ToIntError) Error() string {
+	return "Value overflows standard int capacity"
+}
+
+func (e ErrBigInt64ToIntError) StatusCode() int {
+	return http.StatusBadGateway
+}
+
+func (e ErrBigInt64ToIntError) ClientMsg() string {
+	return "Value overflows standard int capacity"
+}
+
+var _ ErrHTTPBaseError = ErrBigInt64ToIntError{}
 
 var (
 // common
