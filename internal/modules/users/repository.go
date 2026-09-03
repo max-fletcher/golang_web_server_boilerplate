@@ -23,9 +23,9 @@ type repository struct {
 	DB *db.Queries // Reference to a DB connection. Will be used to query data form DB.
 }
 
-func NewRepository(db *db.Queries) *repository {
+func NewRepository(database *db.Queries) *repository {
 	return &repository{
-		DB: db,
+		DB: database,
 	}
 }
 

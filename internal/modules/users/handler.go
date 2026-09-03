@@ -10,20 +10,17 @@ import (
 	"github.com/max-fletcher/golang_web_server_boilerplate/helpers/requests"
 	"github.com/max-fletcher/golang_web_server_boilerplate/helpers/responses"
 	validator "github.com/max-fletcher/golang_web_server_boilerplate/helpers/validation"
-	"github.com/max-fletcher/golang_web_server_boilerplate/internal/db"
 	common_errors "github.com/max-fletcher/golang_web_server_boilerplate/internal/errors"
 )
 
 // same as the handler in internal/handler.go, but will create a new handler instance that is separate from that
 type Handler struct {
-	DB      *db.Queries // Reference to a DB connection. Will be used to query data form DB.
-	service Service
+	service Service // Service that belongs to this/current package by default(i.e defined in service.go)
 }
 
-func New(db *db.Queries) *Handler {
+func NewHandler(service Service) *Handler {
 	return &Handler{
-		DB:      db,
-		service: NewService(db),
+		service: service,
 	}
 }
 

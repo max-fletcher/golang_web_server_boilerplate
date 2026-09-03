@@ -10,6 +10,8 @@ import (
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/users"
 )
 
+// The file and the function named NewServer(below) is for creating a server instance and binding dependencies to it before returning it.
+
 // Struct containing a router instance
 type Server struct {
 	Router        http.Handler // Reference to router instance
@@ -18,13 +20,17 @@ type Server struct {
 	Logger        *slog.Logger
 }
 
-// This function is named New. It is a naming convention for functions that behave like a constructor. This func will create a new server.
+// The name "NewServer" is a naming convention for functions that behave like a constructor. This func will create a new server.
 // It is creating and passing a pointer to a server struct because remember, functions that return structs actually return copies of the struct
 // and not the object itself
-func New(db *db.Queries) *Server {
+func NewServer(database *db.Queries) *Server {
+	userRepository := users.NewRepository(database)
+	userService := users.NewService(userRepository)
+	userHandler := users.NewHandler(userService)
+
 	server := &Server{
-		CommonHandler: handlers.New(db),
-		UsersHandler:  users.New(db),
+		CommonHandler: handlers.New(database),
+		UsersHandler:  userHandler,
 		Logger:        logger.New(),
 	}
 

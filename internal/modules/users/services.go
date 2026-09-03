@@ -26,9 +26,16 @@ type service struct {
 	repository Repository
 }
 
-func NewService(db *db.Queries) *service {
+// Using different structure so that we can prevent circular dependency
+//
+//	func NewService(db *db.Queries) *service {
+//		return &service{
+//			repository: NewRepository(db),
+//		}
+//	}
+func NewService(repository Repository) *service {
 	return &service{
-		repository: NewRepository(db),
+		repository: repository,
 	}
 }
 

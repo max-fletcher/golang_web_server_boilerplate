@@ -55,8 +55,8 @@ func main() {
 		log.Fatal("Database not reachable:", err)
 	}
 
-	DBConn := db.New(conn)    // connection database to sqlc's queries
-	srv := server.New(DBConn) // Server struct coming from server.go
+	DBConn := db.New(conn)          // connecting database to sqlc's queries
+	srv := server.NewServer(DBConn) // Server struct coming from server.go
 
 	// Server options like router and port
 	// On windows, to run without compiling the server, use "go run ."

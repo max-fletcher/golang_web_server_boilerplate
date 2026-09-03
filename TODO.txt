@@ -1,16 +1,16 @@
 # File upload
 # Route not found response(DONE)
-# Validation(DONE. Need to check conditional validation and database query validation though)
-# Needs abstraction on:
+# Validation(DONE)
+# Needs abstraction on: (DONE)
   1.separate modules(e.g users, posts)(DONE)
   2.break modules into struct and handler files(DONE)
   3.custom validation rules for common use(DONE)
   4.validation for query strings(DONE)
   5. abstract formatter(break into separate ones) to those folders(DONE. Decided against it due to reasons)
-  (Partly DONE. Abstract formatters left)
 # Handle JSON marshalling error(DONE)
 # store encrypted/hashed password instead of raw password(DONE)
-# Go for a better abstraction for dealing with and logging errors globally
+# Go for a better abstraction for dealing with and logging errors globally(DONE)
+# Circular dependency concern
 # user registration & login route with access and refresh tokens
 # Add rate limiter(DONE)
 # Add cors(DONE)
