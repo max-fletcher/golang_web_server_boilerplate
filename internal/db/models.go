@@ -15,6 +15,7 @@ type Post struct {
 	ID        uuid.UUID
 	Title     string
 	Content   string
+	Photo     sql.NullString
 	UserID    uuid.UUID
 	CreatedAt time.Time
 	UpdatedAt time.Time

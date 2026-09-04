@@ -7,6 +7,25 @@ import (
 	common_errors "github.com/max-fletcher/golang_web_server_boilerplate/internal/errors"
 )
 
+type ErrInvalidUUID struct {
+	Field string
+	Err   error
+}
+
+func (e ErrInvalidUUID) Error() string {
+	return fmt.Sprintf("Invalid UUID %v(%v)", e.Field, e.Err.Error())
+}
+
+func (e ErrInvalidUUID) StatusCode() int {
+	return http.StatusBadRequest
+}
+
+func (e ErrInvalidUUID) ClientMsg() string {
+	return fmt.Sprintf("Invalid UUID %v(%v)", e.Field, e.Err.Error())
+}
+
+var _ common_errors.ErrHTTPBaseError = ErrInvalidUUID{}
+
 type ErrInvalidUUIDParam struct {
 	Param string
 	Err   error

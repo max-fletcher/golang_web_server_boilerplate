@@ -3,6 +3,8 @@ package validator
 import (
 	"net/url"
 	"strconv"
+
+	common_errors "github.com/max-fletcher/golang_web_server_boilerplate/internal/errors"
 )
 
 type ValidatedPaginationQSData struct {
@@ -12,7 +14,7 @@ type ValidatedPaginationQSData struct {
 	Offset       int
 }
 
-func ValidatePaginationQS(query url.Values) (ValidatedPaginationQSData, map[string]string) {
+func ValidatePaginationQS(query url.Values) (ValidatedPaginationQSData, error) {
 	page := 1
 	limit := 10
 	errors := make(map[string]string)
@@ -52,10 +54,17 @@ func ValidatePaginationQS(query url.Values) (ValidatedPaginationQSData, map[stri
 		}
 	}
 
+	if len(errors) > 0 {
+		return ValidatedPaginationQSData{},
+			common_errors.ErrValidationError{
+				Errors: errors,
+			}
+	}
+
 	return ValidatedPaginationQSData{
 		FilterString: filterString,
 		Page:         page,
 		Limit:        limit,
 		Offset:       (page - 1) * limit,
-	}, errors
+	}, nil
 }

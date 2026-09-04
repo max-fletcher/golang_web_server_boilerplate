@@ -1,4 +1,4 @@
-package users
+package posts
 
 import (
 	"net/http"
@@ -24,24 +24,25 @@ func NewHandler(service Service) *Handler {
 }
 
 func (handler *Handler) Create(w http.ResponseWriter, r *http.Request) error {
-	params := CreateUserRequest{}
+	params := CreatePostRequest{}
 	// Passing a [pointer to params] not [params] directly, else a copy will be passed
 	if err := requests.DecodeJSON(r, &params); err != nil {
 		return err
 	}
 
-	if err := params.ValidateCreateUserData(); err != nil {
+	createPostInput, err := params.ValidateCreatePostData()
+	if err != nil {
 		return err
 	}
 
 	// 1st param: context for the request
 	// 2nd param: the struct that we want to pass so it saves the underlying data in DB
-	user, err := handler.service.Create(r.Context(), params)
+	post, err := handler.service.Create(r.Context(), createPostInput)
 	if err != nil {
 		return err
 	}
 
-	responses.RespondWithSuccess(w, http.StatusCreated, "Created successfully", formatters.DatabaseUserToUser(user))
+	responses.RespondWithSuccess(w, http.StatusCreated, "Created successfully", formatters.DatabasePostToPost(post))
 	return nil
 }
 
@@ -52,74 +53,75 @@ func (handler *Handler) GetAll(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	// 1st param: context for the request
-	users, total, err := handler.service.GetAll(r.Context(), validatedQSData.FilterString, validatedQSData.Limit, validatedQSData.Offset)
+	posts, total, err := handler.service.GetAll(r.Context(), validatedQSData.FilterString, validatedQSData.Limit, validatedQSData.Offset)
 	if err != nil {
 		return err
 	}
-	formattedUserData := formatters.DatabaseUsersToUsers(users)
-	paginatedData := pagination.GeneratePaginationFormat(validatedQSData, total, formattedUserData)
+	formattedPostData := formatters.DatabasePostsToPosts(posts)
+	paginatedData := pagination.GeneratePaginationFormat(validatedQSData, total, formattedPostData)
 
 	responses.RespondWithSuccess(w, http.StatusOK, "Fetched successfully", paginatedData)
 	return nil
 }
 
 func (handler *Handler) GetByID(w http.ResponseWriter, r *http.Request) error {
-	id, err := id_helpers.ParseUUIDRouteParam(chi.URLParam(r, "id"))
+	id, err := id_helpers.ParseUUID(chi.URLParam(r, "id"))
 	if err != nil {
 		return err
 	}
 
 	// 1st param: context for the request
 	// 2nd param: id(type uuid) param
-	user, err := handler.service.GetByID(r.Context(), id)
+	post, err := handler.service.GetByID(r.Context(), id)
 	if err != nil {
 		return err
 	}
 
-	responses.RespondWithSuccess(w, http.StatusOK, "Fetched successfully", formatters.DatabaseUserToUser(user))
+	responses.RespondWithSuccess(w, http.StatusOK, "Fetched successfully", formatters.DatabasePostToPost(post))
 	return nil
 }
 
 func (handler *Handler) Update(w http.ResponseWriter, r *http.Request) error {
-	id, err := id_helpers.ParseUUIDRouteParam(chi.URLParam(r, "id"))
+	id, err := id_helpers.ParseUUID(chi.URLParam(r, "id"))
 	if err != nil {
 		return err
 	}
 
-	params := UpdateUserRequest{}
+	params := UpdatePostRequest{}
 	// Passing a [pointer to params] not [params] directly, else a copy will be passed
 	if err := requests.DecodeJSON(r, &params); err != nil {
 		return err
 	}
 
-	if err := params.ValidateUpdateUserData(); err != nil {
+	updatePostInput, err := params.ValidateUpdatePostData()
+	if err != nil {
 		return err
 	}
 
 	// 1st param: context for the request
 	// 2nd param: the struct that we want to pass so it saves the underlying data in DB
-	user, err := handler.service.Update(r.Context(), id, params)
+	post, err := handler.service.Update(r.Context(), id, updatePostInput)
 	if err != nil {
 		return err
 	}
 
-	responses.RespondWithSuccess(w, http.StatusOK, "Updated successfully", formatters.DatabaseUserToUser(user))
+	responses.RespondWithSuccess(w, http.StatusOK, "Updated successfully", formatters.DatabasePostToPost(post))
 	return nil
 }
 
 func (handler *Handler) Delete(w http.ResponseWriter, r *http.Request) error {
-	id, err := id_helpers.ParseUUIDRouteParam(chi.URLParam(r, "id"))
+	id, err := id_helpers.ParseUUID(chi.URLParam(r, "id"))
 	if err != nil {
 		return err
 	}
 
 	// 1st param: context for the request
 	// 2nd param: id(type uuid) param
-	user, err := handler.service.Delete(r.Context(), id)
+	post, err := handler.service.Delete(r.Context(), id)
 	if err != nil {
 		return err
 	}
 
-	responses.RespondWithSuccess(w, http.StatusOK, "Deleted successfully", formatters.DatabaseUserToUser(user))
+	responses.RespondWithSuccess(w, http.StatusOK, "Deleted successfully", formatters.DatabasePostToPost(post))
 	return nil
 }

@@ -7,8 +7,8 @@ Clone project. If there are missing packages/vendor folder, use "go mod tidy" to
     a. Make new migration inside sql/schemas e.g sql/schemas/ (e.g sql/schemas e.g sql/schemas/001_users.sql) and define what goose up
        and goose down commands should do
     b. Open the terminal. Go to the sql/schema(or what you defined in sqlc.yaml file) folder and use 
-       "goose postgres://postgres:@localhost:5432/golang_web_server up" to run all migrations.
-       ** Worth mentioning that "goose postgres://postgres:@localhost:5432/golang_web_server down" rolls back one migration(sql) file at a time
+       "goose postgres postgres://postgres:@localhost:5432/golang_web_server up" to run all migrations.
+       ** Worth mentioning that "goose postgres postgres://postgres:@localhost:5432/golang_web_server down" rolls back one migration(sql) file at a time
     c. Create sql file inside sql/queries(e.g sql/queries/users.sql), follow sqlc formatting and define queries(so it can generate corresponding 
        repository fns properly) for the CRUD and other functionalities. Go back to root folder and run "sqlc generate" to generate said
        functions(will be stored in internal/db or per what you defined in sqlc.yaml)
@@ -23,33 +23,7 @@ Clone project. If there are missing packages/vendor folder, use "go mod tidy" to
          * Create any errors that you wanna throw inside {your_module_name}/errors.go
          * Create(copy template for ease) any services you want to call from the handler inside services.go
          * Create(copy template for ease) any repositories you want to call from the services inside repository.go
-    e. Bind the new handler (i.e {your_module_name}/handler.go) to your internal/server/server.go file
+    e. Follow this binding heriarchy in server/server.go's NewServer function:
+       repo->service->handler(inside the newly created module)->server(the server instance returned here)
     f. Use the new handler to create new routes, but remember to wrap them in server.Handle(...) so you can log all errors in the
        global error logger
-
-go-rss-agg/
-│
-├── cmd/
-│   └── api/
-│       └── main.go          # entry point only
-│
-├── internal/
-│   ├── server/
-│   │   └── router.go        # chi router setup
-│   │
-│   ├── handler/
-│   │   └── health.go        # handlerReadiness
-│   │
-│   ├── middleware/
-│   │   ├── cors.go
-│   │   └── ratelimiter.go   # httprate logic
-│   │
-│   ├── response/
-│   │   └── json.go          # respondWithJSON
-│   │
-│   └── config/
-│       └── env.go           # env loading
-│
-├── go.mod
-├── go.sum
-└── .env

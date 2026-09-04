@@ -5,24 +5,24 @@ import (
 )
 
 type PaginatedData = struct {
-	Page  int
-	Limit int
-	Total int
-	Next  bool
-	Prev  bool
-	Data  any
+	Page    int  `json:"page"`
+	PerPage int  `json:"per_page"`
+	Total   int  `json:"total"`
+	Next    bool `json:"next"`
+	Prev    bool `json:"prev"`
+	Data    any  `json:"data"`
 }
 
 func GeneratePaginationFormat(pagination validation.ValidatedPaginationQSData, total int, data any) PaginatedData {
 	next := pagination.Offset+pagination.Limit < total
-	prev := pagination.Offset > 0 && pagination.Offset < total+pagination.Limit
+	prev := pagination.Offset > 0 && pagination.Offset < total
 
 	return PaginatedData{
-		Page:  pagination.Page,
-		Limit: pagination.Limit,
-		Total: total,
-		Next:  next,
-		Prev:  prev,
-		Data:  data,
+		Page:    pagination.Page,
+		PerPage: pagination.Limit,
+		Total:   total,
+		Next:    next,
+		Prev:    prev,
+		Data:    data,
 	}
 }

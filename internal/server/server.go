@@ -7,6 +7,7 @@ import (
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/db"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/handlers"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/logger"
+	"github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/posts"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/users"
 )
 
@@ -17,6 +18,7 @@ type Server struct {
 	Router        http.Handler // Reference to router instance
 	CommonHandler *handlers.Handler
 	UsersHandler  *users.Handler
+	PostsHandler  *posts.Handler
 	Logger        *slog.Logger
 }
 
@@ -28,9 +30,14 @@ func NewServer(database *db.Queries) *Server {
 	userService := users.NewService(userRepository)
 	userHandler := users.NewHandler(userService)
 
+	postRepository := posts.NewRepository(database)
+	postService := posts.NewService(postRepository, userService) // using DI
+	postHandler := posts.NewHandler(postService)
+
 	server := &Server{
 		CommonHandler: handlers.New(database),
 		UsersHandler:  userHandler,
+		PostsHandler:  postHandler,
 		Logger:        logger.New(),
 	}
 

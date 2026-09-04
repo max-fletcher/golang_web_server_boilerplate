@@ -70,12 +70,12 @@ type Post struct {
 	// "description": { "String" : "Some des", Valid : true }
 	// Description   *string   `json:"description"`
 	Content string `json:"content"`
-	// Avatar    string    `json:"avatar"`
+	// Photo    string    `json:"photo"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
-func DatabasePostsToPost(dbPost db.Post) Post {
+func DatabasePostToPost(dbPost db.Post) Post {
 	// var description *string // a var containing a pointer to a string
 	// if dbPost.Content.Valid {
 	// 	description = &dbPost.Description.String
@@ -85,7 +85,7 @@ func DatabasePostsToPost(dbPost db.Post) Post {
 		ID:      dbPost.ID,
 		Title:   dbPost.Title,
 		Content: dbPost.Content,
-		// Avatar:         dbPost.Avatar,
+		// Photo:         dbPost.Photo,
 		CreatedAt: dbPost.CreatedAt,
 		UpdatedAt: dbPost.UpdatedAt,
 	}
@@ -103,7 +103,7 @@ func DatabasePostsToPosts(dbPosts []db.Post) []Post {
 			ID:      dbPost.ID,
 			Title:   dbPost.Title,
 			Content: dbPost.Content,
-			// Avatar: dbPost.Avatar,
+			// Photo: dbPost.Photo,
 			CreatedAt: dbPost.CreatedAt,
 			UpdatedAt: dbPost.UpdatedAt,
 		})

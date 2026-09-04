@@ -15,15 +15,16 @@ import (
 
 const createPost = `-- name: CreatePost :one
 
-INSERT INTO posts (id, title, content, user_id, created_at, updated_at)
-VALUES ($1, $2, $3, $4, $5, $6)
-RETURNING id, title, content, user_id, created_at, updated_at
+INSERT INTO posts (id, title, content, photo, user_id, created_at, updated_at)
+VALUES ($1, $2, $3, $4, $5, $6, $7)
+RETURNING id, title, content, photo, user_id, created_at, updated_at
 `
 
 type CreatePostParams struct {
 	ID        uuid.UUID
 	Title     string
 	Content   string
+	Photo     sql.NullString
 	UserID    uuid.UUID
 	CreatedAt time.Time
 	UpdatedAt time.Time
@@ -36,6 +37,7 @@ func (q *Queries) CreatePost(ctx context.Context, arg CreatePostParams) (Post, e
 		arg.ID,
 		arg.Title,
 		arg.Content,
+		arg.Photo,
 		arg.UserID,
 		arg.CreatedAt,
 		arg.UpdatedAt,
@@ -45,6 +47,7 @@ func (q *Queries) CreatePost(ctx context.Context, arg CreatePostParams) (Post, e
 		&i.ID,
 		&i.Title,
 		&i.Content,
+		&i.Photo,
 		&i.UserID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -52,19 +55,22 @@ func (q *Queries) CreatePost(ctx context.Context, arg CreatePostParams) (Post, e
 	return i, err
 }
 
-const deletePost = `-- name: DeletePost :exec
+const deletePost = `-- name: DeletePost :execrows
 DELETE FROM posts
 WHERE id = $1
-RETURNING id, title, content, user_id, created_at, updated_at
+RETURNING id, title, content, photo, user_id, created_at, updated_at
 `
 
-func (q *Queries) DeletePost(ctx context.Context, id uuid.UUID) error {
-	_, err := q.db.ExecContext(ctx, deletePost, id)
-	return err
+func (q *Queries) DeletePost(ctx context.Context, id uuid.UUID) (int64, error) {
+	result, err := q.db.ExecContext(ctx, deletePost, id)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
 }
 
 const getPostById = `-- name: GetPostById :one
-SELECT id, title, content, user_id, created_at, updated_at 
+SELECT id, title, content, photo, user_id, created_at, updated_at 
 FROM posts 
 WHERE id = $1
 LIMIT 1
@@ -77,6 +83,7 @@ func (q *Queries) GetPostById(ctx context.Context, id uuid.UUID) (Post, error) {
 		&i.ID,
 		&i.Title,
 		&i.Content,
+		&i.Photo,
 		&i.UserID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -85,20 +92,23 @@ func (q *Queries) GetPostById(ctx context.Context, id uuid.UUID) (Post, error) {
 }
 
 const getPosts = `-- name: GetPosts :many
-SELECT id, title, content, user_id, created_at, updated_at 
+SELECT id, title, content, photo, user_id, created_at, updated_at 
 FROM posts 
+WHERE
+    ($1 = '' OR title ILIKE '%' || $1 || '%')
 ORDER BY created_at DESC
-LIMIT $1
-OFFSET $2
+LIMIT $2
+OFFSET $3
 `
 
 type GetPostsParams struct {
-	Limit  int32
-	Offset int32
+	Column1 interface{}
+	Limit   int32
+	Offset  int32
 }
 
 func (q *Queries) GetPosts(ctx context.Context, arg GetPostsParams) ([]Post, error) {
-	rows, err := q.db.QueryContext(ctx, getPosts, arg.Limit, arg.Offset)
+	rows, err := q.db.QueryContext(ctx, getPosts, arg.Column1, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
@@ -110,6 +120,7 @@ func (q *Queries) GetPosts(ctx context.Context, arg GetPostsParams) ([]Post, err
 			&i.ID,
 			&i.Title,
 			&i.Content,
+			&i.Photo,
 			&i.UserID,
 			&i.CreatedAt,
 			&i.UpdatedAt,
@@ -127,57 +138,36 @@ func (q *Queries) GetPosts(ctx context.Context, arg GetPostsParams) ([]Post, err
 	return items, nil
 }
 
-const searchPostsByTitleStrSearch = `-- name: SearchPostsByTitleStrSearch :many
-SELECT id, title, content, user_id, created_at, updated_at 
+const getPostsCount = `-- name: GetPostsCount :one
+SELECT COUNT(*)
 FROM posts 
-WHERE title ILIKE '%' || $1 || '%'
-ORDER BY created_at DESC
+WHERE
+    ($1 = '' OR title ILIKE '%' || $1 || '%')
 `
 
-func (q *Queries) SearchPostsByTitleStrSearch(ctx context.Context, dollar_1 sql.NullString) ([]Post, error) {
-	rows, err := q.db.QueryContext(ctx, searchPostsByTitleStrSearch, dollar_1)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []Post
-	for rows.Next() {
-		var i Post
-		if err := rows.Scan(
-			&i.ID,
-			&i.Title,
-			&i.Content,
-			&i.UserID,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
+func (q *Queries) GetPostsCount(ctx context.Context, dollar_1 interface{}) (int64, error) {
+	row := q.db.QueryRowContext(ctx, getPostsCount, dollar_1)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
 }
 
 const updatePost = `-- name: UpdatePost :one
 UPDATE posts
 SET title = $2,
     content = $3,
-    user_id = $4,
-    updated_at = $5
+    photo = $4,
+    user_id = $5,
+    updated_at = $6
 WHERE id = $1
-RETURNING id, title, content, user_id, created_at, updated_at
+RETURNING id, title, content, photo, user_id, created_at, updated_at
 `
 
 type UpdatePostParams struct {
 	ID        uuid.UUID
 	Title     string
 	Content   string
+	Photo     sql.NullString
 	UserID    uuid.UUID
 	UpdatedAt time.Time
 }
@@ -187,6 +177,7 @@ func (q *Queries) UpdatePost(ctx context.Context, arg UpdatePostParams) (Post, e
 		arg.ID,
 		arg.Title,
 		arg.Content,
+		arg.Photo,
 		arg.UserID,
 		arg.UpdatedAt,
 	)
@@ -195,6 +186,7 @@ func (q *Queries) UpdatePost(ctx context.Context, arg UpdatePostParams) (Post, e
 		&i.ID,
 		&i.Title,
 		&i.Content,
+		&i.Photo,
 		&i.UserID,
 		&i.CreatedAt,
 		&i.UpdatedAt,

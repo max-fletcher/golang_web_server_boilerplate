@@ -94,7 +94,6 @@ func (service *service) GetAll(ctx context.Context, filterString string, limit i
 
 	total, err := service.repository.GetAllCount(ctx, filterString)
 	if err != nil {
-
 		var bigInt64ToIntError common_errors.ErrBigInt64ToIntError
 		if errors.As(err, &bigInt64ToIntError) {
 			return []db.User{}, 0, fmt.Errorf("Limit and/or offset value out of range")

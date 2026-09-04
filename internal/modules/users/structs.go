@@ -22,8 +22,8 @@ func (params CreateUserRequest) ValidateCreateUserData() error {
 	err := validation.ValidateStruct(&params,
 		validation.Field(
 			&params.Name,
-			validation.Required.Error("name is required"),
-			validation.Length(2, 100).Error("name must be between 2 and 100 characters"),
+			validation.Required.Error("Name is required"),
+			validation.Length(2, 100).Error("Name must be between 2 and 100 characters"),
 		),
 		validation.Field(
 			&params.Email,

@@ -10,7 +10,7 @@
 # Handle JSON marshalling error(DONE)
 # store encrypted/hashed password instead of raw password(DONE)
 # Go for a better abstraction for dealing with and logging errors globally(DONE)
-# Circular dependency concern
+# Circular dependency concern(DONE. Followed a binding tree with root inside server.go)
 # user registration & login route with access and refresh tokens
 # Add rate limiter(DONE)
 # Add cors(DONE)
@@ -23,11 +23,11 @@
 # Authorization and Access Control
 # PDF/Invoice generation
 # Scheduled Tasks/ CRON job
-# Formatted responses
+# Formatted responses(DONE to a greater extent)
 # Redis
 # Queue (BullMQ + Redis)(e.g for email delivery) + Implement email service(NEEDS RIGOROUS TESTING. TS PROBLEMS.)
 # Add health check endpoint(DONE)
-# Add request logging middleware
+# Add request logging middleware ??
 
 
 Possible path:  
