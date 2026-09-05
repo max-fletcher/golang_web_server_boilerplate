@@ -3,7 +3,6 @@
   2. How to handle sql.nullstring and what structs to use to make it future-proof
   3. Check what heppens if no file is provided during create
   4. Implement file upload in update and delete methods
-  5. Implement file upload in update and delete methods
 # Route not found response(DONE)
 # Validation(DONE)
 # Needs abstraction on: (DONE)
