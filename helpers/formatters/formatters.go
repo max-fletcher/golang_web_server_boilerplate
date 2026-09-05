@@ -1,6 +1,7 @@
 package formatters
 
 import (
+	"database/sql"
 	"time"
 
 	"github.com/google/uuid"
@@ -69,8 +70,8 @@ type Post struct {
 	// due to the, dbFeed.description struct containing nested fields(sql.NullString obj) it will be marshalled to
 	// "description": { "String" : "Some des", Valid : true }
 	// Description   *string   `json:"description"`
-	Content string `json:"content"`
-	// Photo    string    `json:"photo"`
+	Content   string    `json:"content"`
+	Photo     *string   `json:"photo,omitempty"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
@@ -81,11 +82,17 @@ func DatabasePostToPost(dbPost db.Post) Post {
 	// 	description = &dbPost.Description.String
 	// }
 
+	var photo *string
+
+	if dbPost.Photo.Valid {
+		photo = &dbPost.Photo.String
+	}
+
 	return Post{
-		ID:      dbPost.ID,
-		Title:   dbPost.Title,
-		Content: dbPost.Content,
-		// Photo:         dbPost.Photo,
+		ID:        dbPost.ID,
+		Title:     dbPost.Title,
+		Content:   dbPost.Content,
+		Photo:     photo,
 		CreatedAt: dbPost.CreatedAt,
 		UpdatedAt: dbPost.UpdatedAt,
 	}
@@ -93,17 +100,23 @@ func DatabasePostToPost(dbPost db.Post) Post {
 
 func DatabasePostsToPosts(dbPosts []db.Post) []Post {
 	posts := []Post{}
+	var photo *string
 
 	// var description *string // a var containing a pointer to a string
 	for _, dbPost := range dbPosts {
 		// if dbPost.Description.Valid {
 		// 	description = &dbPost.Description.String
 		// }
+
+		if dbPost.Photo.Valid {
+			photo = &dbPost.Photo.String
+		}
+
 		posts = append(posts, Post{
-			ID:      dbPost.ID,
-			Title:   dbPost.Title,
-			Content: dbPost.Content,
-			// Photo: dbPost.Photo,
+			ID:        dbPost.ID,
+			Title:     dbPost.Title,
+			Content:   dbPost.Content,
+			Photo:     photo,
 			CreatedAt: dbPost.CreatedAt,
 			UpdatedAt: dbPost.UpdatedAt,
 		})
@@ -113,4 +126,11 @@ func DatabasePostsToPosts(dbPosts []db.Post) []Post {
 	}
 
 	return posts
+}
+
+func NullString(value string) sql.NullString {
+	return sql.NullString{
+		String: value,
+		Valid:  value != "",
+	}
 }

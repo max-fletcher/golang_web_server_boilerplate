@@ -99,3 +99,21 @@ func (e ErrInvalidFieldType) ErrorMap() map[string]string {
 }
 
 var _ common_errors.ErrHTTPWithErrorMap = ErrInvalidFieldType{}
+
+type ErrParsingFormdataError struct {
+	Err error
+}
+
+func (e ErrParsingFormdataError) Error() string {
+	return "Failed to parse formdata"
+}
+
+func (e ErrParsingFormdataError) StatusCode() int {
+	return http.StatusInternalServerError
+}
+
+func (e ErrParsingFormdataError) ClientMsg() string {
+	return "Failed to parse formdata"
+}
+
+var _ common_errors.ErrHTTPBaseError = ErrParsingFormdataError{}

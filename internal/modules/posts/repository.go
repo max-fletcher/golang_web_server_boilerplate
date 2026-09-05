@@ -35,10 +35,10 @@ func (repository *repository) Create(ctx context.Context, params db.CreatePostPa
 	// #TODO: File uploader
 
 	return repository.DB.CreatePost(ctx, db.CreatePostParams{
-		ID:      uuid.New(),
-		Title:   params.Title,
-		Content: params.Content,
-		// Photo:     params.Photo,
+		ID:        uuid.New(),
+		Title:     params.Title,
+		Content:   params.Content,
+		Photo:     params.Photo,
 		UserID:    params.UserID,
 		CreatedAt: time.Now().UTC(),
 		UpdatedAt: time.Now().UTC(),

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/max-fletcher/golang_web_server_boilerplate/helpers/formatters"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/db"
 	common_errors "github.com/max-fletcher/golang_web_server_boilerplate/internal/errors"
 )
@@ -52,10 +53,10 @@ func (service *service) Create(ctx context.Context, createPostInput CreatePostIn
 	// 1st param: context for the request
 	// 2nd param: the struct that we want to pass so it saves the underlying data in DB
 	post, err := service.repository.Create(ctx, db.CreatePostParams{
-		ID:      uuid.New(),
-		Title:   createPostInput.Title,
-		Content: createPostInput.Content,
-		// Photo:     createPostInput.Photo,
+		ID:        uuid.New(),
+		Title:     createPostInput.Title,
+		Content:   createPostInput.Content,
+		Photo:     formatters.NullString(createPostInput.Photo),
 		UserID:    createPostInput.UserId,
 		CreatedAt: time.Now().UTC(),
 		UpdatedAt: time.Now().UTC(),

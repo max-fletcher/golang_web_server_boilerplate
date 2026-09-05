@@ -15,6 +15,15 @@ func (server *Server) routes() http.Handler {
 	// Global middlewares
 	router.Use(middleware.RateLimiter(100, 1))
 	router.Use(middleware.CORS())
+	router.Use(middleware.MaxBodySizeMiddleware(10))
+
+	router.Handle(
+		"/uploads/*",
+		http.StripPrefix(
+			"/uploads/",
+			http.FileServer(http.Dir("./uploads")),
+		),
+	)
 
 	// Route not found
 	router.NotFound(func(w http.ResponseWriter, r *http.Request) {

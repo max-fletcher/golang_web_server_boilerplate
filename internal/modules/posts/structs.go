@@ -1,6 +1,8 @@
 package posts
 
 import (
+	"mime/multipart"
+
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/google/uuid"
@@ -11,10 +13,10 @@ import (
 
 // Struct to be validated
 type CreatePostRequest struct {
-	Title   string `json:"title"`
-	Content string `json:"content"`
-	Photo   string `json:"photo,omitempty"`
-	UserId  string `json:"user_id"`
+	Title   string
+	Content string
+	Photo   *multipart.FileHeader
+	UserId  string
 }
 
 type CreatePostInput struct {
@@ -41,6 +43,10 @@ func (params CreatePostRequest) ValidateCreatePostData() (CreatePostInput, error
 			validation.Required.Error("User is required"),
 			is.UUID.Error("Not a valid UUID"),
 		),
+		validation.Field( // Validate photo
+			&params.Photo,
+			validation.By(validator.ValidatePhoto),
+		),
 	)
 
 	// parsing UserId field
@@ -48,7 +54,7 @@ func (params CreatePostRequest) ValidateCreatePostData() (CreatePostInput, error
 	createPostInput := CreatePostInput{
 		Title:   params.Title,
 		Content: params.Content,
-		Photo:   params.Photo,
+		Photo:   "",
 		UserId:  userId,
 	}
 
