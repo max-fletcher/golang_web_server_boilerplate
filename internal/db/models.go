@@ -14,7 +14,7 @@ import (
 type Post struct {
 	ID        uuid.UUID
 	Title     string
-	Content   string
+	Content   sql.NullString
 	Photo     sql.NullString
 	UserID    uuid.UUID
 	CreatedAt time.Time

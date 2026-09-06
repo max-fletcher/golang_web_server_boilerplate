@@ -23,7 +23,7 @@ RETURNING id, title, content, photo, user_id, created_at, updated_at
 type CreatePostParams struct {
 	ID        uuid.UUID
 	Title     string
-	Content   string
+	Content   sql.NullString
 	Photo     sql.NullString
 	UserID    uuid.UUID
 	CreatedAt time.Time
@@ -166,7 +166,7 @@ RETURNING id, title, content, photo, user_id, created_at, updated_at
 type UpdatePostParams struct {
 	ID        uuid.UUID
 	Title     string
-	Content   string
+	Content   sql.NullString
 	Photo     sql.NullString
 	UserID    uuid.UUID
 	UpdatedAt time.Time

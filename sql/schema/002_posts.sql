@@ -12,7 +12,7 @@
 CREATE TABLE posts(
     id UUID PRIMARY KEY,
     title TEXT NOT NULL,
-    content TEXT NOT NULL,
+    content TEXT,
     photo TEXT,
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     created_at TIMESTAMP NOT NULL,

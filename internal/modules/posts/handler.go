@@ -17,7 +17,7 @@ import (
 // same as the handler in internal/handler.go, but will create a new handler instance that is separate from that
 type Handler struct {
 	service Service // Service that belongs to this/current package by default(i.e defined in service.go)
-	baseUrl string  //
+	baseUrl string
 }
 
 func NewHandler(service Service, baseUrl string) *Handler {
@@ -36,8 +36,8 @@ func (handler *Handler) Create(w http.ResponseWriter, r *http.Request) error {
 	// }
 
 	requests.ParseFormdata(r)
-	storeFiles := []string{"photo"} // filenames to get from request
-	fileHeaders, err := fileupload.GetFileHeaders(r, storeFiles, true)
+	filenamesToStore := []string{"photo"} // filenames to get/store from request
+	fileHeaders, err := fileupload.GetFileHeaders(r, filenamesToStore)
 
 	params := CreatePostRequest{
 		Title:   r.FormValue("title"),
@@ -54,13 +54,17 @@ func (handler *Handler) Create(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	destination := "posts"
-	storedFiles, err := fileupload.LocalFileUploader(r, storeFiles, destination, handler.baseUrl, true)
+	storedFiles, err := fileupload.LocalFileUploader(r, filenamesToStore, destination, handler.baseUrl, true)
 	if err != nil {
 		return err
 	}
 
 	fmt.Println("File Storage", storedFiles)
-	createPostInput.Photo = storedFiles["photo"]
+	// Since CreatePostInput's Photo field is now a pointer to a string, we are using the block below
+	// instead of createPostInput.Photo = &storedFiles["photo"]
+	if photoURL, ok := storedFiles["photo"]; ok {
+		createPostInput.Photo = &photoURL
+	}
 	fmt.Println("createPostInput Data", createPostInput)
 
 	// 1st param: context for the request

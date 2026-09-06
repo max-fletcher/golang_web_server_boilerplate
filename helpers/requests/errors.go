@@ -116,4 +116,8 @@ func (e ErrParsingFormdataError) ClientMsg() string {
 	return "Failed to parse formdata"
 }
 
-var _ common_errors.ErrHTTPBaseError = ErrParsingFormdataError{}
+func (e ErrParsingFormdataError) Unwrap() error {
+	return e.Err
+}
+
+var _ common_errors.ErrHTTPServerError = ErrParsingFormdataError{}

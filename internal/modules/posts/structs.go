@@ -22,7 +22,7 @@ type CreatePostRequest struct {
 type CreatePostInput struct {
 	Title   string    `json:"title"`
 	Content string    `json:"content"`
-	Photo   string    `json:"photo,omitempty"`
+	Photo   *string   `json:"photo"`
 	UserId  uuid.UUID `json:"user_id"`
 }
 
@@ -45,23 +45,31 @@ func (params CreatePostRequest) ValidateCreatePostData() (CreatePostInput, error
 		),
 		validation.Field( // Validate photo
 			&params.Photo,
+			// validation.Required.Error("Photo is required"), // if you want file(photo in this case) to be required
 			validation.By(validator.ValidatePhoto),
 		),
 	)
 
+	// If you want createPostInput.Photo to be a string or nil(Hack for if you want a "string or nil" value for any struct field etc.)
+	var photo *string
+	if params.Photo != nil {
+		photoValue := params.Photo.Filename
+		photo = &photoValue
+	}
+
 	// parsing UserId field
-	userId, uuidErr := id_helpers.ParseUUID(params.UserId)
+	userID, uuidErr := id_helpers.ParseUUID(params.UserId)
 	createPostInput := CreatePostInput{
 		Title:   params.Title,
 		Content: params.Content,
-		Photo:   "",
-		UserId:  userId,
+		Photo:   photo, // keeping this empty since we will be populating this later when needed
+		UserId:  userID,
 	}
 
 	formattedErrors, ok := validator.FormatValidationErrors(err)
-	if uuidErr != nil { // if userId is not valid uuid, put it in formattedErrors and set ok to true(ok == true means validation errors exists)
+	if uuidErr != nil { // if userID is not valid uuid, put it in formattedErrors and set ok to false(ok == false means validation errors exists)
 		formattedErrors["user_id"] = uuidErr.Error()
-		ok = true
+		ok = false
 	}
 	if !ok {
 		return createPostInput, nil
@@ -103,16 +111,16 @@ func (params UpdatePostRequest) ValidateUpdatePostData() (UpdatePostInput, error
 	)
 
 	// parsing UserId field
-	userId, uuidErr := id_helpers.ParseUUID(params.UserId)
+	userID, uuidErr := id_helpers.ParseUUID(params.UserId)
 	updatePostInput := UpdatePostInput{
 		Title:   params.Title,
 		Content: params.Content,
 		Photo:   params.Photo,
-		UserId:  userId,
+		UserId:  userID,
 	}
 
 	formattedErrors, ok := validator.FormatValidationErrors(err)
-	if uuidErr != nil { // if userId is not valid uuid, put it in formattedErrors and set ok to true(ok == true means validation errors exists)
+	if uuidErr != nil { // if userID is not valid uuid, put it in formattedErrors and set ok to true(ok == true means validation errors exists)
 		formattedErrors["user_id"] = uuidErr.Error()
 		ok = true
 	}

@@ -71,7 +71,7 @@ type Post struct {
 	// "description": { "String" : "Some des", Valid : true }
 	// Description   *string   `json:"description"`
 	Content   string    `json:"content"`
-	Photo     *string   `json:"photo,omitempty"`
+	Photo     *string   `json:"photo"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
@@ -128,9 +128,13 @@ func DatabasePostsToPosts(dbPosts []db.Post) []Post {
 	return posts
 }
 
-func NullString(value string) sql.NullString {
+func StringPointerToNullString(value *string) sql.NullString {
+	if value == nil {
+		return sql.NullString{}
+	}
+
 	return sql.NullString{
-		String: value,
-		Valid:  value != "",
+		String: *value,
+		Valid:  true,
 	}
 }

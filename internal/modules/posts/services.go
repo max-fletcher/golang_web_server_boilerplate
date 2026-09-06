@@ -56,7 +56,7 @@ func (service *service) Create(ctx context.Context, createPostInput CreatePostIn
 		ID:        uuid.New(),
 		Title:     createPostInput.Title,
 		Content:   createPostInput.Content,
-		Photo:     formatters.NullString(createPostInput.Photo),
+		Photo:     formatters.StringPointerToNullString(createPostInput.Photo),
 		UserID:    createPostInput.UserId,
 		CreatedAt: time.Now().UTC(),
 		UpdatedAt: time.Now().UTC(),

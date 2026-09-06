@@ -13,9 +13,9 @@ import (
 	"github.com/google/uuid"
 )
 
-func LocalFileUploader(r *http.Request, storeFiles []string, destination string, baseUrl string, optional bool) (map[string]string, error) {
+func LocalFileUploader(r *http.Request, filenamesToStore []string, destination string, baseUrl string, optional bool) (map[string]string, error) {
 	storedFiles := map[string]string{}
-	for _, storeFile := range storeFiles {
+	for _, storeFile := range filenamesToStore {
 		file, fileHeader, err := r.FormFile(storeFile)
 		if err != nil {
 			if errors.Is(err, http.ErrMissingFile) { // We would need an else condition if we made file required
@@ -88,23 +88,39 @@ func LocalFileUploader(r *http.Request, storeFiles []string, destination string,
 	return storedFiles, nil
 }
 
-func GetFileHeaders(r *http.Request, storeFiles []string, optional bool) (map[string]*multipart.FileHeader, error) {
-	// storedFileHeaders := []*multipart.FileHeader{}
+// Got rid of "optional" param since we don't need "optional" to throw error anymore. Validation will fail instead.
+// func GetFileHeaders(r *http.Request, filenamesToStore []string, optional bool) (map[string]*multipart.FileHeader, error) {
+func GetFileHeaders(r *http.Request, filenamesToStore []string) (map[string]*multipart.FileHeader, error) {
 	storedFileHeaders := map[string]*multipart.FileHeader{}
 
-	for _, storeFile := range storeFiles {
-		_, fileHeader, err := r.FormFile(storeFile)
-		if err != nil {
-			if errors.Is(err, http.ErrMissingFile) { // We would need an else condition if we made file required
-				if optional { // if file is optional, just continue
-					continue
-				}
-				return nil, ErrFileStorageError{Err: fmt.Errorf("Required file missing: %v", storeFile)}
-			}
+	// for _, storeFile := range filenamesToStore {
+	// 	_, fileHeader, err := r.FormFile(storeFile)
+	// 	if err != nil {
+	// 		if errors.Is(err, http.ErrMissingFile) {
+	// 			continue
+	// 			// replaced lines below with "continue" above because I don't want this to return error here. Instead, I want validation to fail
+	// 			// if file is mandatory but doesn't exist
+	// 			// if optional { // if file is optional, just continue
+	// 			// 	continue
+	// 			// }
+	// 			// return nil, ErrFileStorageError{Err: fmt.Errorf("Required file missing: %v", storeFile)}
+	// 		}
 
-			return nil, ErrFileStorageError{Err: fmt.Errorf("Failed to upload file")}
+	// 		return nil, ErrFileStorageError{Err: fmt.Errorf("Failed to upload file")}
+	// 	}
+	// 	storedFileHeaders[storeFile] = fileHeader
+	// }
+
+	// Replaced the block above with the block below as we don't need to get entire file toget file header. Works if
+	// r.ParseMultipartForm(...) was previously used
+	for _, fileName := range filenamesToStore {
+		headers := r.MultipartForm.File[fileName]
+
+		if len(headers) == 0 {
+			continue
 		}
-		storedFileHeaders[storeFile] = fileHeader
+
+		storedFileHeaders[fileName] = headers[0]
 	}
 
 	return storedFileHeaders, nil
