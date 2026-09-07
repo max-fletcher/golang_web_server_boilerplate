@@ -88,31 +88,8 @@ func LocalFileUploader(r *http.Request, filenamesToStore []string, destination s
 	return storedFiles, nil
 }
 
-// Got rid of "optional" param since we don't need "optional" to throw error anymore. Validation will fail instead.
-// func GetFileHeaders(r *http.Request, filenamesToStore []string, optional bool) (map[string]*multipart.FileHeader, error) {
-func GetFileHeaders(r *http.Request, filenamesToStore []string) (map[string]*multipart.FileHeader, error) {
+func GetFileHeaders(r *http.Request, filenamesToStore []string) map[string]*multipart.FileHeader {
 	storedFileHeaders := map[string]*multipart.FileHeader{}
-
-	// for _, storeFile := range filenamesToStore {
-	// 	_, fileHeader, err := r.FormFile(storeFile)
-	// 	if err != nil {
-	// 		if errors.Is(err, http.ErrMissingFile) {
-	// 			continue
-	// 			// replaced lines below with "continue" above because I don't want this to return error here. Instead, I want validation to fail
-	// 			// if file is mandatory but doesn't exist
-	// 			// if optional { // if file is optional, just continue
-	// 			// 	continue
-	// 			// }
-	// 			// return nil, ErrFileStorageError{Err: fmt.Errorf("Required file missing: %v", storeFile)}
-	// 		}
-
-	// 		return nil, ErrFileStorageError{Err: fmt.Errorf("Failed to upload file")}
-	// 	}
-	// 	storedFileHeaders[storeFile] = fileHeader
-	// }
-
-	// Replaced the block above with the block below as we don't need to get entire file toget file header. Works if
-	// r.ParseMultipartForm(...) was previously used
 	for _, fileName := range filenamesToStore {
 		headers := r.MultipartForm.File[fileName]
 
@@ -123,12 +100,48 @@ func GetFileHeaders(r *http.Request, filenamesToStore []string) (map[string]*mul
 		storedFileHeaders[fileName] = headers[0]
 	}
 
-	return storedFileHeaders, nil
+	return storedFileHeaders
 }
 
-func RollbackFiles(files map[string]string) {
-
-	for _, file := range files {
-		_ = os.Remove(file)
+func DeleteFile(file string) error {
+	err := os.Remove(file)
+	if err != nil {
+		return ErrFileDeleteError{
+			Err: err,
+		}
 	}
+
+	return nil
+}
+
+func RollbackFiles(files map[string]string) error {
+	for _, file := range files {
+		err := DeleteFile(file)
+		if err != nil {
+			return ErrFileDeleteError{
+				Err: err,
+			}
+		}
+	}
+
+	return nil
+}
+
+func URLToFilePath(fileURL string, baseURL string) string {
+	relativePath := strings.TrimPrefix(fileURL, strings.TrimRight(baseURL, "/"))
+	relativePath = strings.TrimPrefix(relativePath, "/")
+
+	return filepath.FromSlash(relativePath)
+}
+
+func DeleteFileUsingURL(fileURL string, baseURL string) error {
+	filepath := URLToFilePath(fileURL, baseURL)
+	err := os.Remove(filepath)
+	if err != nil {
+		return ErrFileDeleteError{
+			Err: err,
+		}
+	}
+
+	return nil
 }

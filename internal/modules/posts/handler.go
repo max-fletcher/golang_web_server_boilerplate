@@ -1,7 +1,6 @@
 package posts
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -34,19 +33,15 @@ func (handler *Handler) Create(w http.ResponseWriter, r *http.Request) error {
 	// if err := requests.DecodeJSON(r, &params); err != nil {
 	// 	return err
 	// }
-
 	requests.ParseFormdata(r)
-	filenamesToStore := []string{"photo"} // filenames to get/store from request
-	fileHeaders, err := fileupload.GetFileHeaders(r, filenamesToStore)
-
+	filenamesToStore := []string{"photo"}                         // filenames to get/store from request
+	fileHeaders := fileupload.GetFileHeaders(r, filenamesToStore) // extracted file headers
 	params := CreatePostRequest{
 		Title:   r.FormValue("title"),
 		Content: r.FormValue("content"),
 		UserId:  r.FormValue("user_id"),
 		Photo:   fileHeaders["photo"],
 	}
-
-	fmt.Println("New params", params)
 
 	createPostInput, err := params.ValidateCreatePostData()
 	if err != nil {
@@ -59,13 +54,11 @@ func (handler *Handler) Create(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	fmt.Println("File Storage", storedFiles)
 	// Since CreatePostInput's Photo field is now a pointer to a string, we are using the block below
 	// instead of createPostInput.Photo = &storedFiles["photo"]
 	if photoURL, ok := storedFiles["photo"]; ok {
 		createPostInput.Photo = &photoURL
 	}
-	fmt.Println("createPostInput Data", createPostInput)
 
 	// 1st param: context for the request
 	// 2nd param: the struct that we want to pass so it saves the underlying data in DB
@@ -119,10 +112,23 @@ func (handler *Handler) Update(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	params := UpdatePostRequest{}
-	// Passing a [pointer to params] not [params] directly, else a copy will be passed
-	if err := requests.DecodeJSON(r, &params); err != nil {
+	// Removed since we are not decoding json and using formdata instead
+	// params := UpdatePostRequest{}
+	// // Passing a [pointer to params] not [params] directly, else a copy will be passed
+	// if err := requests.DecodeJSON(r, &params); err != nil {
+	// 	return err
+	// }
+	err = requests.ParseFormdata(r)
+	if err != nil {
 		return err
+	}
+	filenamesToStore := []string{"photo"}                         // filenames to get/store from request
+	fileHeaders := fileupload.GetFileHeaders(r, filenamesToStore) // extracted file headers
+	params := UpdatePostRequest{
+		Title:   r.FormValue("title"),
+		Content: r.FormValue("content"),
+		UserId:  r.FormValue("user_id"),
+		Photo:   fileHeaders["photo"],
 	}
 
 	updatePostInput, err := params.ValidateUpdatePostData()
@@ -130,9 +136,21 @@ func (handler *Handler) Update(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
+	destination := "posts"
+	storedFiles, err := fileupload.LocalFileUploader(r, filenamesToStore, destination, handler.baseUrl, true)
+	if err != nil {
+		return err
+	}
+
+	// Since UpdatePostInput's Photo field is now a pointer to a string, we are using the block below
+	// instead of UpdatePostInput.Photo = &storedFiles["photo"]
+	if photoURL, ok := storedFiles["photo"]; ok {
+		updatePostInput.Photo = &photoURL
+	}
+
 	// 1st param: context for the request
 	// 2nd param: the struct that we want to pass so it saves the underlying data in DB
-	post, err := handler.service.Update(r.Context(), id, updatePostInput)
+	post, err := handler.service.Update(r.Context(), id, updatePostInput, handler.baseUrl)
 	if err != nil {
 		return err
 	}
@@ -149,7 +167,7 @@ func (handler *Handler) Delete(w http.ResponseWriter, r *http.Request) error {
 
 	// 1st param: context for the request
 	// 2nd param: id(type uuid) param
-	post, err := handler.service.Delete(r.Context(), id)
+	post, err := handler.service.Delete(r.Context(), id, handler.baseUrl)
 	if err != nil {
 		return err
 	}

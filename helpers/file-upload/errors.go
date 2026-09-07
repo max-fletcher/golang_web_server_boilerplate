@@ -6,7 +6,7 @@ import (
 	common_errors "github.com/max-fletcher/golang_web_server_boilerplate/internal/errors"
 )
 
-// Number conversion Errors
+// Error storing file on disk
 type ErrFileStorageError struct {
 	Err error
 }
@@ -23,4 +23,31 @@ func (e ErrFileStorageError) ClientMsg() string {
 	return "Failed to upload file to storage"
 }
 
-var _ common_errors.ErrHTTPBaseError = ErrFileStorageError{}
+func (e ErrFileStorageError) Unwrap() error {
+	return e.Err
+}
+
+var _ common_errors.ErrHTTPServerError = ErrFileStorageError{}
+
+// Error deleting file
+type ErrFileDeleteError struct {
+	Err error
+}
+
+func (e ErrFileDeleteError) Error() string {
+	return "Failed to delete file from storage"
+}
+
+func (e ErrFileDeleteError) StatusCode() int {
+	return http.StatusInternalServerError
+}
+
+func (e ErrFileDeleteError) ClientMsg() string {
+	return "Failed to delete file from storage"
+}
+
+func (e ErrFileDeleteError) Unwrap() error {
+	return e.Err
+}
+
+var _ common_errors.ErrHTTPServerError = ErrFileDeleteError{}

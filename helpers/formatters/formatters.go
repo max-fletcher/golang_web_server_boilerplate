@@ -70,7 +70,7 @@ type Post struct {
 	// due to the, dbFeed.description struct containing nested fields(sql.NullString obj) it will be marshalled to
 	// "description": { "String" : "Some des", Valid : true }
 	// Description   *string   `json:"description"`
-	Content   string    `json:"content"`
+	Content   *string   `json:"content"`
 	Photo     *string   `json:"photo"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
@@ -82,16 +82,21 @@ func DatabasePostToPost(dbPost db.Post) Post {
 	// 	description = &dbPost.Description.String
 	// }
 
+	// *IMPORTANT: This is how you dead with nullable fields.(Sources: posts/structs.go(especially CreatePostRequest and CreatePostInput),
+	// posts/services.go and posts/formatters.go)
 	var photo *string
-
 	if dbPost.Photo.Valid {
 		photo = &dbPost.Photo.String
+	}
+	var content *string
+	if dbPost.Content.Valid {
+		photo = &dbPost.Content.String
 	}
 
 	return Post{
 		ID:        dbPost.ID,
 		Title:     dbPost.Title,
-		Content:   dbPost.Content,
+		Content:   content,
 		Photo:     photo,
 		CreatedAt: dbPost.CreatedAt,
 		UpdatedAt: dbPost.UpdatedAt,
@@ -101,6 +106,7 @@ func DatabasePostToPost(dbPost db.Post) Post {
 func DatabasePostsToPosts(dbPosts []db.Post) []Post {
 	posts := []Post{}
 	var photo *string
+	var content *string
 
 	// var description *string // a var containing a pointer to a string
 	for _, dbPost := range dbPosts {
@@ -111,11 +117,14 @@ func DatabasePostsToPosts(dbPosts []db.Post) []Post {
 		if dbPost.Photo.Valid {
 			photo = &dbPost.Photo.String
 		}
+		if dbPost.Content.Valid {
+			photo = &dbPost.Content.String
+		}
 
 		posts = append(posts, Post{
 			ID:        dbPost.ID,
 			Title:     dbPost.Title,
-			Content:   dbPost.Content,
+			Content:   content,
 			Photo:     photo,
 			CreatedAt: dbPost.CreatedAt,
 			UpdatedAt: dbPost.UpdatedAt,

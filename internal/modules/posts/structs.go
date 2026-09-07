@@ -21,7 +21,7 @@ type CreatePostRequest struct {
 
 type CreatePostInput struct {
 	Title   string    `json:"title"`
-	Content string    `json:"content"`
+	Content *string   `json:"content"`
 	Photo   *string   `json:"photo"`
 	UserId  uuid.UUID `json:"user_id"`
 }
@@ -50,47 +50,54 @@ func (params CreatePostRequest) ValidateCreatePostData() (CreatePostInput, error
 		),
 	)
 
+	formattedErrors, hasValidationErrors := validator.FormatValidationErrors(err)
+	userID, uuidErr := id_helpers.ParseUUID(params.UserId) // parsing UserId field
+	if uuidErr != nil {                                    // if userID is not valid uuid, put it in formattedErrors and set hasValidationErrors to false
+		formattedErrors["user_id"] = uuidErr.Error()
+		hasValidationErrors = true
+	}
+	if hasValidationErrors {
+		return CreatePostInput{}, common_errors.ErrValidationError{
+			Errors: formattedErrors,
+		}
+	}
+	// Construct an instance of createPostInput
+
+	// *IMPORTANT: This is how you dead with nullable fields.(Sources: posts/structs.go(especially CreatePostRequest and CreatePostInput),
+	// posts/services.go and posts/formatters.go)
 	// If you want createPostInput.Photo to be a string or nil(Hack for if you want a "string or nil" value for any struct field etc.)
 	var photo *string
 	if params.Photo != nil {
 		photoValue := params.Photo.Filename
 		photo = &photoValue
 	}
-
-	// parsing UserId field
-	userID, uuidErr := id_helpers.ParseUUID(params.UserId)
+	// Same as above
+	var content *string
+	if params.Content != "" {
+		content = &params.Content
+	}
 	createPostInput := CreatePostInput{
 		Title:   params.Title,
-		Content: params.Content,
+		Content: content,
 		Photo:   photo, // keeping this empty since we will be populating this later when needed
 		UserId:  userID,
 	}
 
-	formattedErrors, ok := validator.FormatValidationErrors(err)
-	if uuidErr != nil { // if userID is not valid uuid, put it in formattedErrors and set ok to false(ok == false means validation errors exists)
-		formattedErrors["user_id"] = uuidErr.Error()
-		ok = false
-	}
-	if !ok {
-		return createPostInput, nil
-	}
+	return createPostInput, nil
 
-	return CreatePostInput{}, common_errors.ErrValidationError{
-		Errors: formattedErrors,
-	}
 }
 
 type UpdatePostRequest struct {
-	Title   string `json:"title,omitempty"`
-	Content string `json:"content,omitempty"`
-	Photo   string `json:"photo,omitempty"`
-	UserId  string `json:"user_id,omitempty"`
+	Title   string
+	Content string
+	Photo   *multipart.FileHeader
+	UserId  string
 }
 
 type UpdatePostInput struct {
 	Title   string    `json:"title"`
-	Content string    `json:"content"`
-	Photo   string    `json:"photo,omitempty"`
+	Content *string   `json:"content"`
+	Photo   *string   `json:"photo"`
 	UserId  uuid.UUID `json:"user_id"`
 }
 
@@ -108,27 +115,47 @@ func (params UpdatePostRequest) ValidateUpdatePostData() (UpdatePostInput, error
 			&params.UserId,
 			is.UUID.Error("Not a valid UUID"),
 		),
+		validation.Field( // Validate photo
+			&params.Photo,
+			// validation.Required.Error("Photo is required"), // if you want file(photo in this case) to be required
+			validation.By(validator.ValidatePhoto),
+		),
 	)
 
-	// parsing UserId field
-	userID, uuidErr := id_helpers.ParseUUID(params.UserId)
+	formattedErrors, hasValidationErrors := validator.FormatValidationErrors(err)
+	userID, uuidErr := id_helpers.ParseUUID(params.UserId) // parsing UserId field
+	if uuidErr != nil {                                    // if userID is not valid uuid, put it in formattedErrors and set ok to false(ok == false means validation errors exists)
+		formattedErrors["user_id"] = uuidErr.Error()
+		hasValidationErrors = true
+	}
+	if hasValidationErrors {
+
+		return UpdatePostInput{}, common_errors.ErrValidationError{
+			Errors: formattedErrors,
+		}
+	}
+	// Construct an instance of updatePostInput
+
+	// *IMPORTANT: This is how you dead with nullable fields.(Sources: posts/structs.go(especially CreatePostRequest and CreatePostInput),
+	// posts/services.go and posts/formatters.go)
+	// If you want createPostInput.Photo to be a string or nil(Hack for if you want a "string or nil" value for any struct field etc.)
+	var photo *string
+	if params.Photo != nil {
+		photoValue := params.Photo.Filename
+		photo = &photoValue
+	}
+	// Same as above
+	var content *string
+	if params.Content != "" {
+		content = &params.Content
+	}
+
 	updatePostInput := UpdatePostInput{
 		Title:   params.Title,
-		Content: params.Content,
-		Photo:   params.Photo,
+		Content: content,
+		Photo:   photo,
 		UserId:  userID,
 	}
 
-	formattedErrors, ok := validator.FormatValidationErrors(err)
-	if uuidErr != nil { // if userID is not valid uuid, put it in formattedErrors and set ok to true(ok == true means validation errors exists)
-		formattedErrors["user_id"] = uuidErr.Error()
-		ok = true
-	}
-	if !ok {
-		return updatePostInput, nil
-	}
-
-	return UpdatePostInput{}, common_errors.ErrValidationError{
-		Errors: formattedErrors,
-	}
+	return updatePostInput, nil
 }

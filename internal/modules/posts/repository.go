@@ -66,10 +66,10 @@ func (repository *repository) GetByID(ctx context.Context, id uuid.UUID) (db.Pos
 
 func (repository *repository) Update(ctx context.Context, params db.UpdatePostParams) (db.Post, error) {
 	return repository.DB.UpdatePost(ctx, db.UpdatePostParams{
-		ID:      params.ID,
-		Title:   params.Title,
-		Content: params.Content,
-		// Photo:     params.Photo,
+		ID:        params.ID,
+		Title:     params.Title,
+		Content:   params.Content,
+		Photo:     params.Photo,
 		UserID:    params.UserID,
 		UpdatedAt: time.Now().UTC(),
 	})

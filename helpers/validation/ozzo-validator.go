@@ -18,13 +18,13 @@ func Validate(value validation.Validatable) error {
 
 func FormatValidationErrors(err error) (map[string]string, bool) {
 	if err == nil {
-		return nil, false
+		return make(map[string]string), false
 	}
 
 	// check if error matches type validation.Errors which is an interface for the errors that come from validating validatables
 	var validationErrors validation.Errors
 	if !errors.As(err, &validationErrors) {
-		return nil, false
+		return make(map[string]string), false
 	}
 
 	formattedErrors := make(map[string]string)

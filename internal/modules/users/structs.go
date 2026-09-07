@@ -42,14 +42,14 @@ func (params CreateUserRequest) ValidateCreateUserData() error {
 		),
 	)
 
-	formattedErrors, ok := validator.FormatValidationErrors(err)
-	if !ok {
-		return nil
+	formattedErrors, hasValidationErrors := validator.FormatValidationErrors(err)
+	if hasValidationErrors {
+		return common_errors.ErrValidationError{
+			Errors: formattedErrors,
+		}
 	}
 
-	return common_errors.ErrValidationError{
-		Errors: formattedErrors,
-	}
+	return nil
 }
 
 type UpdateUserRequest struct {
@@ -81,14 +81,14 @@ func (params UpdateUserRequest) ValidateUpdateUserData() error {
 		),
 	)
 
-	formattedErrors, ok := validator.FormatValidationErrors(err)
-	if !ok {
-		return nil
+	formattedErrors, hasValidationErrors := validator.FormatValidationErrors(err)
+	if hasValidationErrors {
+		return common_errors.ErrValidationError{
+			Errors: formattedErrors,
+		}
 	}
 
-	return common_errors.ErrValidationError{
-		Errors: formattedErrors,
-	}
+	return nil
 }
 
 // custom validation rule used above
