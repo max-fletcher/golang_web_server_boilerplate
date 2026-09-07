@@ -63,6 +63,10 @@ func (server *Server) routes() http.Handler {
 			router.Delete("/{id}", server.Handle(server.PostsHandler.Delete))
 		})
 
+		router.Route("/posts-with-user", func(router chi.Router) {
+			router.Post("/", server.Handle(server.PostsWithUserHandler.Create))
+		})
+
 		// Authenticated
 		// v1router.Group(func(v1router chi.Router) {
 		// 	v1router.Use(middleware.Authenticated)

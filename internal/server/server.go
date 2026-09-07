@@ -1,6 +1,7 @@
 package server
 
 import (
+	"database/sql"
 	"log/slog"
 	"net/http"
 
@@ -9,6 +10,7 @@ import (
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/handlers"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/logger"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/posts"
+	posts_with_users "github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/posts-with-users"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/users"
 )
 
@@ -16,23 +18,26 @@ import (
 
 // Struct containing a router instance
 type Server struct {
-	config        *config.Config
-	Router        http.Handler // Reference to router instance
-	CommonHandler *handlers.Handler
-	UsersHandler  *users.Handler
-	PostsHandler  *posts.Handler
-	Logger        *slog.Logger
+	config               *config.Config
+	Router               http.Handler // Reference to router instance
+	CommonHandler        *handlers.Handler
+	UsersHandler         *users.Handler
+	PostsHandler         *posts.Handler
+	PostsWithUserHandler *posts_with_users.Handler
+	Logger               *slog.Logger
 }
 
 // The name "NewServer" is a naming convention for functions that behave like a constructor. This func will create a new server.
 // It is creating and passing a pointer to a server struct because remember, functions that return structs actually return copies of the struct
 // and not the object itself
-func NewServer(database *db.Queries, cfg *config.Config) *Server {
+func NewServer(database *db.Queries, conn *sql.DB, cfg *config.Config) *Server {
 	// we will be sending baseUrl to handlers where we can in turn send it to LocalFileUpload for storing files with full paths to serve as static assets
 	var baseUrl string
-	if cfg.AppMode == "local" {
+
+	switch cfg.AppMode {
+	case "local":
 		baseUrl = cfg.LocalBaseUrl
-	} else if cfg.AppMode == "production" {
+	case "production":
 		baseUrl = cfg.LiveBaseUrl
 	}
 
@@ -44,12 +49,17 @@ func NewServer(database *db.Queries, cfg *config.Config) *Server {
 	postService := posts.NewService(postRepository, userService) // using DI
 	postHandler := posts.NewHandler(postService, baseUrl)
 
+	// postWithUserRepository := posts_with_users.NewRepository(database)
+	postWithUserService := posts_with_users.NewService(conn, database)
+	postWithUserHandler := posts_with_users.NewHandler(postWithUserService)
+
 	server := &Server{
-		config:        cfg,
-		CommonHandler: handlers.New(database),
-		UsersHandler:  userHandler,
-		PostsHandler:  postHandler,
-		Logger:        logger.New(),
+		config:               cfg,
+		CommonHandler:        handlers.New(database),
+		UsersHandler:         userHandler,
+		PostsHandler:         postHandler,
+		PostsWithUserHandler: postWithUserHandler,
+		Logger:               logger.New(),
 	}
 
 	server.Router = server.routes()

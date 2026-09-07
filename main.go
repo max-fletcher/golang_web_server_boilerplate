@@ -44,6 +44,8 @@ func main() {
 	}
 
 	// using go's sql package from its standard library to establish connection
+	// *IMPORTANT: One terminology note: conn/sql.DB is technically a connection pool (*sql.DB), not one specific PostgreSQL connection.
+	// BeginTx obtains a connection from that pool and starts the transaction on it.
 	conn, err := sql.Open("postgres", cfg.DbURL)
 	if err != nil {
 		log.Fatal("Can't connect to the database", err)
@@ -55,8 +57,8 @@ func main() {
 		log.Fatal("Database not reachable:", err)
 	}
 
-	DBConn := db.New(conn)               // connecting database to sqlc's queries
-	srv := server.NewServer(DBConn, cfg) // Server struct coming from server.go
+	database := db.New(conn)                     // connecting database to sqlc's queries. "database" contains all sqlc queries.
+	srv := server.NewServer(database, conn, cfg) // Server struct coming from server.go
 
 	// Server options like router and port
 	// On windows, to run without compiling the server, use "go run ."

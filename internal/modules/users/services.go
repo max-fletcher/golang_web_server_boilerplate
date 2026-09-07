@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	constants "github.com/max-fletcher/golang_web_server_boilerplate/helpers/const"
 	"github.com/max-fletcher/golang_web_server_boilerplate/helpers/crypto"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/db"
 	common_errors "github.com/max-fletcher/golang_web_server_boilerplate/internal/errors"
@@ -40,6 +41,8 @@ func NewService(repository Repository) *service {
 }
 
 func (service *service) Create(ctx context.Context, params CreateUserRequest) (db.User, error) {
+	// Not sure if this is needed anymore since I am checking unique constraint violation below on creat
+	// and throwing the exact same error
 	_, err := service.GetByEmail(ctx, params.Email)
 	if err == nil {
 		return db.User{}, ErrUserWithEmailAlreadyExists{
@@ -75,6 +78,14 @@ func (service *service) Create(ctx context.Context, params CreateUserRequest) (d
 		UpdatedAt: time.Now().UTC(),
 	})
 	if err != nil {
+
+		pgErr := common_errors.GetPostgresError(err)
+		if pgErr.Code == constants.PGUniqueViolationCode {
+			return db.User{}, ErrUserWithEmailAlreadyExists{
+				Email: params.Email,
+			}
+		}
+
 		return db.User{}, ErrUserCreateFailed{
 			createErr: err,
 		}

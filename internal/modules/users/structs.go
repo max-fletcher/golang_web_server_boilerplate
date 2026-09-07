@@ -1,8 +1,6 @@
 package users
 
 import (
-	"errors"
-
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	validator "github.com/max-fletcher/golang_web_server_boilerplate/helpers/validation"
@@ -38,7 +36,7 @@ func (params CreateUserRequest) ValidateCreateUserData() error {
 		validation.Field(
 			&params.ConfirmPassword,
 			validation.Required.Error("Confirm password is required"),
-			passwordsMatch(params.Password),
+			validator.PasswordsMatch(params.Password),
 		),
 	)
 
@@ -76,8 +74,8 @@ func (params UpdateUserRequest) ValidateUpdateUserData() error {
 		),
 		validation.Field(
 			&params.ConfirmPassword,
-			ConfirmPasswordRequiredOnPasswordProvided(params.Password),
-			passwordsMatch(params.Password),
+			validator.ConfirmPasswordRequiredOnPasswordProvided(params.Password),
+			validator.PasswordsMatch(params.Password),
 		),
 	)
 
@@ -89,24 +87,4 @@ func (params UpdateUserRequest) ValidateUpdateUserData() error {
 	}
 
 	return nil
-}
-
-// custom validation rule used above
-func passwordsMatch(password string) validation.Rule {
-	return validation.By(func(value interface{}) error {
-		confirmPassword, ok := value.(string)
-		if !ok {
-			return errors.New("invalid password confirmation")
-		}
-
-		if confirmPassword != password {
-			return errors.New("passwords do not match")
-		}
-
-		return nil
-	})
-}
-
-func ConfirmPasswordRequiredOnPasswordProvided(password string) validation.Rule {
-	return validation.When(password != "", validation.Required.Error("Confirm password is required"))
 }

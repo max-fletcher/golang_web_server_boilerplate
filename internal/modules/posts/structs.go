@@ -13,10 +13,10 @@ import (
 
 // Struct to be validated
 type CreatePostRequest struct {
-	Title   string
-	Content string
-	Photo   *multipart.FileHeader
-	UserId  string
+	Title   string                `json:"title"`
+	Content string                `json:"content"`
+	Photo   *multipart.FileHeader `json:"photo"`
+	UserId  string                `json:"user_id"`
 }
 
 type CreatePostInput struct {
@@ -62,7 +62,6 @@ func (params CreatePostRequest) ValidateCreatePostData() (CreatePostInput, error
 		}
 	}
 	// Construct an instance of createPostInput
-
 	// *IMPORTANT: This is how you dead with nullable fields.(Sources: posts/structs.go(especially CreatePostRequest and CreatePostInput),
 	// posts/services.go and posts/formatters.go)
 	// If you want createPostInput.Photo to be a string or nil(Hack for if you want a "string or nil" value for any struct field etc.)
@@ -79,7 +78,7 @@ func (params CreatePostRequest) ValidateCreatePostData() (CreatePostInput, error
 	createPostInput := CreatePostInput{
 		Title:   params.Title,
 		Content: content,
-		Photo:   photo, // keeping this empty since we will be populating this later when needed
+		Photo:   photo,
 		UserId:  userID,
 	}
 

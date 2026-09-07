@@ -48,3 +48,23 @@ func ValidateAndFormatValidationErrors(value validation.Validatable) (map[string
 
 	return formattedErrors, true
 }
+
+// custom validation rule used above
+func PasswordsMatch(password string) validation.Rule {
+	return validation.By(func(value interface{}) error {
+		confirmPassword, ok := value.(string)
+		if !ok {
+			return errors.New("invalid password confirmation")
+		}
+
+		if confirmPassword != password {
+			return errors.New("passwords do not match")
+		}
+
+		return nil
+	})
+}
+
+func ConfirmPasswordRequiredOnPasswordProvided(password string) validation.Rule {
+	return validation.When(password != "", validation.Required.Error("Confirm password is required"))
+}
