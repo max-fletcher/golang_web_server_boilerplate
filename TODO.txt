@@ -1,8 +1,8 @@
-# File upload
-  1. Check flow and streamline it
-  2. How to handle sql.nullstring and what structs to use to make it future-proof
-  3. Check what heppens if no file is provided during create
-  4. Implement file upload in update and delete methods
+# File upload(DONE)
+  1. Check flow and streamline it(DONE. Streamlined enough)
+  2. How to handle sql.nullstring and what structs to use to make it future-proof(DONE)
+  3. Check what heppens if no file is provided during create(DONE)
+  4. Implement file upload in update and delete methods(DONE)
 # Route not found response(DONE)
 # Validation(DONE)
 # Needs abstraction on: (DONE)
@@ -29,7 +29,7 @@
 # Scheduled Tasks/ CRON job
 # Formatted responses(DONE to a greater extent)
 # Redis
-# Queue (BullMQ + Redis)(e.g for email delivery) + Implement email service(NEEDS RIGOROUS TESTING. TS PROBLEMS.)
+# Queue (BullMQ + Redis)(e.g for email delivery) + Implement email service
 # Add health check endpoint(DONE)
 # Add request logging middleware ??
 

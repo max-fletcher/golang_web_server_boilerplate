@@ -33,8 +33,11 @@ func (handler *Handler) Create(w http.ResponseWriter, r *http.Request) error {
 	// if err := requests.DecodeJSON(r, &params); err != nil {
 	// 	return err
 	// }
-	requests.ParseFormdata(r)
-	filenamesToStore := []string{"photo"}                         // filenames to get/store from request
+	err := requests.ParseFormdata(r)
+	if err != nil {
+		return err
+	}
+	filenamesToStore := []string{"photo"}                         // files to get/store/get headers from request
 	fileHeaders := fileupload.GetFileHeaders(r, filenamesToStore) // extracted file headers
 	params := CreatePostRequest{
 		Title:   r.FormValue("title"),
