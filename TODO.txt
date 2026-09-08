@@ -20,16 +20,16 @@
 # Add cors(DONE)
 # Global error handler and logger(DONE but might need a notepad version. Also, not sure if a request logger is needed)
 # Add custom exception handler(DONE added custom error responses)
-# Relations
-# Nested Relations
+# Relations(DONE)
+# Nested Relations ??
 # Pagination for getAll calls(DONE)
-# DB Transactions when disjointing relational data
+# DB Transactions when disjointing relational data(DONE)
 # Authorization and Access Control
 # PDF/Invoice generation
 # Scheduled Tasks/ CRON job
 # Formatted responses(DONE to a greater extent)
-# Redis
-# Queue (BullMQ + Redis)(e.g for email delivery) + Implement email service
+# Redis(DONE but needs to be implemented on all methods and modules)
+# Queue(Redis)(e.g for email delivery)(DONE No practical use currently)
 # Add health check endpoint(DONE)
 # Add request logging middleware ??
 

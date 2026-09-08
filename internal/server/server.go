@@ -2,9 +2,11 @@ package server
 
 import (
 	"database/sql"
+	"log"
 	"log/slog"
 	"net/http"
 
+	"github.com/max-fletcher/golang_web_server_boilerplate/internal/cache"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/config"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/db"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/handlers"
@@ -12,6 +14,8 @@ import (
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/posts"
 	posts_with_users "github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/posts-with-users"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/users"
+	"github.com/max-fletcher/golang_web_server_boilerplate/internal/queue"
+	"github.com/max-fletcher/golang_web_server_boilerplate/internal/redis"
 )
 
 // The file and the function named NewServer(below) is for creating a server instance and binding dependencies to it before returning it.
@@ -41,12 +45,19 @@ func NewServer(database *db.Queries, conn *sql.DB, cfg *config.Config) *Server {
 		baseUrl = cfg.LiveBaseUrl
 	}
 
+	redisClient, err := redis.NewClient(cfg.RedisURL) //create redis client
+	if err != nil {
+		log.Fatal("Can't connect to Redis:", err)
+	}
+	cacheClient := cache.NewRedisCache(redisClient, cfg.CacheActive) //attach client to cache struct
+	queueClient := queue.NewRedisQueue(redisClient)                  // attach client to queue struct as well
+
 	userRepository := users.NewRepository(database)
 	userService := users.NewService(userRepository)
 	userHandler := users.NewHandler(userService)
 
 	postRepository := posts.NewRepository(database)
-	postService := posts.NewService(postRepository, userService) // using DI
+	postService := posts.NewService(postRepository, userService, cacheClient, cfg.RedisCacheExpiry, queueClient) // using DI
 	postHandler := posts.NewHandler(postService, baseUrl)
 
 	postWithUserRepository := posts_with_users.NewRepository(database)
