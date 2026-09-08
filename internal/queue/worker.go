@@ -24,6 +24,10 @@ type Worker struct {
 	logger        *slog.Logger
 }
 
+// creates and returns a new worker struct. We are passing:
+// a) a handler(a func that can do what you want) as an arg so it is bound to this worker struct and can be used as long as we pass the client to it
+// b) other params and methods that we can use e.g streams are like channels/topics
+// c) Run is to run the queue worker and process takes messages and runs the handler against them
 func NewWorker(
 	client *redis.Client,
 	stream string,
@@ -42,8 +46,18 @@ func NewWorker(
 	}
 }
 
+// *IMPORTANT
+// Current Queue flow:
+// XReadGroup()
+//  ↓
+// process()
+//  ↓
+// SUCCESS
+//  ↓
+// XAck()
+
 func (worker *Worker) Run(ctx context.Context) error {
-	err := worker.client.XGroupCreateMkStream(
+	err := worker.client.XGroupCreateMkStream( // When the worker starts, it needs to make sure the group exists
 		ctx,
 		worker.stream,
 		worker.consumerGroup,
@@ -55,22 +69,22 @@ func (worker *Worker) Run(ctx context.Context) error {
 		return err
 	}
 
+	worker.logger.Info( // check if queue started or not
+		"queue worker started",
+		"stream", worker.stream,
+		"consumer_group", worker.consumerGroup,
+		"consumer", worker.consumer,
+	)
+
 	for {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-
-		default:
-		}
-
-		messages, err := worker.client.XReadGroup(
+		messages, err := worker.client.XReadGroup( // the worker starts reading
 			ctx,
 			&redis.XReadGroupArgs{
-				Group:    worker.consumerGroup,
-				Consumer: worker.consumer,
-				Streams:  []string{worker.stream, ">"},
+				Group:    worker.consumerGroup,         // Which consumer group is reading
+				Consumer: worker.consumer,              // Which worker within the group is reading
+				Streams:  []string{worker.stream, ">"}, // input messages that have never been delivered to another consumer in this group
 				Count:    10,
-				Block:    5 * time.Second,
+				Block:    5 * time.Second, // makes sure the worker doesn't constantly hammer Redis
 			},
 		).Result()
 
@@ -79,12 +93,28 @@ func (worker *Worker) Run(ctx context.Context) error {
 				continue
 			}
 
+			if ctx.Err() != nil {
+				return ctx.Err()
+			}
+
 			return err
 		}
 
+		worker.logger.Info( // check if XReadGroup received the message
+			"queue messages received",
+			"count", len(messages),
+		)
+
 		for _, stream := range messages {
 			for _, message := range stream.Messages {
-				if err := worker.process(ctx, message); err != nil {
+
+				worker.logger.Info( // for checking if messages are coming upto here before being processes
+					"processing queue message",
+					"message_id", message.ID,
+					"type", message.Values["type"],
+				)
+
+				if err := worker.process(ctx, message); err != nil { // if processing a message failed, throw err
 					worker.logger.Error(
 						"queue message failed",
 						"stream", worker.stream,
@@ -95,7 +125,7 @@ func (worker *Worker) Run(ctx context.Context) error {
 					continue
 				}
 
-				if err := worker.client.XAck(
+				if err := worker.client.XAck( // runs after successfully processing message(i.e acknowledged)
 					ctx,
 					worker.stream,
 					worker.consumerGroup,

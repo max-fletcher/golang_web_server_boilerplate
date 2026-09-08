@@ -8,7 +8,6 @@ import (
 )
 
 // Redis Implementation
-
 type redisQueue struct {
 	client *redis.Client
 }
@@ -25,7 +24,7 @@ func (queue *redisQueue) Publish(ctx context.Context, stream StreamType, message
 		return err
 	}
 
-	_, err = queue.client.XAdd(ctx, &redis.XAddArgs{
+	_, err = queue.client.XAdd(ctx, &redis.XAddArgs{ // publish messages/events
 		Stream: string(stream), // Works like channels/topics in kafka. This needs to be converted to string for it to work as arg
 		Values: map[string]any{
 			"type": string(message.Type), // This needs to be converted to string for it to work as arg

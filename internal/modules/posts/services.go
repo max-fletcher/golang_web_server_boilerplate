@@ -70,6 +70,19 @@ func (service *service) Create(ctx context.Context, createPostInput CreatePostIn
 		}
 	}
 
+	if err := service.cache.DeleteByPrefix(ctx, cache.CacheKeyValidPrefixes(CacheKeyPosts)); err != nil { // delete from cache
+		fmt.Println("Failed to invalidate by prefix")
+	}
+
+	if err := service.queue.Publish(ctx, queue.StreamPost, queue.Message{ // Publish event
+		Type: queue.QueueMsgPostCreated, // using const(sub for enum) here
+		Data: map[string]any{
+			"post_id": post.ID,
+		},
+	}); err != nil {
+		log.Printf("Failed to publish post created event: %v", err)
+	}
+
 	return post, nil
 }
 
@@ -77,7 +90,6 @@ func (service *service) GetAll(ctx context.Context, filterString string, limit i
 	cacheKey := GetAllCacheKey(filterString, limit, offset)
 	var cachedPosts GetAllPostsResult
 	err := service.cache.Get(ctx, cacheKey, &cachedPosts)
-
 	if err == nil { // return if no errros i.e fetched successfully
 		fmt.Println("Cache get successful")
 		return cachedPosts.Posts, cachedPosts.Total, nil
@@ -128,7 +140,6 @@ func (service *service) GetByID(ctx context.Context, id uuid.UUID) (db.Post, err
 	cacheKey := GetByIDCacheKey(id)
 	var post db.Post
 	err := service.cache.Get(ctx, cacheKey, &post)
-
 	if err == nil { // return if no errros i.e fetched successfully
 		fmt.Println("Cache get successful")
 		return post, nil
@@ -154,13 +165,7 @@ func (service *service) GetByID(ctx context.Context, id uuid.UUID) (db.Post, err
 	}
 
 	fmt.Println("Cache miss")
-
-	if err := service.cache.Set( // Set cache
-		ctx,
-		cacheKey,
-		post,
-		service.cacheExpiry,
-	); err != nil {
+	if err := service.cache.Set(ctx, cacheKey, post, service.cacheExpiry); err != nil { // Set cache
 		// Failing to set shouldn't fail request since we did get data from database. Just debug why redis is not working
 		log.Printf("Failed to store data in redis: %v", err)
 	}
@@ -195,11 +200,21 @@ func (service *service) Update(ctx context.Context, id uuid.UUID, updatePostInpu
 		}
 	}
 
-	if err := service.cache.Delete( // delete from cache
-		ctx,
-		"post:"+id.String(),
-	); err != nil {
+	if err := service.cache.Delete(ctx, "post:"+id.String()); err != nil { // delete from cache
 		fmt.Println("Failed to invalidate")
+	}
+
+	if err := service.cache.DeleteByPrefix(ctx, cache.CacheKeyValidPrefixes(CacheKeyPosts)); err != nil { // delete from cache
+		fmt.Println("Failed to invalidate by prefix")
+	}
+
+	if err := service.queue.Publish(ctx, queue.StreamPost, queue.Message{ // Publish event
+		Type: queue.QueueMsgPostUpdated, // using const(sub for enum) here
+		Data: map[string]any{
+			"post_id": id,
+		},
+	}); err != nil {
+		log.Printf("Failed to publish post updated event: %v", err)
 	}
 
 	if existingPost.Photo.Valid { // delete old file/photo if exists

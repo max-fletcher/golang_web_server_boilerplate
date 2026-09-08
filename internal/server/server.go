@@ -2,7 +2,6 @@ package server
 
 import (
 	"database/sql"
-	"log"
 	"log/slog"
 	"net/http"
 
@@ -15,7 +14,7 @@ import (
 	posts_with_users "github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/posts-with-users"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/users"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/queue"
-	"github.com/max-fletcher/golang_web_server_boilerplate/internal/redis"
+	redis "github.com/redis/go-redis/v9"
 )
 
 // The file and the function named NewServer(below) is for creating a server instance and binding dependencies to it before returning it.
@@ -34,7 +33,7 @@ type Server struct {
 // The name "NewServer" is a naming convention for functions that behave like a constructor. This func will create a new server.
 // It is creating and passing a pointer to a server struct because remember, functions that return structs actually return copies of the struct
 // and not the object itself
-func NewServer(database *db.Queries, conn *sql.DB, cfg *config.Config) *Server {
+func NewServer(database *db.Queries, conn *sql.DB, cfg *config.Config, redisClient *redis.Client) *Server {
 	// we will be sending baseUrl to handlers where we can in turn send it to LocalFileUpload for storing files with full paths to serve as static assets
 	var baseUrl string
 
@@ -45,12 +44,8 @@ func NewServer(database *db.Queries, conn *sql.DB, cfg *config.Config) *Server {
 		baseUrl = cfg.LiveBaseUrl
 	}
 
-	redisClient, err := redis.NewClient(cfg.RedisURL) //create redis client
-	if err != nil {
-		log.Fatal("Can't connect to Redis:", err)
-	}
-	cacheClient := cache.NewRedisCache(redisClient, cfg.CacheActive) //attach client to cache struct
-	queueClient := queue.NewRedisQueue(redisClient)                  // attach client to queue struct as well
+	cacheClient := cache.NewRedisCache(redisClient, cfg.CacheActive) // attach redis client to cache struct
+	queueClient := queue.NewRedisQueue(redisClient)                  // attach redis client to queue struct as well
 
 	userRepository := users.NewRepository(database)
 	userService := users.NewService(userRepository)
