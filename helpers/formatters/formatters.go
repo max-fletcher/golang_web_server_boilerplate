@@ -129,9 +129,79 @@ func DatabasePostsToPosts(dbPosts []db.Post) []Post {
 			CreatedAt: dbPost.CreatedAt,
 			UpdatedAt: dbPost.UpdatedAt,
 		})
+	}
 
-		// This also works if you want to reuse functionality i.e replace above block with the line below
-		// posts = append(posts, DatabasePostsToPost(dbFeed))
+	return posts
+}
+
+type CreatedByUser struct {
+	ID    uuid.UUID `json:"id"`
+	Name  string    `json:"name"`
+	Email string    `json:"email"`
+}
+type PostWithUser struct {
+	ID        uuid.UUID     `json:"id"`
+	Title     string        `json:"title"`
+	Content   *string       `json:"content"`
+	Photo     *string       `json:"photo"`
+	User      CreatedByUser `json:"user"`
+	CreatedAt time.Time     `json:"created_at"`
+	UpdatedAt time.Time     `json:"updated_at"`
+}
+
+func DatabasePostWUserToPostWUser(dbPostWUser db.GetPostWithUserByIdRow) PostWithUser {
+	// *IMPORTANT: This is how you dead with nullable fields.(Sources: posts/structs.go(especially CreatePostRequest and CreatePostInput),
+	// posts/services.go and posts/formatters.go)
+	var photo *string
+	if dbPostWUser.Photo.Valid {
+		photo = &dbPostWUser.Photo.String
+	}
+	var content *string
+	if dbPostWUser.Content.Valid {
+		photo = &dbPostWUser.Content.String
+	}
+
+	return PostWithUser{
+		ID:      dbPostWUser.ID,
+		Title:   dbPostWUser.Title,
+		Content: content,
+		Photo:   photo,
+		User: CreatedByUser{
+			ID:    dbPostWUser.UserID,
+			Name:  dbPostWUser.UserName,
+			Email: dbPostWUser.UserEmail,
+		},
+		CreatedAt: dbPostWUser.PostCreatedAt,
+		UpdatedAt: dbPostWUser.PostUpdatedAt,
+	}
+}
+
+func DatabasePostsWUserToPostsWUser(dbPostsWithUser []db.GetPostsWithUserRow) []PostWithUser {
+	posts := []PostWithUser{}
+	var photo *string
+	var content *string
+
+	for _, dbPostWithUser := range dbPostsWithUser {
+		if dbPostWithUser.Photo.Valid {
+			photo = &dbPostWithUser.Photo.String
+		}
+		if dbPostWithUser.Content.Valid {
+			photo = &dbPostWithUser.Content.String
+		}
+
+		posts = append(posts, PostWithUser{
+			ID:      dbPostWithUser.ID,
+			Title:   dbPostWithUser.Title,
+			Content: content,
+			Photo:   photo,
+			User: CreatedByUser{
+				ID:    dbPostWithUser.UserID,
+				Name:  dbPostWithUser.UserName,
+				Email: dbPostWithUser.UserEmail,
+			},
+			CreatedAt: dbPostWithUser.PostCreatedAt,
+			UpdatedAt: dbPostWithUser.PostUpdatedAt,
+		})
 	}
 
 	return posts

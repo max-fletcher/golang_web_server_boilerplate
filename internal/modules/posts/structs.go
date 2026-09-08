@@ -51,8 +51,8 @@ func (params CreatePostRequest) ValidateCreatePostData() (CreatePostInput, error
 	)
 
 	formattedErrors, hasValidationErrors := validator.FormatValidationErrors(err)
-	userID, uuidErr := id_helpers.ParseUUID(params.UserId) // parsing UserId field
-	if uuidErr != nil {                                    // if userID is not valid uuid, put it in formattedErrors and set hasValidationErrors to false
+	userID, uuidErr := id_helpers.ParseUUID(params.UserId, "post ID") // parsing UserId field
+	if uuidErr != nil {                                               // if userID is not valid uuid, put it in formattedErrors and set hasValidationErrors to false
 		formattedErrors["user_id"] = uuidErr.Error()
 		hasValidationErrors = true
 	}
@@ -122,8 +122,8 @@ func (params UpdatePostRequest) ValidateUpdatePostData() (UpdatePostInput, error
 	)
 
 	formattedErrors, hasValidationErrors := validator.FormatValidationErrors(err)
-	userID, uuidErr := id_helpers.ParseUUID(params.UserId) // parsing UserId field
-	if uuidErr != nil {                                    // if userID is not valid uuid, put it in formattedErrors and set ok to false(ok == false means validation errors exists)
+	userID, uuidErr := id_helpers.ParseUUID(params.UserId, "post ID") // parsing UserId field
+	if uuidErr != nil {                                               // if userID is not valid uuid, put it in formattedErrors and set ok to false(ok == false means validation errors exists)
 		formattedErrors["user_id"] = uuidErr.Error()
 		hasValidationErrors = true
 	}

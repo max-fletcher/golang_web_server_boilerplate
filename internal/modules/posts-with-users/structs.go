@@ -81,8 +81,8 @@ func (params CreatePostWithUserRequest) ValidateCreatePostWithUserData() (Create
 	)
 
 	formattedErrors, hasValidationErrors := validator.FormatValidationErrors(err)
-	_, exists := formattedErrors["user_id"]                // check if err with key "user_id" exists
-	userID, uuidErr := id_helpers.ParseUUID(params.UserId) // parsing UserId field
+	_, exists := formattedErrors["user_id"]                           // check if err with key "user_id" exists
+	userID, uuidErr := id_helpers.ParseUUID(params.UserId, "user ID") // parsing UserId field
 	// if userID is not valid uuid and err with key "user_id" doesn't exist, put it in formattedErrors and set hasValidationErrors to false
 	if uuidErr != nil && !exists {
 		formattedErrors["user_id"] = uuidErr.Error()

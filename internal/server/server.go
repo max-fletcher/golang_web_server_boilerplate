@@ -49,8 +49,8 @@ func NewServer(database *db.Queries, conn *sql.DB, cfg *config.Config) *Server {
 	postService := posts.NewService(postRepository, userService) // using DI
 	postHandler := posts.NewHandler(postService, baseUrl)
 
-	// postWithUserRepository := posts_with_users.NewRepository(database)
-	postWithUserService := posts_with_users.NewService(conn, database)
+	postWithUserRepository := posts_with_users.NewRepository(database)
+	postWithUserService := posts_with_users.NewService(postWithUserRepository, conn, database)
 	postWithUserHandler := posts_with_users.NewHandler(postWithUserService)
 
 	server := &Server{

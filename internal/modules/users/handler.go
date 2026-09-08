@@ -64,7 +64,7 @@ func (handler *Handler) GetAll(w http.ResponseWriter, r *http.Request) error {
 }
 
 func (handler *Handler) GetByID(w http.ResponseWriter, r *http.Request) error {
-	id, err := id_helpers.ParseUUIDRouteParam(chi.URLParam(r, "id"))
+	id, err := id_helpers.ParseUUIDRouteParam(chi.URLParam(r, "id"), "user ID")
 	if err != nil {
 		return err
 	}
@@ -81,7 +81,7 @@ func (handler *Handler) GetByID(w http.ResponseWriter, r *http.Request) error {
 }
 
 func (handler *Handler) Update(w http.ResponseWriter, r *http.Request) error {
-	id, err := id_helpers.ParseUUIDRouteParam(chi.URLParam(r, "id"))
+	id, err := id_helpers.ParseUUIDRouteParam(chi.URLParam(r, "id"), "user ID")
 	if err != nil {
 		return err
 	}
@@ -108,7 +108,7 @@ func (handler *Handler) Update(w http.ResponseWriter, r *http.Request) error {
 }
 
 func (handler *Handler) Delete(w http.ResponseWriter, r *http.Request) error {
-	id, err := id_helpers.ParseUUIDRouteParam(chi.URLParam(r, "id"))
+	id, err := id_helpers.ParseUUIDRouteParam(chi.URLParam(r, "id"), "user ID")
 	if err != nil {
 		return err
 	}

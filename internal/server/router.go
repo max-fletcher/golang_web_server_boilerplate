@@ -65,6 +65,8 @@ func (server *Server) routes() http.Handler {
 
 		router.Route("/posts-with-user", func(router chi.Router) {
 			router.Post("/", server.Handle(server.PostsWithUserHandler.Create))
+			router.Get("/", server.Handle(server.PostsWithUserHandler.GetAll))
+			router.Get("/{id}", server.Handle(server.PostsWithUserHandler.GetByID))
 		})
 
 		// Authenticated

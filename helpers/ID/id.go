@@ -5,11 +5,11 @@ import (
 	"github.com/max-fletcher/golang_web_server_boilerplate/helpers/requests"
 )
 
-func ParseUUIDRouteParam(value string) (uuid.UUID, error) {
+func ParseUUIDRouteParam(value string, paramName string) (uuid.UUID, error) {
 	id, err := uuid.Parse(value)
 	if err != nil {
 		return uuid.Nil, requests.ErrInvalidUUIDParam{
-			Param: "user id",
+			Param: paramName,
 			Err:   err,
 		}
 	}
@@ -17,11 +17,11 @@ func ParseUUIDRouteParam(value string) (uuid.UUID, error) {
 	return id, nil
 }
 
-func ParseUUID(value string) (uuid.UUID, error) {
+func ParseUUID(value string, paramName string) (uuid.UUID, error) {
 	id, err := uuid.Parse(value)
 	if err != nil {
 		return uuid.Nil, requests.ErrInvalidUUID{
-			Field: "user id",
+			Field: paramName,
 			Err:   err,
 		}
 	}
