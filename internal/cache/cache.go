@@ -9,6 +9,7 @@ type CacheKeyValidPrefixes string
 
 const (
 	CacheKeyPosts CacheKeyValidPrefixes = "posts:"
+	CacheKeyUsers CacheKeyValidPrefixes = "users:"
 )
 
 type Cache interface {

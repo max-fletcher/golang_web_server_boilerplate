@@ -47,16 +47,17 @@ func NewServer(database *db.Queries, conn *sql.DB, cfg *config.Config, redisClie
 	cacheClient := cache.NewRedisCache(redisClient, cfg.CacheActive) // attach redis client to cache struct
 	queueClient := queue.NewRedisQueue(redisClient)                  // attach redis client to queue struct as well
 
+	// (using DI) initialize child structs and passing them so they can be in turn used to initialize parent structs
 	userRepository := users.NewRepository(database)
-	userService := users.NewService(userRepository)
+	userService := users.NewService(userRepository, cacheClient, cfg.RedisCacheExpiry, queueClient)
 	userHandler := users.NewHandler(userService)
 
 	postRepository := posts.NewRepository(database)
-	postService := posts.NewService(postRepository, userService, cacheClient, cfg.RedisCacheExpiry, queueClient) // using DI
+	postService := posts.NewService(postRepository, userService, cacheClient, cfg.RedisCacheExpiry, queueClient)
 	postHandler := posts.NewHandler(postService, baseUrl)
 
 	postWithUserRepository := posts_with_users.NewRepository(database)
-	postWithUserService := posts_with_users.NewService(postWithUserRepository, conn, database)
+	postWithUserService := posts_with_users.NewService(postWithUserRepository, conn, database, cacheClient, cfg.RedisCacheExpiry, queueClient)
 	postWithUserHandler := posts_with_users.NewHandler(postWithUserService)
 
 	server := &Server{

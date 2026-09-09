@@ -41,13 +41,13 @@ func main() {
 		log.Println("No .env file found, using environment variables")
 	}
 
-	// using Load function to fetch any variables we need from .env(all of them are stored inside cfg struct)
+	// Using Load function to fetch any variables we need from .env(all of them are stored inside cfg struct)
 	cfg, err := config.Load()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	// using go's sql package from its standard library to establish connection
+	// Using go's sql package from its standard library to establish connection
 	// *IMPORTANT: One terminology note: conn/sql.DB is technically a connection pool (*sql.DB), not one specific PostgreSQL connection.
 	// BeginTx obtains a connection from that pool and starts the transaction on it.
 	conn, err := sql.Open("postgres", cfg.DbURL)
@@ -78,7 +78,7 @@ func main() {
 
 	// ------ Create a queue worker ------
 
-	//create a handler function to pass to NewWorker(will be bound to Worker struct)
+	// Create a handler function to pass to NewWorker(will be bound to Worker struct)
 	workerHandler := func(ctx context.Context, message queue.Message) error {
 		log.Printf(
 			"WORKER RECEIVED: type=%s data=%v",
@@ -86,6 +86,33 @@ func main() {
 			message.Data,
 		)
 
+		// Using a switch-case for dealing with each event types. Add functions here if you need be.
+		switch message.Type {
+		case queue.QueueMsgUserCreated:
+			log.Printf(
+				"Switch case for QueueMsgUserCreated resolved.",
+			)
+		case queue.QueueMsgUserUpdated:
+			log.Printf(
+				"Switch case for QueueMsgUserUpdated resolved.",
+			)
+		case queue.QueueMsgUserDeleted:
+			log.Printf(
+				"Switch case for QueueMsgUserDeleted resolved.",
+			)
+		case queue.QueueMsgPostCreated:
+			log.Printf(
+				"Switch case for QueueMsgPostCreated resolved.",
+			)
+		case queue.QueueMsgPostUpdated:
+			log.Printf(
+				"Switch case for QueueMsgPostUpdated resolved.",
+			)
+		case queue.QueueMsgPostDeleted:
+			log.Printf(
+				"Switch case for QueueMsgPostDeleted resolved.",
+			)
+		}
 		return nil
 	}
 

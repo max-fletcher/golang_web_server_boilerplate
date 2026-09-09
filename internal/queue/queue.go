@@ -8,6 +8,7 @@ type StreamType string
 
 const (
 	StreamPost StreamType = "app:post"
+	StreamUser StreamType = "app:user"
 )
 
 type MessageType string
@@ -16,6 +17,10 @@ const (
 	QueueMsgPostCreated MessageType = "post.created"
 	QueueMsgPostUpdated MessageType = "post.updated"
 	QueueMsgPostDeleted MessageType = "post.deleted"
+
+	QueueMsgUserCreated MessageType = "user.created"
+	QueueMsgUserUpdated MessageType = "user.updated"
+	QueueMsgUserDeleted MessageType = "user.deleted"
 )
 
 type Message struct {

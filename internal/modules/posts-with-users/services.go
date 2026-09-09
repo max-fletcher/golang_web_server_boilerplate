@@ -5,16 +5,19 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/google/uuid"
 	constants "github.com/max-fletcher/golang_web_server_boilerplate/helpers/const"
 	"github.com/max-fletcher/golang_web_server_boilerplate/helpers/crypto"
 	"github.com/max-fletcher/golang_web_server_boilerplate/helpers/formatters"
+	"github.com/max-fletcher/golang_web_server_boilerplate/internal/cache"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/db"
 	common_errors "github.com/max-fletcher/golang_web_server_boilerplate/internal/errors"
-	"github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/posts"
-	"github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/users"
+	posts_package "github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/posts"
+	users_package "github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/users"
+	"github.com/max-fletcher/golang_web_server_boilerplate/internal/queue"
 )
 
 type Service interface {
@@ -24,16 +27,22 @@ type Service interface {
 }
 
 type service struct {
-	repository Repository
-	sqlDB      *sql.DB
-	DB         *db.Queries // We are importing(using DI) db.Queries here so we can use database transactions
+	repository  Repository
+	sqlDB       *sql.DB
+	DB          *db.Queries // We are importing(using DI) db.Queries here so we can use database transactions
+	cache       cache.Cache
+	cacheExpiry time.Duration
+	queue       queue.Queue
 }
 
-func NewService(repository Repository, conn *sql.DB, database *db.Queries) *service {
+func NewService(repository Repository, conn *sql.DB, database *db.Queries, cache cache.Cache, cacheExpiry time.Duration, queue queue.Queue) *service {
 	return &service{
-		repository: repository,
-		sqlDB:      conn,
-		DB:         database, // We are importing(using DI) db.Queries here so we can use database transactions
+		repository:  repository,
+		sqlDB:       conn,
+		DB:          database, // We are importing(using DI) db.Queries here so we can use database transactions
+		cache:       cache,
+		cacheExpiry: cacheExpiry,
+		queue:       queue,
 	}
 }
 
@@ -59,8 +68,8 @@ func (service *service) Create(ctx context.Context, createPostWithUserInput Crea
 	// we can do this because both txDB and "database" param(1st param) in NewRepository is of type *db.Queries. This means
 	// since we passed txDB into these repositories, any query executed from inside these are now part of this database transaction.
 	// *IMPORTANT: replace these later with DI(see posts service that uses the UserExistenceChecker interface to import usersService)
-	userRepository := users.NewRepository(txDB)
-	postRepository := posts.NewRepository(txDB)
+	userRepository := users_package.NewRepository(txDB)
+	postRepository := posts_package.NewRepository(txDB)
 
 	// 1st param: context for the request
 	// 2nd param: the struct that we want to pass so it saves the underlying data in DB
@@ -85,7 +94,7 @@ func (service *service) Create(ctx context.Context, createPostWithUserInput Crea
 		}
 	}
 
-	_, err = postRepository.Create(ctx, db.CreatePostParams{
+	post, err := postRepository.Create(ctx, db.CreatePostParams{
 		ID:        uuid.New(),
 		Title:     createPostWithUserInput.Title,
 		Content:   formatters.StringPointerToNullString(createPostWithUserInput.Content),
@@ -104,19 +113,53 @@ func (service *service) Create(ctx context.Context, createPostWithUserInput Crea
 		return db.User{}, err
 	}
 
+	if err := service.cache.DeleteByPrefix(ctx, cache.CacheKeyValidPrefixes(CacheKeyPostsWithUser)); err != nil { // delete from cache
+		fmt.Println("Failed to invalidate by prefix")
+	}
+
+	if err := service.queue.Publish(ctx, queue.StreamUser, queue.Message{ // Publish event
+		Type: queue.QueueMsgUserCreated, // using const(sub for enum) here
+		Data: map[string]any{
+			"user_id": user.ID,
+		},
+	}); err != nil {
+		log.Printf("Failed to publish user created event: %v", err)
+	}
+
+	if err := service.queue.Publish(ctx, queue.StreamPost, queue.Message{ // Publish event
+		Type: queue.QueueMsgPostCreated, // using const(sub for enum) here
+		Data: map[string]any{
+			"post_id": post.ID,
+		},
+	}); err != nil {
+		log.Printf("Failed to publish post created event: %v", err)
+	}
+
 	return user, nil
 }
 
 func (service *service) GetAll(ctx context.Context, filterString string, limit int, offset int) ([]db.GetPostsWithUserRow, int, error) {
+	cacheKey := GetAllCacheKey(filterString, limit, offset)
+	var cachedPostsWithUser GetAllPostsWithUsersResult
+	err := service.cache.Get(ctx, cacheKey, &cachedPostsWithUser)
+	if err == nil { // return if no errros i.e fetched successfully
+		fmt.Println("Cache get successful")
+		return cachedPostsWithUser.Posts, cachedPostsWithUser.Total, nil
+	}
+	// Decide whether cache failure should fail the request. For most caches, I'd allow the request to continue.
+	// else {
+	// 	return err
+	// }
+
 	// 1st param: context for the request
-	users, err := service.repository.GetAll(ctx, filterString, limit, offset)
+	posts, err := service.repository.GetAll(ctx, filterString, limit, offset)
 	if err != nil {
 		return []db.GetPostsWithUserRow{}, 0, ErrUsersFetchFailed{
 			fetchErr: err,
 		}
 	}
 
-	postRepository := posts.NewRepository(service.DB)
+	postRepository := posts_package.NewRepository(service.DB)
 	total, err := postRepository.GetAllCount(ctx, filterString)
 	if err != nil {
 		var bigInt64ToIntError common_errors.ErrBigInt64ToIntError
@@ -129,13 +172,39 @@ func (service *service) GetAll(ctx context.Context, filterString string, limit i
 		}
 	}
 
-	return users, total, nil
+	fmt.Println("Cache miss")
+	if err := service.cache.Set( // Set cache
+		ctx,
+		cacheKey,
+		GetAllPostsWithUsersResult{
+			Posts: posts,
+			Total: total,
+		},
+		service.cacheExpiry,
+	); err != nil {
+		// Failing to set shouldn't fail request since we did get data from database. Just debug why redis is not working
+		log.Printf("Failed to store data in redis: %v", err)
+	}
+
+	return posts, total, nil
 }
 
 func (service *service) GetByID(ctx context.Context, id uuid.UUID) (db.GetPostWithUserByIdRow, error) {
+	cacheKey := GetByIDCacheKey(id)
+	var postWithUser db.GetPostWithUserByIdRow
+	err := service.cache.Get(ctx, cacheKey, &postWithUser)
+	if err == nil { // return if no errros i.e fetched successfully
+		fmt.Println("Cache get successful")
+		return postWithUser, nil
+	}
+	// Decide whether cache failure should fail the request. For most caches, I'd allow the request to continue.
+	// else {
+	// 	return err
+	// }
+
 	// 1st param: context for the request
 	// 2nd param: id(type uuid) param
-	user, err := service.repository.GetByID(ctx, id)
+	postWithUser, err = service.repository.GetByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) { // check if error is of type sql.ErrNoRows
 			return db.GetPostWithUserByIdRow{}, ErrUserWithIdNotFound{
@@ -148,5 +217,11 @@ func (service *service) GetByID(ctx context.Context, id uuid.UUID) (db.GetPostWi
 		}
 	}
 
-	return user, nil
+	fmt.Println("Cache miss")
+	if err := service.cache.Set(ctx, cacheKey, postWithUser, service.cacheExpiry); err != nil { // Set cache
+		// Failing to set shouldn't fail request since we did get data from database. Just debug why redis is not working
+		log.Printf("Failed to store data in redis: %v", err)
+	}
+
+	return postWithUser, nil
 }

@@ -5,13 +5,16 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/google/uuid"
 	constants "github.com/max-fletcher/golang_web_server_boilerplate/helpers/const"
 	"github.com/max-fletcher/golang_web_server_boilerplate/helpers/crypto"
+	"github.com/max-fletcher/golang_web_server_boilerplate/internal/cache"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/db"
 	common_errors "github.com/max-fletcher/golang_web_server_boilerplate/internal/errors"
+	"github.com/max-fletcher/golang_web_server_boilerplate/internal/queue"
 )
 
 type Service interface {
@@ -24,7 +27,10 @@ type Service interface {
 }
 
 type service struct {
-	repository Repository
+	repository  Repository
+	cache       cache.Cache
+	cacheExpiry time.Duration
+	queue       queue.Queue
 }
 
 // Using different structure so that we can prevent circular dependency
@@ -34,9 +40,12 @@ type service struct {
 //			repository: NewRepository(db),
 //		}
 //	}
-func NewService(repository Repository) *service {
+func NewService(repository Repository, cache cache.Cache, cacheExpiry time.Duration, queue queue.Queue) *service {
 	return &service{
-		repository: repository,
+		repository:  repository,
+		cache:       cache,
+		cacheExpiry: cacheExpiry,
+		queue:       queue,
 	}
 }
 
@@ -91,10 +100,35 @@ func (service *service) Create(ctx context.Context, params CreateUserRequest) (d
 		}
 	}
 
+	if err := service.cache.DeleteByPrefix(ctx, cache.CacheKeyValidPrefixes(CacheKeyUsers)); err != nil { // delete from cache
+		fmt.Println("Failed to invalidate by prefix")
+	}
+
+	if err := service.queue.Publish(ctx, queue.StreamUser, queue.Message{ // Publish event
+		Type: queue.QueueMsgUserCreated, // using const(sub for enum) here
+		Data: map[string]any{
+			"user_id": user.ID,
+		},
+	}); err != nil {
+		log.Printf("Failed to publish user created event: %v", err)
+	}
+
 	return user, nil
 }
 
 func (service *service) GetAll(ctx context.Context, filterString string, limit int, offset int) ([]db.User, int, error) {
+	cacheKey := GetAllCacheKey(filterString, limit, offset)
+	var cachedUsers GetAllUsersResult
+	err := service.cache.Get(ctx, cacheKey, &cachedUsers)
+	if err == nil { // return if no errros i.e fetched successfully
+		fmt.Println("Cache get successful")
+		return cachedUsers.Users, cachedUsers.Total, nil
+	}
+	// Decide whether cache failure should fail the request. For most caches, I'd allow the request to continue.
+	// else {
+	// 	return err
+	// }
+
 	// 1st param: context for the request
 	users, err := service.repository.GetAll(ctx, filterString, limit, offset)
 	if err != nil {
@@ -115,13 +149,39 @@ func (service *service) GetAll(ctx context.Context, filterString string, limit i
 		}
 	}
 
+	fmt.Println("Cache miss")
+	if err := service.cache.Set( // Set cache
+		ctx,
+		cacheKey,
+		GetAllUsersResult{
+			Users: users,
+			Total: total,
+		},
+		service.cacheExpiry,
+	); err != nil {
+		// Failing to set shouldn't fail request since we did get data from database. Just debug why redis is not working
+		log.Printf("Failed to store data in redis: %v", err)
+	}
+
 	return users, total, nil
 }
 
 func (service *service) GetByID(ctx context.Context, id uuid.UUID) (db.User, error) {
+	cacheKey := GetByIDCacheKey(id)
+	var user db.User
+	err := service.cache.Get(ctx, cacheKey, &user)
+	if err == nil { // return if no errros i.e fetched successfully
+		fmt.Println("Cache get successful")
+		return user, nil
+	}
+	// Decide whether cache failure should fail the request. For most caches, I'd allow the request to continue.
+	// else {
+	// 	return err
+	// }
+
 	// 1st param: context for the request
 	// 2nd param: id(type uuid) param
-	user, err := service.repository.GetByID(ctx, id)
+	user, err = service.repository.GetByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) { // check if error is of type sql.ErrNoRows
 			return db.User{}, ErrUserWithIdNotFound{
@@ -132,6 +192,12 @@ func (service *service) GetByID(ctx context.Context, id uuid.UUID) (db.User, err
 		return db.User{}, ErrUserFetchFailed{
 			fetchErr: err,
 		}
+	}
+
+	fmt.Println("Cache miss")
+	if err := service.cache.Set(ctx, cacheKey, user, service.cacheExpiry); err != nil { // Set cache
+		// Failing to set shouldn't fail request since we did get data from database. Just debug why redis is not working
+		log.Printf("Failed to store data in redis: %v", err)
 	}
 
 	return user, nil
@@ -201,6 +267,23 @@ func (service *service) Update(ctx context.Context, id uuid.UUID, params UpdateU
 		}
 	}
 
+	if err := service.cache.Delete(ctx, "user:"+id.String()); err != nil { // delete from cache
+		fmt.Println("Failed to invalidate")
+	}
+
+	if err := service.cache.DeleteByPrefix(ctx, cache.CacheKeyValidPrefixes(CacheKeyUsers)); err != nil { // delete from cache
+		fmt.Println("Failed to invalidate by prefix")
+	}
+
+	if err := service.queue.Publish(ctx, queue.StreamUser, queue.Message{ // Publish event
+		Type: queue.QueueMsgUserUpdated, // using const(sub for enum) here
+		Data: map[string]any{
+			"user_id": id,
+		},
+	}); err != nil {
+		log.Printf("Failed to publish user updated event: %v", err)
+	}
+
 	return user, nil
 }
 
@@ -215,6 +298,23 @@ func (service *service) Delete(ctx context.Context, id uuid.UUID) (db.User, erro
 		return db.User{}, ErrUserDeleteFailed{
 			deleteErr: err,
 		}
+	}
+
+	if err := service.cache.Delete(ctx, "user:"+id.String()); err != nil { // delete from cache
+		fmt.Println("Failed to invalidate single")
+	}
+
+	if err := service.cache.DeleteByPrefix(ctx, cache.CacheKeyValidPrefixes(CacheKeyUsers)); err != nil { // delete from cache
+		fmt.Println("Failed to invalidate by prefix")
+	}
+
+	if err := service.queue.Publish(ctx, queue.StreamUser, queue.Message{ // Publish event
+		Type: queue.QueueMsgUserDeleted, // using const(sub for enum) here
+		Data: map[string]any{
+			"user_id": id,
+		},
+	}); err != nil {
+		log.Printf("Failed to publish user deleted event: %v", err)
 	}
 
 	return user, nil
