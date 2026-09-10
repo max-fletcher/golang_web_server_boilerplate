@@ -21,6 +21,7 @@ type publisher struct {
 	stream string
 }
 
+// func NewPublisher() creates a Publisher struct and returns it, so it can be passed down to services where they are used
 func NewPublisher(queueClient queue.Queue, stream string) Publisher {
 	return &publisher{
 		queue:  queueClient,

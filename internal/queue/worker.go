@@ -12,7 +12,7 @@ import (
 
 // Worker that will handle redis queue messages
 
-type Handler func(ctx context.Context, message Message) error
+type Handler func(ctx context.Context, message Message) error // used to define handler's type below
 
 type Worker struct {
 	client        *redis.Client
