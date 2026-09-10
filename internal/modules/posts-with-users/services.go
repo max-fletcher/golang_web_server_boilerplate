@@ -17,7 +17,6 @@ import (
 	common_errors "github.com/max-fletcher/golang_web_server_boilerplate/internal/errors"
 	posts_package "github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/posts"
 	users_package "github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/users"
-	"github.com/max-fletcher/golang_web_server_boilerplate/internal/queue"
 )
 
 type Service interface {
@@ -27,22 +26,18 @@ type Service interface {
 }
 
 type service struct {
-	repository  Repository
-	sqlDB       *sql.DB
-	DB          *db.Queries // We are importing(using DI) db.Queries here so we can use database transactions
-	cache       cache.Cache
-	cacheExpiry time.Duration
-	queue       queue.Queue
+	repository Repository
+	sqlDB      *sql.DB
+	DB         *db.Queries // We are importing(using DI) db.Queries here so we can use database transactions
+	cache      cache.Cache
 }
 
-func NewService(repository Repository, conn *sql.DB, database *db.Queries, cache cache.Cache, cacheExpiry time.Duration, queue queue.Queue) *service {
+func NewService(repository Repository, conn *sql.DB, database *db.Queries, cache cache.Cache) *service {
 	return &service{
-		repository:  repository,
-		sqlDB:       conn,
-		DB:          database, // We are importing(using DI) db.Queries here so we can use database transactions
-		cache:       cache,
-		cacheExpiry: cacheExpiry,
-		queue:       queue,
+		repository: repository,
+		sqlDB:      conn,
+		DB:         database, // We are importing(using DI) db.Queries here so we can use database transactions
+		cache:      cache,
 	}
 }
 
@@ -94,7 +89,7 @@ func (service *service) Create(ctx context.Context, createPostWithUserInput Crea
 		}
 	}
 
-	post, err := postRepository.Create(ctx, db.CreatePostParams{
+	_, err = postRepository.Create(ctx, db.CreatePostParams{
 		ID:        uuid.New(),
 		Title:     createPostWithUserInput.Title,
 		Content:   formatters.StringPointerToNullString(createPostWithUserInput.Content),
@@ -115,24 +110,6 @@ func (service *service) Create(ctx context.Context, createPostWithUserInput Crea
 
 	if err := service.cache.DeleteByPrefix(ctx, cache.CacheKeyValidPrefixes(CacheKeyPostsWithUser)); err != nil { // delete from cache
 		fmt.Println("Failed to invalidate by prefix")
-	}
-
-	if err := service.queue.Publish(ctx, queue.StreamUser, queue.Message{ // Publish event
-		Type: queue.QueueMsgUserCreated, // using const(sub for enum) here
-		Data: map[string]any{
-			"user_id": user.ID,
-		},
-	}); err != nil {
-		log.Printf("Failed to publish user created event: %v", err)
-	}
-
-	if err := service.queue.Publish(ctx, queue.StreamPost, queue.Message{ // Publish event
-		Type: queue.QueueMsgPostCreated, // using const(sub for enum) here
-		Data: map[string]any{
-			"post_id": post.ID,
-		},
-	}); err != nil {
-		log.Printf("Failed to publish post created event: %v", err)
 	}
 
 	return user, nil
@@ -180,7 +157,6 @@ func (service *service) GetAll(ctx context.Context, filterString string, limit i
 			Posts: posts,
 			Total: total,
 		},
-		service.cacheExpiry,
 	); err != nil {
 		// Failing to set shouldn't fail request since we did get data from database. Just debug why redis is not working
 		log.Printf("Failed to store data in redis: %v", err)
@@ -218,7 +194,7 @@ func (service *service) GetByID(ctx context.Context, id uuid.UUID) (db.GetPostWi
 	}
 
 	fmt.Println("Cache miss")
-	if err := service.cache.Set(ctx, cacheKey, postWithUser, service.cacheExpiry); err != nil { // Set cache
+	if err := service.cache.Set(ctx, cacheKey, postWithUser); err != nil { // Set cache
 		// Failing to set shouldn't fail request since we did get data from database. Just debug why redis is not working
 		log.Printf("Failed to store data in redis: %v", err)
 	}

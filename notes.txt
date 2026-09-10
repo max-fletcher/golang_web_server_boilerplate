@@ -25,5 +25,12 @@ Clone project. If there are missing packages/vendor folder, use "go mod tidy" to
          * Create(copy template for ease) any repositories you want to call from the services inside repository.go
     e. Follow this binding heriarchy in server/server.go's NewServer function:
        repo->service->handler(inside the newly created module)->server(the server instance returned here)
+       On a tangent, remember to add/remove any dependencies you may need i.e if you need/don't need cache and queue inside, just add/remove it.
+       If you want to add new events, do the following:
+         1. Add a new EventType in /internal/events/events.go
+         2. Add a new event struct inside internal/events/{your_module_name}.go OR make new file and add it there
+         3. Create new handler against the new event you created above inside internal/modules/{your_module}/worker.go and define any logic
+            that should be executed if the event is processed by the queue here in the handler
+         4. Register your EventType against the handler you created inside /internal/workers/workers.go
     f. Use the new handler to create new routes, but remember to wrap them in server.Handle(...) so you can log all errors in the
        global error logger

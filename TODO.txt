@@ -30,6 +30,16 @@
 # Formatted responses(DONE to a greater extent)
 # Redis(DONE but needs to be implemented on all methods and modules)
 # Queue(Redis)(e.g for email delivery)(DONE No practical use currently)
+  See later for Queue:
+    event bus
+    message broker abstraction
+    generic event registry
+    generic payload registry
+    retry framework
+    dead-letter abstraction
+    Kafka adapter
+    RabbitMQ adapter
+    multiple queue interfaces
 # Add health check endpoint(DONE)
 # Add request logging middleware ??
 

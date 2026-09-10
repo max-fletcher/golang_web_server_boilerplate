@@ -4,20 +4,23 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"time"
 
 	redis "github.com/redis/go-redis/v9"
 )
 
 type redisCache struct {
-	client   *redis.Client
-	isActive bool
+	client     *redis.Client
+	isActive   bool
+	defaultExp time.Duration
 }
 
-func NewRedisCache(client *redis.Client, isActive bool) Cache { // Return a struct that contains an instance of redis client
+func NewRedisCache(client *redis.Client, isActive bool, defaultExp time.Duration) Cache { // Return a struct that contains an instance of redis client
 	return &redisCache{
-		client:   client,
-		isActive: isActive,
+		client:     client,
+		isActive:   isActive,
+		defaultExp: defaultExp,
 	}
 }
 
@@ -47,7 +50,7 @@ func (cache *redisCache) Get(ctx context.Context, key string, dest any) error {
 }
 
 // Set value to cache
-func (cache *redisCache) Set(ctx context.Context, key string, value any, expiration time.Duration) error {
+func (cache *redisCache) Set(ctx context.Context, key string, value any, expiration ...time.Duration) error {
 	if !cache.isActive {
 		return nil
 	}
@@ -56,7 +59,16 @@ func (cache *redisCache) Set(ctx context.Context, key string, value any, expirat
 		return err
 	}
 
-	return cache.client.Set(ctx, key, data, expiration).Err()
+	if len(expiration) > 1 {
+		return fmt.Errorf("cache.Set accepts at most one expiration")
+	}
+
+	exp := cache.defaultExp
+	if len(expiration) == 1 {
+		exp = expiration[0]
+	}
+
+	return cache.client.Set(ctx, key, data, exp).Err()
 }
 
 func (cache *redisCache) Delete(ctx context.Context, key string) error {

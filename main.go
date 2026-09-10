@@ -17,18 +17,24 @@ package main
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"log"
-	"log/slog"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
+	"github.com/max-fletcher/golang_web_server_boilerplate/internal/cache"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/config"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/db"
+	"github.com/max-fletcher/golang_web_server_boilerplate/internal/events"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/queue"
-	"github.com/max-fletcher/golang_web_server_boilerplate/internal/redis"
+	"github.com/max-fletcher/golang_web_server_boilerplate/internal/queue/redis"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/server"
+	"github.com/max-fletcher/golang_web_server_boilerplate/internal/workers"
 )
 
 func main() {
@@ -76,64 +82,50 @@ func main() {
 	}
 	defer redisClient.Close()
 
-	// ------ Create a queue worker ------
-
-	// Create a handler function to pass to NewWorker(will be bound to Worker struct)
-	workerHandler := func(ctx context.Context, message queue.Message) error {
-		log.Printf(
-			"WORKER RECEIVED: type=%s data=%v",
-			message.Type,
-			message.Data,
-		)
-
-		// Using a switch-case for dealing with each event types. Add functions here if you need be.
-		switch message.Type {
-		case queue.QueueMsgUserCreated:
-			log.Printf(
-				"Switch case for QueueMsgUserCreated resolved.",
-			)
-		case queue.QueueMsgUserUpdated:
-			log.Printf(
-				"Switch case for QueueMsgUserUpdated resolved.",
-			)
-		case queue.QueueMsgUserDeleted:
-			log.Printf(
-				"Switch case for QueueMsgUserDeleted resolved.",
-			)
-		case queue.QueueMsgPostCreated:
-			log.Printf(
-				"Switch case for QueueMsgPostCreated resolved.",
-			)
-		case queue.QueueMsgPostUpdated:
-			log.Printf(
-				"Switch case for QueueMsgPostUpdated resolved.",
-			)
-		case queue.QueueMsgPostDeleted:
-			log.Printf(
-				"Switch case for QueueMsgPostDeleted resolved.",
-			)
-		}
-		return nil
-	}
-
-	worker := queue.NewWorker( // create a queue worker
+	cacheClient := cache.NewRedisCache(
 		redisClient,
-		string(queue.StreamPost),
-		"post-workers",
-		"worker-1",
-		workerHandler,
-		slog.Default(),
+		cfg.CacheActive,
+		cfg.RedisCacheExpiry,
 	)
 
-	go func() { // start the queue worker
-		if err := worker.Run(context.Background()); err != nil {
-			log.Fatal("Queue worker stopped:", err)
+	// ------ Create a queue client and event publisher ------
+	queueClient := queue.NewRedisQueue(
+		redisClient,
+	)
+
+	eventPublisher := events.NewPublisher(
+		queueClient,
+		events.DefaultStream,
+	)
+	// ------ End create a queue client and event publisher ------
+
+	// ------ Create server ------
+	database := db.New(conn)                                                  // connecting database to sqlc's queries. "database" contains all sqlc queries.
+	srv := server.NewServer(database, conn, cfg, cacheClient, eventPublisher) // Server struct coming from server.go. Create a new server instance
+	// ------ End create server ------
+
+	// ------ Background workers ------
+	worker := workers.New(
+		redisClient,
+		// cacheClient,
+		srv.Logger,
+	)
+
+	ctx, cancel := signal.NotifyContext(
+		context.Background(),
+		os.Interrupt,
+		syscall.SIGTERM,
+	)
+	defer cancel()
+
+	go func() {
+		if err := worker.Run(ctx); err != nil &&
+			!errors.Is(err, context.Canceled) {
+			log.Printf("Queue worker stopped: %v", err)
+			cancel()
 		}
 	}()
-	// ------ End create a queue worker ------
-
-	database := db.New(conn)                                  // connecting database to sqlc's queries. "database" contains all sqlc queries.
-	srv := server.NewServer(database, conn, cfg, redisClient) // Server struct coming from server.go. Create a new server instance
+	// ------ Background workers ------
 
 	// Server options like router and port
 	// On windows, to run without compiling the server, use "go run ."

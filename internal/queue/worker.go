@@ -3,9 +3,8 @@ package queue
 import (
 	"context"
 	"encoding/json"
-	"errors"
+	"fmt"
 	"log/slog"
-	"strings"
 	"time"
 
 	redis "github.com/redis/go-redis/v9"
@@ -55,21 +54,19 @@ func NewWorker(
 // SUCCESS
 //  ↓
 // XAck()
+// 	return strings.Contains(
+// 		err.Error(),
+// 		"BUSYGROUP",
+// 	)
+// }
 
 func (worker *Worker) Run(ctx context.Context) error {
-	err := worker.client.XGroupCreateMkStream( // When the worker starts, it needs to make sure the group exists
-		ctx,
-		worker.stream,
-		worker.consumerGroup,
-		"0",
-	).Err()
-
-	if err != nil &&
-		!isConsumerGroupExistsError(err) {
+	err := worker.createConsumerGroup(ctx)
+	if err != nil {
 		return err
 	}
 
-	worker.logger.Info( // check if queue started or not
+	worker.logger.Info(
 		"queue worker started",
 		"stream", worker.stream,
 		"consumer_group", worker.consumerGroup,
@@ -77,47 +74,47 @@ func (worker *Worker) Run(ctx context.Context) error {
 	)
 
 	for {
-		messages, err := worker.client.XReadGroup( // the worker starts reading
+		select {
+		case <-ctx.Done():
+			worker.logger.Info("queue worker stopped")
+			return ctx.Err()
+
+		default:
+		}
+
+		messages, err := worker.client.XReadGroup(
 			ctx,
 			&redis.XReadGroupArgs{
-				Group:    worker.consumerGroup,         // Which consumer group is reading
-				Consumer: worker.consumer,              // Which worker within the group is reading
-				Streams:  []string{worker.stream, ">"}, // input messages that have never been delivered to another consumer in this group
+				Group:    worker.consumerGroup,
+				Consumer: worker.consumer,
+				Streams:  []string{worker.stream, ">"},
 				Count:    10,
-				Block:    5 * time.Second, // makes sure the worker doesn't constantly hammer Redis
+				Block:    30 * time.Second,
 			},
 		).Result()
 
 		if err != nil {
-			if errors.Is(err, redis.Nil) {
-				continue
-			}
-
 			if ctx.Err() != nil {
 				return ctx.Err()
 			}
 
-			return err
-		}
+			if err == redis.Nil {
+				continue
+			}
 
-		worker.logger.Info( // check if XReadGroup received the message
-			"queue messages received",
-			"count", len(messages),
-		)
+			worker.logger.Error(
+				"failed to read queue",
+				"error", err,
+			)
+
+			continue
+		}
 
 		for _, stream := range messages {
 			for _, message := range stream.Messages {
-
-				worker.logger.Info( // for checking if messages are coming upto here before being processes
-					"processing queue message",
-					"message_id", message.ID,
-					"type", message.Values["type"],
-				)
-
-				if err := worker.process(ctx, message); err != nil { // if processing a message failed, throw err
+				if err := worker.process(ctx, message); err != nil {
 					worker.logger.Error(
-						"queue message failed",
-						"stream", worker.stream,
+						"failed to process queue message",
 						"message_id", message.ID,
 						"error", err,
 					)
@@ -125,12 +122,14 @@ func (worker *Worker) Run(ctx context.Context) error {
 					continue
 				}
 
-				if err := worker.client.XAck( // runs after successfully processing message(i.e acknowledged)
+				_, err = worker.client.XAck(
 					ctx,
 					worker.stream,
 					worker.consumerGroup,
 					message.ID,
-				).Err(); err != nil {
+				).Result()
+
+				if err != nil {
 					worker.logger.Error(
 						"failed to acknowledge queue message",
 						"message_id", message.ID,
@@ -142,38 +141,46 @@ func (worker *Worker) Run(ctx context.Context) error {
 	}
 }
 
-func (worker *Worker) process(
-	ctx context.Context,
-	message redis.XMessage,
-) error {
+func (worker *Worker) createConsumerGroup(ctx context.Context) error {
+	err := worker.client.XGroupCreateMkStream(
+		ctx,
+		worker.stream,
+		worker.consumerGroup,
+		"0",
+	).Err()
+
+	if err != nil && err.Error() != "BUSYGROUP Consumer Group name already exists" {
+		return err
+	}
+
+	return nil
+}
+
+func (worker *Worker) process(ctx context.Context, message redis.XMessage) error {
 	messageType, ok := message.Values["type"].(string)
 	if !ok {
-		return errors.New("queue message type missing")
+		return fmt.Errorf("invalid message type")
 	}
 
 	data, ok := message.Values["data"].(string)
 	if !ok {
-		return errors.New("queue message data missing")
+		return fmt.Errorf("invalid message data")
 	}
 
-	var decoded any
+	var payload json.RawMessage
 
-	if err := json.Unmarshal([]byte(data), &decoded); err != nil {
-		return err
+	if err := json.Unmarshal(
+		[]byte(data),
+		&payload,
+	); err != nil {
+		return fmt.Errorf("decode message: %w", err)
 	}
 
 	return worker.handler(
 		ctx,
 		Message{
-			Type: MessageType(messageType), // Casting.converting it to "MessageType" type(see internal/queue/queue.go)
-			Data: decoded,
+			Type: messageType,
+			Data: payload,
 		},
-	)
-}
-
-func isConsumerGroupExistsError(err error) bool {
-	return strings.Contains(
-		err.Error(),
-		"BUSYGROUP",
 	)
 }

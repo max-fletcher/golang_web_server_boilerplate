@@ -8,13 +8,12 @@ import (
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/cache"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/config"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/db"
+	"github.com/max-fletcher/golang_web_server_boilerplate/internal/events"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/handlers"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/logger"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/posts"
 	posts_with_users "github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/posts-with-users"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/users"
-	"github.com/max-fletcher/golang_web_server_boilerplate/internal/queue"
-	redis "github.com/redis/go-redis/v9"
 )
 
 // The file and the function named NewServer(below) is for creating a server instance and binding dependencies to it before returning it.
@@ -33,7 +32,7 @@ type Server struct {
 // The name "NewServer" is a naming convention for functions that behave like a constructor. This func will create a new server.
 // It is creating and passing a pointer to a server struct because remember, functions that return structs actually return copies of the struct
 // and not the object itself
-func NewServer(database *db.Queries, conn *sql.DB, cfg *config.Config, redisClient *redis.Client) *Server {
+func NewServer(database *db.Queries, conn *sql.DB, cfg *config.Config, cache cache.Cache, events events.Publisher) *Server {
 	// we will be sending baseUrl to handlers where we can in turn send it to LocalFileUpload for storing files with full paths to serve as static assets
 	var baseUrl string
 
@@ -44,20 +43,20 @@ func NewServer(database *db.Queries, conn *sql.DB, cfg *config.Config, redisClie
 		baseUrl = cfg.LiveBaseUrl
 	}
 
-	cacheClient := cache.NewRedisCache(redisClient, cfg.CacheActive) // attach redis client to cache struct
-	queueClient := queue.NewRedisQueue(redisClient)                  // attach redis client to queue struct as well
+	// cacheClient := cache.NewRedisCache(cache.client, cfg.CacheActive) // attach redis client to cache struct
+	// queueClient := queue.NewRedisQueue(redisClient)                   // attach redis client to queue struct as well
 
 	// (using DI) initialize child structs and passing them so they can be in turn used to initialize parent structs
 	userRepository := users.NewRepository(database)
-	userService := users.NewService(userRepository, cacheClient, cfg.RedisCacheExpiry, queueClient)
+	userService := users.NewService(userRepository, cache, events)
 	userHandler := users.NewHandler(userService)
 
 	postRepository := posts.NewRepository(database)
-	postService := posts.NewService(postRepository, userService, cacheClient, cfg.RedisCacheExpiry, queueClient)
+	postService := posts.NewService(postRepository, userService, cache, events)
 	postHandler := posts.NewHandler(postService, baseUrl)
 
 	postWithUserRepository := posts_with_users.NewRepository(database)
-	postWithUserService := posts_with_users.NewService(postWithUserRepository, conn, database, cacheClient, cfg.RedisCacheExpiry, queueClient)
+	postWithUserService := posts_with_users.NewService(postWithUserRepository, conn, database, cache)
 	postWithUserHandler := posts_with_users.NewHandler(postWithUserService)
 
 	server := &Server{

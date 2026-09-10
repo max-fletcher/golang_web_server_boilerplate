@@ -14,7 +14,7 @@ import (
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/cache"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/db"
 	common_errors "github.com/max-fletcher/golang_web_server_boilerplate/internal/errors"
-	"github.com/max-fletcher/golang_web_server_boilerplate/internal/queue"
+	"github.com/max-fletcher/golang_web_server_boilerplate/internal/events"
 )
 
 type Service interface {
@@ -27,10 +27,9 @@ type Service interface {
 }
 
 type service struct {
-	repository  Repository
-	cache       cache.Cache
-	cacheExpiry time.Duration
-	queue       queue.Queue
+	repository Repository
+	cache      cache.Cache
+	events     events.Publisher
 }
 
 // Using different structure so that we can prevent circular dependency
@@ -40,12 +39,11 @@ type service struct {
 //			repository: NewRepository(db),
 //		}
 //	}
-func NewService(repository Repository, cache cache.Cache, cacheExpiry time.Duration, queue queue.Queue) *service {
+func NewService(repository Repository, cache cache.Cache, events events.Publisher) *service {
 	return &service{
-		repository:  repository,
-		cache:       cache,
-		cacheExpiry: cacheExpiry,
-		queue:       queue,
+		repository: repository,
+		cache:      cache,
+		events:     events,
 	}
 }
 
@@ -104,13 +102,14 @@ func (service *service) Create(ctx context.Context, params CreateUserRequest) (d
 		fmt.Println("Failed to invalidate by prefix")
 	}
 
-	if err := service.queue.Publish(ctx, queue.StreamUser, queue.Message{ // Publish event
-		Type: queue.QueueMsgUserCreated, // using const(sub for enum) here
-		Data: map[string]any{
-			"user_id": user.ID,
+	err = service.events.Publish(ctx, events.QueueEventUserCreated,
+		events.UserCreated{
+			ID: user.ID,
 		},
-	}); err != nil {
+	)
+	if err != nil {
 		log.Printf("Failed to publish user created event: %v", err)
+		return db.User{}, err
 	}
 
 	return user, nil
@@ -157,7 +156,6 @@ func (service *service) GetAll(ctx context.Context, filterString string, limit i
 			Users: users,
 			Total: total,
 		},
-		service.cacheExpiry,
 	); err != nil {
 		// Failing to set shouldn't fail request since we did get data from database. Just debug why redis is not working
 		log.Printf("Failed to store data in redis: %v", err)
@@ -195,7 +193,7 @@ func (service *service) GetByID(ctx context.Context, id uuid.UUID) (db.User, err
 	}
 
 	fmt.Println("Cache miss")
-	if err := service.cache.Set(ctx, cacheKey, user, service.cacheExpiry); err != nil { // Set cache
+	if err := service.cache.Set(ctx, cacheKey, user); err != nil { // Set cache
 		// Failing to set shouldn't fail request since we did get data from database. Just debug why redis is not working
 		log.Printf("Failed to store data in redis: %v", err)
 	}
@@ -275,13 +273,14 @@ func (service *service) Update(ctx context.Context, id uuid.UUID, params UpdateU
 		fmt.Println("Failed to invalidate by prefix")
 	}
 
-	if err := service.queue.Publish(ctx, queue.StreamUser, queue.Message{ // Publish event
-		Type: queue.QueueMsgUserUpdated, // using const(sub for enum) here
-		Data: map[string]any{
-			"user_id": id,
+	err = service.events.Publish(ctx, events.QueueEventUserUpdated,
+		events.UserUpdated{
+			ID: user.ID,
 		},
-	}); err != nil {
+	)
+	if err != nil {
 		log.Printf("Failed to publish user updated event: %v", err)
+		return db.User{}, err
 	}
 
 	return user, nil
@@ -308,13 +307,14 @@ func (service *service) Delete(ctx context.Context, id uuid.UUID) (db.User, erro
 		fmt.Println("Failed to invalidate by prefix")
 	}
 
-	if err := service.queue.Publish(ctx, queue.StreamUser, queue.Message{ // Publish event
-		Type: queue.QueueMsgUserDeleted, // using const(sub for enum) here
-		Data: map[string]any{
-			"user_id": id,
+	err = service.events.Publish(ctx, events.QueueEventUserDeleted,
+		events.UserDeleted{
+			ID: user.ID,
 		},
-	}); err != nil {
+	)
+	if err != nil {
 		log.Printf("Failed to publish user deleted event: %v", err)
+		return db.User{}, err
 	}
 
 	return user, nil

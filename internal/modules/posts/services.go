@@ -14,7 +14,7 @@ import (
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/cache"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/db"
 	common_errors "github.com/max-fletcher/golang_web_server_boilerplate/internal/errors"
-	"github.com/max-fletcher/golang_web_server_boilerplate/internal/queue"
+	"github.com/max-fletcher/golang_web_server_boilerplate/internal/events"
 )
 
 type UserExistenceChecker interface { // For DI. Used in validating user in structs.go
@@ -33,17 +33,20 @@ type service struct {
 	repository  Repository
 	userChecker UserExistenceChecker // Using DI. See server/server.go where we are passing user service as 2nd param here.
 	cache       cache.Cache
-	cacheExpiry time.Duration
-	queue       queue.Queue
+	events      events.Publisher
 }
 
-func NewService(repository Repository, userChecker UserExistenceChecker, cache cache.Cache, cacheExpiry time.Duration, queue queue.Queue) *service {
+func NewService(
+	repository Repository,
+	userChecker UserExistenceChecker,
+	cache cache.Cache,
+	events events.Publisher,
+) *service {
 	return &service{
 		repository:  repository,
 		userChecker: userChecker, // Using DI. See server/server.go where we are passing user service as 2nd param here.
 		cache:       cache,
-		cacheExpiry: cacheExpiry,
-		queue:       queue,
+		events:      events,
 	}
 }
 
@@ -74,13 +77,14 @@ func (service *service) Create(ctx context.Context, createPostInput CreatePostIn
 		fmt.Println("Failed to invalidate by prefix")
 	}
 
-	if err := service.queue.Publish(ctx, queue.StreamPost, queue.Message{ // Publish event
-		Type: queue.QueueMsgPostCreated, // using const(sub for enum) here
-		Data: map[string]any{
-			"post_id": post.ID,
+	err = service.events.Publish(ctx, events.QueueEventPostCreated,
+		events.PostCreated{
+			ID: post.ID,
 		},
-	}); err != nil {
+	)
+	if err != nil {
 		log.Printf("Failed to publish post created event: %v", err)
+		return db.Post{}, err
 	}
 
 	return post, nil
@@ -127,7 +131,6 @@ func (service *service) GetAll(ctx context.Context, filterString string, limit i
 			Posts: posts,
 			Total: total,
 		},
-		service.cacheExpiry,
 	); err != nil {
 		// Failing to set shouldn't fail request since we did get data from database. Just debug why redis is not working
 		log.Printf("Failed to store data in redis: %v", err)
@@ -165,7 +168,7 @@ func (service *service) GetByID(ctx context.Context, id uuid.UUID) (db.Post, err
 	}
 
 	fmt.Println("Cache miss")
-	if err := service.cache.Set(ctx, cacheKey, post, service.cacheExpiry); err != nil { // Set cache
+	if err := service.cache.Set(ctx, cacheKey, post); err != nil { // Set cache
 		// Failing to set shouldn't fail request since we did get data from database. Just debug why redis is not working
 		log.Printf("Failed to store data in redis: %v", err)
 	}
@@ -186,7 +189,7 @@ func (service *service) Update(ctx context.Context, id uuid.UUID, updatePostInpu
 	}
 	// 1st param: context for the request
 	// 2nd param: the struct that we want to pass so it saves the underlying data in DB
-	user, err := service.repository.Update(ctx, db.UpdatePostParams{
+	post, err := service.repository.Update(ctx, db.UpdatePostParams{
 		ID:        id,
 		Title:     updatePostInput.Title,
 		Content:   formatters.StringPointerToNullString(updatePostInput.Content),
@@ -208,13 +211,14 @@ func (service *service) Update(ctx context.Context, id uuid.UUID, updatePostInpu
 		fmt.Println("Failed to invalidate by prefix")
 	}
 
-	if err := service.queue.Publish(ctx, queue.StreamPost, queue.Message{ // Publish event
-		Type: queue.QueueMsgPostUpdated, // using const(sub for enum) here
-		Data: map[string]any{
-			"post_id": id,
+	err = service.events.Publish(ctx, events.QueueEventPostUpdated,
+		events.PostUpdated{
+			ID: existingPost.ID,
 		},
-	}); err != nil {
+	)
+	if err != nil {
 		log.Printf("Failed to publish post updated event: %v", err)
+		return db.Post{}, err
 	}
 
 	if existingPost.Photo.Valid { // delete old file/photo if exists
@@ -224,7 +228,7 @@ func (service *service) Update(ctx context.Context, id uuid.UUID, updatePostInpu
 		}
 	}
 
-	return user, nil
+	return post, nil
 }
 
 func (service *service) Delete(ctx context.Context, id uuid.UUID, baseUrl string) (db.Post, error) {
@@ -248,13 +252,14 @@ func (service *service) Delete(ctx context.Context, id uuid.UUID, baseUrl string
 		fmt.Println("Failed to invalidate by prefix")
 	}
 
-	if err := service.queue.Publish(ctx, queue.StreamPost, queue.Message{ // Publish event
-		Type: queue.QueueMsgPostDeleted, // using const(sub for enum) here
-		Data: map[string]any{
-			"post_id": id,
+	err = service.events.Publish(ctx, events.QueueEventPostDeleted,
+		events.PostDeleted{
+			ID: existingPost.ID,
 		},
-	}); err != nil {
+	)
+	if err != nil {
 		log.Printf("Failed to publish post deleted event: %v", err)
+		return db.Post{}, err
 	}
 
 	if existingPost.Photo.Valid { // delete old file/photo if exists
