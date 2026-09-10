@@ -10,6 +10,8 @@ import (
 	redis "github.com/redis/go-redis/v9"
 )
 
+// Redis Implementaiton
+
 type redisCache struct {
 	client     *redis.Client
 	isActive   bool

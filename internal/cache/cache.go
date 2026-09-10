@@ -5,6 +5,8 @@ import (
 	"time"
 )
 
+// Cache Abstraction
+
 type CacheKeyValidPrefixes string
 
 const (

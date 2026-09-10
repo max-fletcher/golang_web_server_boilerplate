@@ -76,6 +76,8 @@ func main() {
 	//    connection/pool to an external system (just like the database connection created here) and although several parts of your
 	//    application depend on that same client, server.go is supposed to be responsible only for the HTTP-specific
 	//    infrastructure(i.e server) of the application.
+	// BTW, you can initialize this client from either internal/queue/redis/redis.go or internal/cache/redis/redis.go(both have same function NewClient).
+	// The reason it is duplicated is because both the cache(redisCache struct) and queue(redisQueue) needs the same redis client to function
 	redisClient, err := redis.NewClient(cfg.RedisURL)
 	if err != nil {
 		log.Fatal("Can't connect to Redis:", err)

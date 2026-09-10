@@ -7,6 +7,11 @@ import (
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/queue"
 )
 
+// This struct works like a strategy pattern. publisher struct satisfies Publisher interface. It accepts a queue.Queue struct
+// and publisher.Publish method just executes the queue.Queue's publish. The difference is the eventType params in
+// publisher.Publish is typed EventType, whereas queue.publish's eventType is just a string. If you want to add new EventTypes,
+// add them where EventType is declared(i.e internal/events/events.go)
+
 type Publisher interface {
 	Publish(ctx context.Context, eventType EventType, payload any) error
 }
