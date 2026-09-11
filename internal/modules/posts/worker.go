@@ -26,11 +26,11 @@ func (worker *Worker) HandleCreated(ctx context.Context, message queue.Message) 
 	var event events.PostCreated
 
 	if err := json.Unmarshal(message.Data, &event); err != nil {
-		return fmt.Errorf("decode post.created event: %w", err)
+		return fmt.Errorf("decode post.created event: %w \n", err)
 	}
 
 	// Do something with event.ID.
-	fmt.Printf("Post created event fired: %v", event)
+	fmt.Printf("Post created event fired: %v \n", event)
 
 	return nil
 }
@@ -39,11 +39,11 @@ func (worker *Worker) HandleUpdated(ctx context.Context, message queue.Message) 
 	var event events.PostUpdated
 
 	if err := json.Unmarshal(message.Data, &event); err != nil {
-		return fmt.Errorf("decode post.updated event: %w", err)
+		return fmt.Errorf("decode post.updated event: %w \n", err)
 	}
 
 	// Do something with event.ID.
-	fmt.Printf("Post updated event fired: %v", event)
+	fmt.Printf("Post updated event fired: %v \n", event)
 
 	return nil
 }
@@ -52,11 +52,11 @@ func (worker *Worker) HandleDeleted(ctx context.Context, message queue.Message) 
 	var event events.PostDeleted
 
 	if err := json.Unmarshal(message.Data, &event); err != nil {
-		return fmt.Errorf("decode post.deleted event: %w", err)
+		return fmt.Errorf("decode post.deleted event: %w \n", err)
 	}
 
 	// Do something with event.ID.
-	fmt.Printf("Post deleted event fired: %v", event)
+	fmt.Printf("Post deleted event fired: %v \n", event)
 
 	return nil
 }

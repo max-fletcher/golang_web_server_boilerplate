@@ -1,7 +1,7 @@
 package workers
 
 import (
-	"github.com/redis/go-redis/v9"
+	redisClient "github.com/redis/go-redis/v9"
 
 	"log/slog"
 
@@ -9,6 +9,7 @@ import (
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/posts"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/users"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/queue"
+	redis_queue "github.com/max-fletcher/golang_web_server_boilerplate/internal/queue/redis"
 )
 
 // func New() does the following:
@@ -28,10 +29,10 @@ import (
 // event-handler bindings isn't gone; it lives somewhere in memory, and when we are calling queue.worker.handler, the bindings are used
 // to map out which method/handler to execute
 func New(
-	redisClient *redis.Client,
+	redisClient *redisClient.Client,
 	// cacheClient cache.Cache, // Bind and dependency here that you may want to pass down to other workers below
 	logger *slog.Logger,
-) *queue.Worker {
+) *redis_queue.Worker {
 	dispatcher := queue.NewDispatcher()
 
 	userWorker := users.NewWorker(
@@ -72,7 +73,7 @@ func New(
 		postWorker.HandleDeleted,
 	)
 
-	return queue.NewWorker(
+	return redis_queue.NewWorker(
 		redisClient,
 		events.DefaultStream,
 		"app-workers",

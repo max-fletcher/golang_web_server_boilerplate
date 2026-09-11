@@ -29,11 +29,11 @@ func (worker *Worker) HandleCreated(ctx context.Context, message queue.Message) 
 		message.Data,
 		&event,
 	); err != nil {
-		return fmt.Errorf("decode user.created event: %w", err)
+		return fmt.Errorf("decode user.created event: %w \n", err)
 	}
 
 	// Do something with event.ID.
-	fmt.Printf("User created event fired: %v", event)
+	fmt.Printf("User created event fired: %v \n", event)
 
 	return nil
 }
@@ -45,11 +45,11 @@ func (worker *Worker) HandleUpdated(ctx context.Context, message queue.Message) 
 		message.Data,
 		&event,
 	); err != nil {
-		return fmt.Errorf("decode user.updated event: %w", err)
+		return fmt.Errorf("decode user.updated event: %w \n", err)
 	}
 
 	// Do something with event.ID.
-	fmt.Printf("User updated event fired: %v", event)
+	fmt.Printf("User updated event fired: %v \n", event)
 
 	return nil
 }
@@ -61,11 +61,11 @@ func (worker *Worker) HandleDeleted(ctx context.Context, message queue.Message) 
 		message.Data,
 		&event,
 	); err != nil {
-		return fmt.Errorf("decode user.deleted event: %w", err)
+		return fmt.Errorf("decode user.deleted event: %w \n", err)
 	}
 
 	// Do something with event.ID.
-	fmt.Printf("User deleted event fired: %v", event)
+	fmt.Printf("User deleted event fired: %v \n", event)
 
 	return nil
 }

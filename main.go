@@ -27,12 +27,12 @@ import (
 
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
-	"github.com/max-fletcher/golang_web_server_boilerplate/internal/cache"
+	redis_cache "github.com/max-fletcher/golang_web_server_boilerplate/internal/cache/redis"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/config"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/db"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/events"
-	"github.com/max-fletcher/golang_web_server_boilerplate/internal/queue"
-	"github.com/max-fletcher/golang_web_server_boilerplate/internal/queue/redis"
+	redis_queue "github.com/max-fletcher/golang_web_server_boilerplate/internal/queue/redis"
+	"github.com/max-fletcher/golang_web_server_boilerplate/internal/redis"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/server"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/workers"
 )
@@ -84,14 +84,14 @@ func main() {
 	}
 	defer redisClient.Close()
 
-	cacheClient := cache.NewRedisCache(
+	cacheClient := redis_cache.NewRedisCache(
 		redisClient,
 		cfg.CacheActive,
 		cfg.RedisCacheExpiry,
 	)
 
 	// ------ Create a queue client and event publisher ------
-	queueClient := queue.NewRedisQueue(
+	queueClient := redis_queue.NewRedisQueue(
 		redisClient,
 	)
 

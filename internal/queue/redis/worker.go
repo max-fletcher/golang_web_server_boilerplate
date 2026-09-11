@@ -1,4 +1,4 @@
-package queue
+package redis_queue
 
 import (
 	"context"
@@ -7,19 +7,19 @@ import (
 	"log/slog"
 	"time"
 
-	redis "github.com/redis/go-redis/v9"
+	"github.com/max-fletcher/golang_web_server_boilerplate/internal/queue"
+	"github.com/redis/go-redis/v9"
+	redisClient "github.com/redis/go-redis/v9"
 )
 
 // Worker that will handle redis queue messages
 
-type Handler func(ctx context.Context, message Message) error // used to define handler's type below
-
 type Worker struct {
-	client        *redis.Client
+	client        *redisClient.Client
 	stream        string
 	consumerGroup string
 	consumer      string
-	handler       Handler
+	handler       queue.Handler
 	logger        *slog.Logger
 }
 
@@ -27,12 +27,16 @@ type Worker struct {
 // a) a handler(a func that can do what you want) as an arg so it is bound to this worker struct and can be used as long as we pass the client to it
 // b) other params and methods that we can use e.g streams are like channels/topics
 // c) Run is to run the queue worker and process takes messages and runs the handler against them
+// Below: Consumer group = "Which team of workers am I part of?" and Consumer = "Which individual worker am I?". If your application grows
+// and you need multiple workers to keep up with handling events(either across different applications or goroutines), you can define say
+// consumer = "worker-2" with same consumerGroup name(since we need the new worker to take events from same consumerGroups) and use it so more
+// workers can consume events and process them faster
 func NewWorker(
-	client *redis.Client,
+	client *redisClient.Client,
 	stream string,
-	consumerGroup string,
-	consumer string,
-	handler Handler,
+	consumerGroup string, // Consumer group = "Which team of workers am I part of?"
+	consumer string, // Consumer = "Which individual worker am I?"
+	handler queue.Handler,
 	logger *slog.Logger,
 ) *Worker {
 	return &Worker{
@@ -74,31 +78,28 @@ func (worker *Worker) Run(ctx context.Context) error {
 	)
 
 	for {
-		select {
-		case <-ctx.Done():
-			worker.logger.Info("queue worker stopped")
-			return ctx.Err()
-
-		default:
-		}
-
 		messages, err := worker.client.XReadGroup(
 			ctx,
-			&redis.XReadGroupArgs{
-				Group:    worker.consumerGroup,
-				Consumer: worker.consumer,
+			&redisClient.XReadGroupArgs{
+				Group:    worker.consumerGroup, // Means: Read as part of this consumer group
+				Consumer: worker.consumer,      // Means: This particular worker is requesting messages
 				Streams:  []string{worker.stream, ">"},
-				Count:    10,
-				Block:    30 * time.Second,
+				Count:    10, // Means: this worker can ask Redis for up to 10 messages at once
+				// Means: If there are currently no messages, wait for up to 5 seconds for one to arrive
+				// Related to the timeout issue faced earlier. If Redis client's network ReadTimeout is shorter than the Redis BLOCK duration, you can get
+				// "i/o timeout" even though Redis itself is functioning.
+				Block: 30 * time.Second,
 			},
 		).Result()
 
 		if err != nil {
 			if ctx.Err() != nil {
+				worker.logger.Info("queue worker stopped")
 				return ctx.Err()
 			}
 
-			if err == redis.Nil {
+			// Retry if when key does not exist. Else, log error below(worker.logger.Error)
+			if err == redisClient.Nil {
 				continue
 			}
 
@@ -122,6 +123,8 @@ func (worker *Worker) Run(ctx context.Context) error {
 					continue
 				}
 
+				// signals to redis that the message was processed successfully causing it to be marked as complete
+				// and no retries/reissue to other worker happens
 				_, err = worker.client.XAck(
 					ctx,
 					worker.stream,
@@ -178,7 +181,7 @@ func (worker *Worker) process(ctx context.Context, message redis.XMessage) error
 
 	return worker.handler(
 		ctx,
-		Message{
+		queue.Message{
 			Type: messageType,
 			Data: payload,
 		},
