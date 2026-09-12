@@ -56,13 +56,12 @@ func (service *service) Create(ctx context.Context, params CreateUserRequest) (d
 			Email: params.Email,
 		}
 	}
-
 	// If error exists but doesn't match the errors that GetByEmail() sends back
 	var userWithEmailNotFoundErr ErrUserWithEmailNotFound
 	var userFetchFailedErr ErrUserFetchFailed
 	if err != nil && !errors.As(err, &userWithEmailNotFoundErr) && !errors.As(err, &userFetchFailedErr) {
-		return db.User{}, ErrUserFetchFailed{
-			fetchErr: err,
+		return db.User{}, common_errors.ErrInternalServerError{
+			Err: err,
 		}
 	}
 
@@ -85,7 +84,6 @@ func (service *service) Create(ctx context.Context, params CreateUserRequest) (d
 		UpdatedAt: time.Now().UTC(),
 	})
 	if err != nil {
-
 		pgErr := common_errors.GetPostgresError(err)
 		if pgErr.Code == constants.PGUniqueViolationCode {
 			return db.User{}, ErrUserWithEmailAlreadyExists{
@@ -94,7 +92,7 @@ func (service *service) Create(ctx context.Context, params CreateUserRequest) (d
 		}
 
 		return db.User{}, ErrUserCreateFailed{
-			createErr: err,
+			CreateErr: err,
 		}
 	}
 

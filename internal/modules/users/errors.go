@@ -127,7 +127,7 @@ func (e ErrUserFetchFailed) Unwrap() error { // Unwrap shows underlying details 
 var _ common_errors.ErrHTTPServerError = ErrUserFetchFailed{}
 
 type ErrUserCreateFailed struct {
-	createErr error
+	CreateErr error
 }
 
 func (e ErrUserCreateFailed) Error() string {
@@ -143,7 +143,7 @@ func (e ErrUserCreateFailed) ClientMsg() string {
 }
 
 func (e ErrUserCreateFailed) Unwrap() error {
-	return e.createErr
+	return e.CreateErr
 }
 
 var _ common_errors.ErrHTTPServerError = ErrUserCreateFailed{}

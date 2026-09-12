@@ -11,6 +11,7 @@ import (
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/events"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/handlers"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/logger"
+	"github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/auth"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/posts"
 	posts_with_users "github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/posts-with-users"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/users"
@@ -23,6 +24,7 @@ type Server struct {
 	config               *config.Config
 	Router               http.Handler // Reference to router instance
 	CommonHandler        *handlers.Handler
+	Authhandler          *auth.Handler
 	UsersHandler         *users.Handler
 	PostsHandler         *posts.Handler
 	PostsWithUserHandler *posts_with_users.Handler
@@ -47,9 +49,13 @@ func NewServer(database *db.Queries, conn *sql.DB, cfg *config.Config, cache cac
 	// queueClient := queue.NewRedisQueue(redisClient)                   // attach redis client to queue struct as well
 
 	// (using DI) initialize child structs and passing them so they can be in turn used to initialize parent structs
+
 	userRepository := users.NewRepository(database)
 	userService := users.NewService(userRepository, cache, events)
 	userHandler := users.NewHandler(userService)
+
+	authService := auth.NewService(userService, events, cfg.JWTSecret, cfg.JWTExpiry)
+	authHandler := auth.NewHandler(authService)
 
 	postRepository := posts.NewRepository(database)
 	postService := posts.NewService(postRepository, userService, cache, events)
@@ -62,6 +68,7 @@ func NewServer(database *db.Queries, conn *sql.DB, cfg *config.Config, cache cac
 	server := &Server{
 		config:               cfg,
 		CommonHandler:        handlers.New(database),
+		Authhandler:          authHandler,
 		UsersHandler:         userHandler,
 		PostsHandler:         postHandler,
 		PostsWithUserHandler: postWithUserHandler,

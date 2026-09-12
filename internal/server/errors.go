@@ -2,6 +2,7 @@ package server
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/max-fletcher/golang_web_server_boilerplate/helpers/responses"
@@ -9,6 +10,7 @@ import (
 )
 
 func (server *Server) HandleError(w http.ResponseWriter, err error) {
+	fmt.Println("Error", err)
 	// Errors generated from validation or invalid JSON that contains map of key-values
 	var httpErrorMapErr common_errors.ErrHTTPWithErrorMap
 	if errors.As(err, &httpErrorMapErr) {

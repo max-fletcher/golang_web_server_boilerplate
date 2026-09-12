@@ -85,7 +85,7 @@ func (service *service) Create(ctx context.Context, createPostWithUserInput Crea
 		}
 
 		return db.User{}, ErrUserCreateFailed{
-			createErr: err,
+			CreateErr: err,
 		}
 	}
 

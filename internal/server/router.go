@@ -47,6 +47,11 @@ func (server *Server) routes() http.Handler {
 		router.Get("/healthz", server.Handle(server.CommonHandler.HealthCheck))
 		router.Get("/error", server.Handle(server.CommonHandler.ErrorResponse))
 
+		router.Route("/auth", func(router chi.Router) {
+			router.Post("/register", server.Handle(server.Authhandler.UserRegistration))
+			router.Post("/login", server.Handle(server.Authhandler.UserLogin))
+		})
+
 		router.Route("/users", func(router chi.Router) {
 			router.Get("/", server.Handle(server.UsersHandler.GetAll))
 			router.Post("/", server.Handle(server.UsersHandler.Create))

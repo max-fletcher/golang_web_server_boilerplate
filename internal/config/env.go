@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"time"
 )
 
@@ -15,6 +16,8 @@ type Config struct {
 	RedisURL         string
 	RedisCacheExpiry time.Duration
 	CacheActive      bool
+	JWTSecret        string
+	JWTExpiry        time.Duration
 }
 
 func Load() (*Config, error) {
@@ -27,6 +30,21 @@ func Load() (*Config, error) {
 	if DB_URL == "" {
 		return nil, fmt.Errorf("DB_URL is not set")
 	}
+
+	JWT_SECRET := os.Getenv("JWT_SECRET")
+	if JWT_SECRET == "" {
+		return nil, fmt.Errorf("JWT_SECRET is not set")
+	}
+
+	JWT_EXPIRY := os.Getenv("JWT_EXPIRY")
+	if JWT_EXPIRY == "" {
+		return nil, fmt.Errorf("JWT_EXPIRY is not set")
+	}
+	JWT_EXPIRY_INT, err := strconv.Atoi(JWT_EXPIRY)
+	if err != nil {
+		return nil, fmt.Errorf("Error converting JWT_EXPIRY to int")
+	}
+	JWT_EXPIRY_DURATION := time.Duration(JWT_EXPIRY_INT) * time.Minute
 
 	APP_MODE := os.Getenv("APP_MODE")
 	if APP_MODE == "" {
@@ -79,5 +97,7 @@ func Load() (*Config, error) {
 		RedisURL:         REDIS_URL,
 		RedisCacheExpiry: REDIS_CACHE_EXPIRY_MINUTES,
 		CacheActive:      CACHE_ACTIVE_BOOL,
+		JWTSecret:        JWT_SECRET,
+		JWTExpiry:        JWT_EXPIRY_DURATION,
 	}, nil
 }

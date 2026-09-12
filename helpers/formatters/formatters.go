@@ -118,7 +118,7 @@ func DatabasePostsToPosts(dbPosts []db.Post) []Post {
 			photo = &dbPost.Photo.String
 		}
 		if dbPost.Content.Valid {
-			photo = &dbPost.Content.String
+			content = &dbPost.Content.String
 		}
 
 		posts = append(posts, Post{
@@ -215,5 +215,52 @@ func StringPointerToNullString(value *string) sql.NullString {
 	return sql.NullString{
 		String: *value,
 		Valid:  true,
+	}
+}
+
+type AuthenticatedUser struct {
+	ID        uuid.UUID
+	Name      string
+	Email     string
+	Avatar    sql.NullString
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+type InnerAuthenticatedUser struct {
+	ID        uuid.UUID `json:"id"`
+	Name      string    `json:"name"`
+	Email     string    `json:"email"`
+	Avatar    *string   `json:"avatar"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+type AuthenticatedUserWithJWT struct {
+	JWT  string `json:"jwt"`
+	User InnerAuthenticatedUser
+}
+
+func ToAuthenticatedUserWithJWT(jwt string, authUser AuthenticatedUser) AuthenticatedUserWithJWT {
+	// var description *string // a var containing a pointer to a string
+	// if dbPost.Content.Valid {
+	// 	description = &dbPost.Description.String
+	// }
+
+	// *IMPORTANT: This is how you dead with nullable fields.(Sources: posts/structs.go(especially CreatePostRequest and CreatePostInput),
+	// posts/services.go and posts/formatters.go)
+	var avatar *string
+	if authUser.Avatar.Valid {
+		avatar = &authUser.Avatar.String
+	}
+
+	return AuthenticatedUserWithJWT{
+		JWT: jwt,
+		User: InnerAuthenticatedUser{
+			ID:        authUser.ID,
+			Name:      authUser.Name,
+			Email:     authUser.Email,
+			Avatar:    avatar,
+			CreatedAt: authUser.CreatedAt,
+			UpdatedAt: authUser.UpdatedAt,
+		},
 	}
 }

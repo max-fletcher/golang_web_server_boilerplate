@@ -19,6 +19,9 @@ const DefaultStream = "app:events"
 type EventType string
 
 const (
+	QueueEventAuthRegistration EventType = "auth.registration"
+	QueueEventAuthLogin        EventType = "auth.login"
+
 	QueueEventPostCreated EventType = "post.created"
 	QueueEventPostUpdated EventType = "post.updated"
 	QueueEventPostDeleted EventType = "post.deleted"

@@ -83,7 +83,6 @@ func (e ErrHashingPassword) Unwrap() error {
 
 var _ ErrHTTPServerError = ErrHashingPassword{}
 
-// Number conversion Errors
 type ErrBigInt64ToIntError struct {
 	Err error
 }
@@ -101,6 +100,25 @@ func (e ErrBigInt64ToIntError) ClientMsg() string {
 }
 
 var _ ErrHTTPBaseError = ErrBigInt64ToIntError{}
+
+// Unknown/InternalServerErrors
+type ErrInternalServerError struct {
+	Err error
+}
+
+func (e ErrInternalServerError) Error() string {
+	return "Something went wrong. Please try again."
+}
+
+func (e ErrInternalServerError) StatusCode() int {
+	return http.StatusInternalServerError
+}
+
+func (e ErrInternalServerError) ClientMsg() string {
+	return "Something went wrong. Please try again."
+}
+
+var _ ErrHTTPBaseError = ErrInternalServerError{}
 
 var (
 // common
