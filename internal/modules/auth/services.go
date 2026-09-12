@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"log"
-	"time"
 
 	constants "github.com/max-fletcher/golang_web_server_boilerplate/helpers/const"
 	"github.com/max-fletcher/golang_web_server_boilerplate/helpers/crypto"
@@ -27,17 +26,15 @@ type Service interface {
 
 type service struct {
 	userService UserService
+	jwtService  JWTService
 	events      events.Publisher
-	JWTSecret   string
-	JWTExpiry   time.Duration
 }
 
-func NewService(userService UserService, events events.Publisher, JWTSecret string, JWTExpiry time.Duration) *service {
+func NewService(userService UserService, events events.Publisher, jwtService JWTService) *service {
 	return &service{
 		userService: userService,
 		events:      events,
-		JWTSecret:   JWTSecret,
-		JWTExpiry:   JWTExpiry,
+		jwtService:  jwtService,
 	}
 }
 
@@ -54,7 +51,7 @@ func (service *service) UserRegistration(ctx context.Context, params UserRegistr
 	var userWithEmailNotFoundErr users.ErrUserWithEmailNotFound
 	var userFetchFailedErr users.ErrUserFetchFailed
 	if err != nil && !errors.As(err, &userWithEmailNotFoundErr) && !errors.As(err, &userFetchFailedErr) {
-		return AuthenticatedUser{}, "", common_errors.ErrInternalServerError{
+		return AuthenticatedUser{}, "", common_errors.ErrInternalServer{
 			Err: err,
 		}
 	}
@@ -111,7 +108,7 @@ func (service *service) UserRegistration(ctx context.Context, params UserRegistr
 		UpdatedAt: user.UpdatedAt,
 	}
 
-	jwt, err := CreateJWT(authUser, service.JWTSecret, service.JWTExpiry)
+	jwt, err := service.jwtService.GenerateJWTAccessToken(ctx, user.ID)
 	if err != nil {
 		return AuthenticatedUser{}, "", err
 	}
@@ -130,7 +127,7 @@ func (service *service) UserLogin(ctx context.Context, params UserLoginRequest) 
 	var userWithEmailNotFoundErr users.ErrUserWithEmailNotFound
 	var userFetchFailedErr users.ErrUserFetchFailed
 	if err != nil && !errors.As(err, &userWithEmailNotFoundErr) && !errors.As(err, &userFetchFailedErr) {
-		return AuthenticatedUser{}, "", common_errors.ErrInternalServerError{
+		return AuthenticatedUser{}, "", common_errors.ErrInternalServer{
 			Err: err,
 		}
 	}
@@ -162,7 +159,7 @@ func (service *service) UserLogin(ctx context.Context, params UserLoginRequest) 
 		UpdatedAt: user.UpdatedAt,
 	}
 
-	jwt, err := CreateJWT(authUser, service.JWTSecret, service.JWTExpiry)
+	jwt, err := service.jwtService.GenerateJWTAccessToken(ctx, user.ID)
 	if err != nil {
 		return AuthenticatedUser{}, "", err
 	}

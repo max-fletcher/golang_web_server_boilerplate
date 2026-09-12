@@ -61,6 +61,8 @@ func (server *Server) routes() http.Handler {
 		})
 
 		router.Route("/posts", func(router chi.Router) {
+			router.Use(server.AuthMiddleware.Authenticate)
+
 			router.Get("/", server.Handle(server.PostsHandler.GetAll))
 			router.Post("/", server.Handle(server.PostsHandler.Create))
 			router.Get("/{id}", server.Handle(server.PostsHandler.GetByID))

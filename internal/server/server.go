@@ -25,6 +25,7 @@ type Server struct {
 	Router               http.Handler // Reference to router instance
 	CommonHandler        *handlers.Handler
 	Authhandler          *auth.Handler
+	AuthMiddleware       *auth.Middleware
 	UsersHandler         *users.Handler
 	PostsHandler         *posts.Handler
 	PostsWithUserHandler *posts_with_users.Handler
@@ -54,7 +55,9 @@ func NewServer(database *db.Queries, conn *sql.DB, cfg *config.Config, cache cac
 	userService := users.NewService(userRepository, cache, events)
 	userHandler := users.NewHandler(userService)
 
-	authService := auth.NewService(userService, events, cfg.JWTSecret, cfg.JWTExpiry)
+	jwtService := auth.NewJWTService(cfg.JWTSecret, cfg.JWTExpiry)
+	authMiddleware := auth.NewMiddleware(jwtService)
+	authService := auth.NewService(userService, events, jwtService)
 	authHandler := auth.NewHandler(authService)
 
 	postRepository := posts.NewRepository(database)
@@ -69,6 +72,7 @@ func NewServer(database *db.Queries, conn *sql.DB, cfg *config.Config, cache cac
 		config:               cfg,
 		CommonHandler:        handlers.New(database),
 		Authhandler:          authHandler,
+		AuthMiddleware:       authMiddleware,
 		UsersHandler:         userHandler,
 		PostsHandler:         postHandler,
 		PostsWithUserHandler: postWithUserHandler,

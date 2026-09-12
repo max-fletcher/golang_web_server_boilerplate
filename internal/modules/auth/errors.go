@@ -65,3 +65,44 @@ func (e ErrJWTGenerationFailed) Unwrap() error { // Unwrap shows underlying deta
 }
 
 var _ common_errors.ErrHTTPServerError = ErrJWTGenerationFailed{}
+
+// unexpected signing method
+type ErrUnknownSigningMethod struct {
+	Err error
+}
+
+func (e ErrUnknownSigningMethod) Error() string {
+	return "Unexpected signing method"
+}
+
+func (e ErrUnknownSigningMethod) StatusCode() int {
+	return http.StatusInternalServerError
+}
+
+func (e ErrUnknownSigningMethod) ClientMsg() string {
+	return "Unexpected signing method"
+}
+
+func (e ErrUnknownSigningMethod) Unwrap() error { // Unwrap shows underlying details of errors
+	return e.Err
+}
+
+var _ common_errors.ErrHTTPServerError = ErrUnknownSigningMethod{}
+
+type ErrJWTInvalid struct {
+	Err error
+}
+
+func (e ErrJWTInvalid) Error() string {
+	return "Invalid JWT"
+}
+
+func (e ErrJWTInvalid) StatusCode() int {
+	return http.StatusUnauthorized
+}
+
+func (e ErrJWTInvalid) ClientMsg() string {
+	return "Invalid JWT"
+}
+
+var _ common_errors.ErrHTTPBaseError = ErrJWTInvalid{}

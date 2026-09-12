@@ -60,7 +60,7 @@ func (service *service) Create(ctx context.Context, params CreateUserRequest) (d
 	var userWithEmailNotFoundErr ErrUserWithEmailNotFound
 	var userFetchFailedErr ErrUserFetchFailed
 	if err != nil && !errors.As(err, &userWithEmailNotFoundErr) && !errors.As(err, &userFetchFailedErr) {
-		return db.User{}, common_errors.ErrInternalServerError{
+		return db.User{}, common_errors.ErrInternalServer{
 			Err: err,
 		}
 	}

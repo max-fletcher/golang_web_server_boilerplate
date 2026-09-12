@@ -1,6 +1,8 @@
 package posts
 
 import (
+	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -11,6 +13,7 @@ import (
 	"github.com/max-fletcher/golang_web_server_boilerplate/helpers/requests"
 	"github.com/max-fletcher/golang_web_server_boilerplate/helpers/responses"
 	validator "github.com/max-fletcher/golang_web_server_boilerplate/helpers/validation"
+	"github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/auth"
 )
 
 // same as the handler in internal/handler.go, but will create a new handler instance that is separate from that
@@ -75,6 +78,13 @@ func (handler *Handler) Create(w http.ResponseWriter, r *http.Request) error {
 }
 
 func (handler *Handler) GetAll(w http.ResponseWriter, r *http.Request) error {
+	userID, ok := auth.UserIDFromContext(r.Context())
+	fmt.Println("Auth user ID:", userID)
+	if !ok {
+		// This should normally never happen because middleware protects the route.
+		return errors.New("User ID not found")
+	}
+
 	validatedQSData, err := validator.ValidatePaginationQS(r.URL.Query())
 	if err != nil {
 		return err

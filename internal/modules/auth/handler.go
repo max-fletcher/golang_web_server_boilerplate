@@ -87,7 +87,7 @@ func (handler *Handler) UserLogin(w http.ResponseWriter, r *http.Request) error 
 
 	responses.RespondWithSuccess(
 		w,
-		http.StatusCreated,
+		http.StatusAccepted,
 		"Login successfully",
 		formatters.ToAuthenticatedUserWithJWT(jwt, formatters.AuthenticatedUser(authUser)))
 	return nil

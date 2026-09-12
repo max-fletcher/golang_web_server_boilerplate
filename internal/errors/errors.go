@@ -102,23 +102,42 @@ func (e ErrBigInt64ToIntError) ClientMsg() string {
 var _ ErrHTTPBaseError = ErrBigInt64ToIntError{}
 
 // Unknown/InternalServerErrors
-type ErrInternalServerError struct {
+type ErrUnauthorized struct {
 	Err error
 }
 
-func (e ErrInternalServerError) Error() string {
+func (e ErrUnauthorized) Error() string {
 	return "Something went wrong. Please try again."
 }
 
-func (e ErrInternalServerError) StatusCode() int {
+func (e ErrUnauthorized) StatusCode() int {
 	return http.StatusInternalServerError
 }
 
-func (e ErrInternalServerError) ClientMsg() string {
+func (e ErrUnauthorized) ClientMsg() string {
 	return "Something went wrong. Please try again."
 }
 
-var _ ErrHTTPBaseError = ErrInternalServerError{}
+var _ ErrHTTPBaseError = ErrUnauthorized{}
+
+// InternalServerErrors
+type ErrInternalServer struct {
+	Err error
+}
+
+func (e ErrInternalServer) Error() string {
+	return "Something went wrong. Please try again."
+}
+
+func (e ErrInternalServer) StatusCode() int {
+	return http.StatusInternalServerError
+}
+
+func (e ErrInternalServer) ClientMsg() string {
+	return "Something went wrong. Please try again."
+}
+
+var _ ErrHTTPBaseError = ErrInternalServer{}
 
 var (
 // common
