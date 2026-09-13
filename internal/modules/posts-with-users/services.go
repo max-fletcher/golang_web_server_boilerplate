@@ -10,7 +10,7 @@ import (
 
 	"github.com/google/uuid"
 	constants "github.com/max-fletcher/golang_web_server_boilerplate/helpers/const"
-	"github.com/max-fletcher/golang_web_server_boilerplate/helpers/crypto"
+	"github.com/max-fletcher/golang_web_server_boilerplate/helpers/cryptography"
 	"github.com/max-fletcher/golang_web_server_boilerplate/helpers/formatters"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/cache"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/db"
@@ -42,7 +42,7 @@ func NewService(repository Repository, conn *sql.DB, database *db.Queries, cache
 }
 
 func (service *service) Create(ctx context.Context, createPostWithUserInput CreatePostWithUserInput) (db.User, error) {
-	hashedPassword, err := crypto.HashPassword(createPostWithUserInput.Password)
+	hashedPassword, err := cryptography.HashPassword(createPostWithUserInput.Password)
 	if err != nil {
 		return db.User{}, common_errors.ErrHashingPassword{
 			HashErr: err,
@@ -132,7 +132,7 @@ func (service *service) GetAll(ctx context.Context, filterString string, limit i
 	posts, err := service.repository.GetAll(ctx, filterString, limit, offset)
 	if err != nil {
 		return []db.GetPostsWithUserRow{}, 0, ErrUsersFetchFailed{
-			fetchErr: err,
+			FetchErr: err,
 		}
 	}
 
@@ -145,7 +145,7 @@ func (service *service) GetAll(ctx context.Context, filterString string, limit i
 		}
 
 		return []db.GetPostsWithUserRow{}, 0, ErrUsersFetchFailed{
-			fetchErr: err,
+			FetchErr: err,
 		}
 	}
 
@@ -189,7 +189,7 @@ func (service *service) GetByID(ctx context.Context, id uuid.UUID) (db.GetPostWi
 		}
 
 		return db.GetPostWithUserByIdRow{}, ErrUserFetchFailed{
-			fetchErr: err,
+			FetchErr: err,
 		}
 	}
 

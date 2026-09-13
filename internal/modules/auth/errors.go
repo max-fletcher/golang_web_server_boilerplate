@@ -89,6 +89,24 @@ func (e ErrUnknownSigningMethod) Unwrap() error { // Unwrap shows underlying det
 
 var _ common_errors.ErrHTTPServerError = ErrUnknownSigningMethod{}
 
+type ErrInvalidAuthorizationHeader struct {
+	Err error
+}
+
+func (e ErrInvalidAuthorizationHeader) Error() string {
+	return "Invalid authorization header"
+}
+
+func (e ErrInvalidAuthorizationHeader) StatusCode() int {
+	return http.StatusUnauthorized
+}
+
+func (e ErrInvalidAuthorizationHeader) ClientMsg() string {
+	return "Invalid authorization header"
+}
+
+var _ common_errors.ErrHTTPBaseError = ErrInvalidAuthorizationHeader{}
+
 type ErrJWTInvalid struct {
 	Err error
 }
@@ -106,3 +124,21 @@ func (e ErrJWTInvalid) ClientMsg() string {
 }
 
 var _ common_errors.ErrHTTPBaseError = ErrJWTInvalid{}
+
+type ErrInvalidRefreshToken struct {
+	Err error
+}
+
+func (e ErrInvalidRefreshToken) Error() string {
+	return "Invalid refresh token"
+}
+
+func (e ErrInvalidRefreshToken) StatusCode() int {
+	return http.StatusUnauthorized
+}
+
+func (e ErrInvalidRefreshToken) ClientMsg() string {
+	return "Invalid refresh token"
+}
+
+var _ common_errors.ErrHTTPBaseError = ErrInvalidRefreshToken{}

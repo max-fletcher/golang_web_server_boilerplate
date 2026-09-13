@@ -2,101 +2,94 @@ package auth
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"log"
+	"time"
 
+	"github.com/google/uuid"
 	constants "github.com/max-fletcher/golang_web_server_boilerplate/helpers/const"
-	"github.com/max-fletcher/golang_web_server_boilerplate/helpers/crypto"
+	"github.com/max-fletcher/golang_web_server_boilerplate/helpers/cryptography"
 	"github.com/max-fletcher/golang_web_server_boilerplate/helpers/formatters"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/db"
 	common_errors "github.com/max-fletcher/golang_web_server_boilerplate/internal/errors"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/events"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/users"
+	users_package "github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/users"
 )
 
-type UserService interface {
-	Create(ctx context.Context, params users.CreateUserRequest) (db.User, error)
-	GetByEmail(ctx context.Context, email string) (db.User, error)
+type JWTTokenServiceForAuth interface {
+	GenerateJWTAccessToken(ctx context.Context, id uuid.UUID) (string, error)
+	GenerateRefreshToken() (string, error)
 }
 
 type Service interface {
-	UserRegistration(ctx context.Context, params UserRegistrationInput) (AuthenticatedUser, string, error)
-	UserLogin(ctx context.Context, params UserLoginRequest) (AuthenticatedUser, string, error)
+	UserRegistration(ctx context.Context, params UserRegistrationInput) (AuthenticatedUser, string, string, error)
+	UserLogin(ctx context.Context, params UserLoginRequest) (AuthenticatedUser, string, string, error)
+	RefreshToken(ctx context.Context, refreshToken string) (string, AuthenticatedUser, error)
 }
 
 type service struct {
-	userService UserService
-	jwtService  JWTService
-	events      events.Publisher
+	tokenService       JWTTokenServiceForAuth
+	events             events.Publisher
+	sqlDB              *sql.DB
+	DB                 *db.Queries // We are importing(using DI) db.Queries here so we can use database transactions
+	refreshTokenExpiry time.Duration
 }
 
-func NewService(userService UserService, events events.Publisher, jwtService JWTService) *service {
+func NewService(tokenService JWTTokenServiceForAuth, events events.Publisher, conn *sql.DB, database *db.Queries, refreshTokenExpiry time.Duration) *service {
 	return &service{
-		userService: userService,
-		events:      events,
-		jwtService:  jwtService,
+		tokenService:       tokenService,
+		events:             events,
+		sqlDB:              conn,
+		DB:                 database, // We are importing(using DI) db.Queries here so we can use database transactions
+		refreshTokenExpiry: refreshTokenExpiry,
 	}
 }
 
-func (service *service) UserRegistration(ctx context.Context, params UserRegistrationInput) (AuthenticatedUser, string, error) {
-	// Not sure if this is needed anymore since I am checking unique constraint violation below on create
-	// and throwing the exact same error
-	_, err := service.userService.GetByEmail(ctx, params.Email)
-	if err == nil {
-		return AuthenticatedUser{}, "", users.ErrUserWithEmailAlreadyExists{
-			Email: params.Email,
-		}
-	}
-	// If error exists but doesn't match the errors that GetByEmail() sends back
-	var userWithEmailNotFoundErr users.ErrUserWithEmailNotFound
-	var userFetchFailedErr users.ErrUserFetchFailed
-	if err != nil && !errors.As(err, &userWithEmailNotFoundErr) && !errors.As(err, &userFetchFailedErr) {
-		return AuthenticatedUser{}, "", common_errors.ErrInternalServer{
-			Err: err,
-		}
-	}
-
-	hashedPassword, err := crypto.HashPassword(params.Password)
+func (service *service) UserRegistration(ctx context.Context, params UserRegistrationInput) (AuthenticatedUser, string, string, error) {
+	hashedPassword, err := cryptography.HashPassword(params.Password)
 	if err != nil {
-		return AuthenticatedUser{}, "", common_errors.ErrHashingPassword{
+		return AuthenticatedUser{}, "", "", common_errors.ErrHashingPassword{
 			HashErr: err,
 		}
 	}
 	params.Password = hashedPassword
-	params.ConfirmPassword = hashedPassword
+
+	tx, err := service.sqlDB.BeginTx(ctx, nil) // begin transaction
+	if err != nil {
+		return AuthenticatedUser{}, "", "", err
+	}
+	defer tx.Rollback()
+	// IMPORTANT: txDB contains all the queries from sqlc. So initializing txDB like this and using it to make queries will cause
+	// all queries to be part of one transaction
+	txDB := service.DB.WithTx(tx)
+	userRepository := users_package.NewRepository(txDB)
+	refreshTokenRepository := NewRefreshTokenRepository(txDB, service.refreshTokenExpiry)
 
 	// #TODO: Store Avatar Later. Avatar validation is done though.
 
 	// 1st param: context for the request
 	// 2nd param: the struct that we want to pass so it saves the underlying data in DB
-	user, err := service.userService.Create(ctx, users.CreateUserRequest{
-		Name:            params.Name,
-		Email:           params.Email,
-		Password:        params.Password,
-		ConfirmPassword: params.ConfirmPassword,
+	user, err := userRepository.Create(ctx, db.CreateUserParams{
+		ID:        uuid.New(),
+		Name:      params.Name,
+		Email:     params.Email,
+		Password:  hashedPassword,
+		CreatedAt: time.Now().UTC(),
+		UpdatedAt: time.Now().UTC(),
 	})
 	if err != nil {
 		pgErr := common_errors.GetPostgresError(err)
 		if pgErr.Code == constants.PGUniqueViolationCode {
-			return AuthenticatedUser{}, "", users.ErrUserWithEmailAlreadyExists{
+			return AuthenticatedUser{}, "", "", users.ErrUserWithEmailAlreadyExists{
 				Email: params.Email,
 			}
 		}
 
-		return AuthenticatedUser{}, "", users.ErrUserCreateFailed{
+		return AuthenticatedUser{}, "", "", users.ErrUserCreateFailed{
 			CreateErr: err,
 		}
-	}
-
-	err = service.events.Publish(ctx, events.QueueEventAuthRegistration,
-		events.AuthRegistration{
-			ID:    user.ID,
-			Email: user.Email,
-		},
-	)
-	if err != nil {
-		log.Printf("Failed to publish user registration event: %v", err)
-		return AuthenticatedUser{}, "", err
 	}
 
 	authUser := AuthenticatedUser{
@@ -108,46 +101,79 @@ func (service *service) UserRegistration(ctx context.Context, params UserRegistr
 		UpdatedAt: user.UpdatedAt,
 	}
 
-	jwt, err := service.jwtService.GenerateJWTAccessToken(ctx, user.ID)
-	if err != nil {
-		return AuthenticatedUser{}, "", err
-	}
-
-	return authUser, jwt, nil
-}
-
-func (service *service) UserLogin(ctx context.Context, params UserLoginRequest) (AuthenticatedUser, string, error) {
-	user, err := service.userService.GetByEmail(ctx, params.Email)
-	if err != nil {
-		return AuthenticatedUser{}, "", users.ErrUserWithEmailNotFound{
-			Email: params.Email,
-		}
-	}
-	// If error exists but doesn't match the errors that GetByEmail() sends back
-	var userWithEmailNotFoundErr users.ErrUserWithEmailNotFound
-	var userFetchFailedErr users.ErrUserFetchFailed
-	if err != nil && !errors.As(err, &userWithEmailNotFoundErr) && !errors.As(err, &userFetchFailedErr) {
-		return AuthenticatedUser{}, "", common_errors.ErrInternalServer{
-			Err: err,
-		}
-	}
-
-	err = crypto.CheckPassword(params.Password, user.Password)
-	if err != nil {
-		return AuthenticatedUser{}, "", ErrPasswordMismatch{
-			Err: err,
-		}
-	}
-
-	err = service.events.Publish(ctx, events.QueueEventAuthLogin,
+	err = service.events.Publish(ctx, events.QueueEventAuthRegistration,
 		events.AuthRegistration{
 			ID:    user.ID,
 			Email: user.Email,
 		},
 	)
 	if err != nil {
-		log.Printf("Failed to publish user login event: %v", err)
-		return AuthenticatedUser{}, "", err
+		log.Printf("Failed to publish user registration event: %v", err)
+		return AuthenticatedUser{}, "", "", err
+	}
+
+	jwt, err := service.tokenService.GenerateJWTAccessToken(ctx, user.ID)
+	if err != nil {
+		return AuthenticatedUser{}, "", "", err
+	}
+
+	refreshToken, err := service.tokenService.GenerateRefreshToken()
+	if err != nil {
+		return AuthenticatedUser{}, "", "", err
+	}
+
+	createRefreshTokenParams := db.CreateRefreshTokenParams{
+		ID:        uuid.New(),
+		UserID:    user.ID,
+		TokenHash: cryptography.HashString(refreshToken),
+		ExpiresAt: time.Now().Add(refreshTokenRepository.expiry).UTC(),
+		RevokedAt: sql.NullTime{},
+		CreatedAt: time.Now().UTC(),
+		UpdatedAt: time.Now().UTC(),
+	}
+
+	_, err = refreshTokenRepository.Create(ctx, createRefreshTokenParams)
+	if err != nil {
+		return AuthenticatedUser{}, "", "", err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return AuthenticatedUser{}, "", "", err
+	}
+
+	return authUser, jwt, refreshToken, nil
+}
+
+func (service *service) UserLogin(ctx context.Context, params UserLoginRequest) (AuthenticatedUser, string, string, error) {
+	tx, err := service.sqlDB.BeginTx(ctx, nil) // begin transaction
+	if err != nil {
+		return AuthenticatedUser{}, "", "", err
+	}
+	defer tx.Rollback()
+	// IMPORTANT: txDB contains all the queries from sqlc. So initializing txDB like this and using it to make queries will cause
+	// all queries to be part of one transaction
+	txDB := service.DB.WithTx(tx)
+	userRepository := users_package.NewRepository(txDB)
+	refreshTokenRepository := NewRefreshTokenRepository(txDB, service.refreshTokenExpiry)
+
+	user, err := userRepository.GetByEmail(ctx, params.Email)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) { // check if error is of type sql.ErrNoRows
+			return AuthenticatedUser{}, "", "", users.ErrUserWithEmailNotFound{
+				Email: params.Email,
+			}
+		}
+
+		return AuthenticatedUser{}, "", "", users.ErrUserFetchFailed{
+			FetchErr: err,
+		}
+	}
+
+	err = cryptography.CheckPassword(params.Password, user.Password)
+	if err != nil {
+		return AuthenticatedUser{}, "", "", ErrPasswordMismatch{
+			Err: err,
+		}
 	}
 
 	authUser := AuthenticatedUser{
@@ -159,10 +185,85 @@ func (service *service) UserLogin(ctx context.Context, params UserLoginRequest) 
 		UpdatedAt: user.UpdatedAt,
 	}
 
-	jwt, err := service.jwtService.GenerateJWTAccessToken(ctx, user.ID)
+	err = service.events.Publish(ctx, events.QueueEventAuthLogin,
+		events.AuthRegistration{
+			ID:    user.ID,
+			Email: user.Email,
+		},
+	)
 	if err != nil {
-		return AuthenticatedUser{}, "", err
+		log.Printf("Failed to publish user login event: %v", err)
+		return AuthenticatedUser{}, "", "", err
 	}
 
-	return authUser, jwt, nil
+	jwt, err := service.tokenService.GenerateJWTAccessToken(ctx, user.ID)
+	if err != nil {
+		return AuthenticatedUser{}, "", "", err
+	}
+
+	refreshToken, err := service.tokenService.GenerateRefreshToken()
+	if err != nil {
+		return AuthenticatedUser{}, "", "", err
+	}
+
+	createRefreshTokenParams := db.CreateRefreshTokenParams{
+		ID:        uuid.New(),
+		UserID:    user.ID,
+		TokenHash: cryptography.HashString(refreshToken),
+		ExpiresAt: time.Now().Add(refreshTokenRepository.expiry).UTC(),
+		RevokedAt: sql.NullTime{},
+		CreatedAt: time.Now().UTC(),
+		UpdatedAt: time.Now().UTC(),
+	}
+
+	_, err = refreshTokenRepository.Create(ctx, createRefreshTokenParams)
+	if err != nil {
+		return AuthenticatedUser{}, "", "", err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return AuthenticatedUser{}, "", "", err
+	}
+
+	return authUser, jwt, refreshToken, nil
+}
+
+func (service *service) RefreshToken(ctx context.Context, refreshToken string) (string, AuthenticatedUser, error) {
+	tokenHash := cryptography.HashString(refreshToken)
+
+	refreshTokenRepository := NewRefreshTokenRepository(service.DB, service.refreshTokenExpiry)
+	storedToken, err := refreshTokenRepository.GetByTokenHash(ctx, tokenHash)
+	if err != nil {
+		return "", AuthenticatedUser{}, ErrInvalidRefreshToken{}
+	}
+
+	if storedToken.RevokedAt.Valid {
+		return "", AuthenticatedUser{}, ErrInvalidRefreshToken{}
+	}
+
+	if time.Now().After(storedToken.ExpiresAt) {
+		return "", AuthenticatedUser{}, ErrInvalidRefreshToken{}
+	}
+
+	userRepository := users_package.NewRepository(service.DB)
+	user, err := userRepository.GetByID(ctx, storedToken.UserID)
+	if err != nil {
+		return "", AuthenticatedUser{}, ErrInvalidRefreshToken{}
+	}
+
+	authUser := AuthenticatedUser{
+		ID:        user.ID,
+		Name:      user.Name,
+		Email:     user.Email,
+		Avatar:    user.Avatar,
+		CreatedAt: user.CreatedAt,
+		UpdatedAt: user.UpdatedAt,
+	}
+
+	accessToken, err := service.tokenService.GenerateJWTAccessToken(ctx, storedToken.UserID)
+	if err != nil {
+		return "", AuthenticatedUser{}, err
+	}
+
+	return accessToken, authUser, nil
 }

@@ -2,6 +2,8 @@ package auth
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"time"
@@ -11,20 +13,21 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 )
 
-type JWTService interface {
+type TokenService interface {
 	GenerateJWTAccessToken(ctx context.Context, id uuid.UUID) (string, error)
 	ValidateAccessToken(tokenString string) (uuid.UUID, error)
+	GenerateRefreshToken() (string, error)
 }
 
-type jwtService struct {
-	JWTSecret []byte // needed for token.SignedString or else it fails
-	JWTExpiry time.Duration
+type tokenService struct {
+	jwtSecret []byte // needed for token.SignedString or else it fails
+	jwtExpiry time.Duration
 }
 
-func NewJWTService(JWTSecret string, JWTExpiry time.Duration) *jwtService {
-	return &jwtService{
-		JWTSecret: []byte(JWTSecret), // needed for token.SignedString or else it fails
-		JWTExpiry: JWTExpiry,
+func NewTokenService(jwtSecret string, jwtExpiry time.Duration) *tokenService {
+	return &tokenService{
+		jwtSecret: []byte(jwtSecret), // needed for token.SignedString or else it fails
+		jwtExpiry: jwtExpiry,
 	}
 }
 
@@ -34,18 +37,18 @@ type Claims struct {
 	jwt.RegisteredClaims
 }
 
-func (jwtService *jwtService) GenerateJWTAccessToken(ctx context.Context, id uuid.UUID) (string, error) {
+func (tokenService *tokenService) GenerateJWTAccessToken(ctx context.Context, id uuid.UUID) (string, error) {
 	claims := Claims{
 		UserID: id,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(jwtService.JWTExpiry)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(tokenService.jwtExpiry)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 		},
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
-	signedToken, err := token.SignedString(jwtService.JWTSecret)
+	signedToken, err := token.SignedString(tokenService.jwtSecret)
 	if err != nil {
 		return "", ErrJWTGenerationFailed{
 			Err: err,
@@ -55,7 +58,7 @@ func (jwtService *jwtService) GenerateJWTAccessToken(ctx context.Context, id uui
 	return signedToken, nil
 }
 
-func (jwtService *jwtService) ValidateAccessToken(tokenString string) (uuid.UUID, error) {
+func (tokenService *tokenService) ValidateAccessToken(tokenString string) (uuid.UUID, error) {
 	var claims Claims
 
 	token, err := jwt.ParseWithClaims(
@@ -69,7 +72,7 @@ func (jwtService *jwtService) ValidateAccessToken(tokenString string) (uuid.UUID
 				}
 			}
 
-			return jwtService.JWTSecret, nil
+			return tokenService.jwtSecret, nil
 		},
 	)
 	if err != nil {
@@ -89,4 +92,14 @@ func (jwtService *jwtService) ValidateAccessToken(tokenString string) (uuid.UUID
 	}
 
 	return claims.UserID, nil
+}
+
+func (tokenService *tokenService) GenerateRefreshToken() (string, error) { // Doesn't provide a JWT. Instead produces a random opaque token.
+	bytes := make([]byte, 32)
+
+	if _, err := rand.Read(bytes); err != nil {
+		return "", err
+	}
+
+	return base64.RawURLEncoding.EncodeToString(bytes), nil
 }

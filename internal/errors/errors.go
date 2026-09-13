@@ -1,6 +1,8 @@
 package common_errors
 
-import "net/http"
+import (
+	"net/http"
+)
 
 // NOTE: rule of thumb for defining custom errors:
 // 1. Define static errors for static strings(see below example)
@@ -101,7 +103,7 @@ func (e ErrBigInt64ToIntError) ClientMsg() string {
 
 var _ ErrHTTPBaseError = ErrBigInt64ToIntError{}
 
-// Unknown/InternalServerErrors
+// Unauthorized Errors
 type ErrUnauthorized struct {
 	Err error
 }
@@ -111,7 +113,7 @@ func (e ErrUnauthorized) Error() string {
 }
 
 func (e ErrUnauthorized) StatusCode() int {
-	return http.StatusInternalServerError
+	return http.StatusUnauthorized
 }
 
 func (e ErrUnauthorized) ClientMsg() string {

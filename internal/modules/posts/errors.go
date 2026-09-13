@@ -47,7 +47,7 @@ func (e ErrPostWithIdNotFound) ClientMsg() string {
 var _ common_errors.ErrHTTPBaseError = ErrPostWithIdNotFound{}
 
 type ErrPostsFetchFailed struct {
-	fetchErr error
+	FetchErr error
 }
 
 func (e ErrPostsFetchFailed) Error() string {
@@ -63,13 +63,13 @@ func (e ErrPostsFetchFailed) ClientMsg() string {
 }
 
 func (e ErrPostsFetchFailed) Unwrap() error { // Unwrap shows underlying details of errors
-	return e.fetchErr
+	return e.FetchErr
 }
 
 var _ common_errors.ErrHTTPServerError = ErrPostsFetchFailed{}
 
 type ErrPostFetchFailed struct {
-	fetchErr error
+	FetchErr error
 }
 
 func (e ErrPostFetchFailed) Error() string {
@@ -85,7 +85,7 @@ func (e ErrPostFetchFailed) ClientMsg() string {
 }
 
 func (e ErrPostFetchFailed) Unwrap() error { // Unwrap shows underlying details of errors
-	return e.fetchErr
+	return e.FetchErr
 }
 
 var _ common_errors.ErrHTTPServerError = ErrPostFetchFailed{}

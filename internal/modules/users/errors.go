@@ -83,7 +83,7 @@ func (e ErrUserWithIdNotFound) ClientMsg() string {
 var _ common_errors.ErrHTTPBaseError = ErrUserWithIdNotFound{}
 
 type ErrUsersFetchFailed struct {
-	fetchErr error
+	FetchErr error
 }
 
 func (e ErrUsersFetchFailed) Error() string {
@@ -99,13 +99,13 @@ func (e ErrUsersFetchFailed) ClientMsg() string {
 }
 
 func (e ErrUsersFetchFailed) Unwrap() error { // Unwrap shows underlying details of errors
-	return e.fetchErr
+	return e.FetchErr
 }
 
 var _ common_errors.ErrHTTPServerError = ErrUsersFetchFailed{}
 
 type ErrUserFetchFailed struct {
-	fetchErr error
+	FetchErr error
 }
 
 func (e ErrUserFetchFailed) Error() string {
@@ -121,7 +121,7 @@ func (e ErrUserFetchFailed) ClientMsg() string {
 }
 
 func (e ErrUserFetchFailed) Unwrap() error { // Unwrap shows underlying details of errors
-	return e.fetchErr
+	return e.FetchErr
 }
 
 var _ common_errors.ErrHTTPServerError = ErrUserFetchFailed{}

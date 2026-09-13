@@ -55,9 +55,9 @@ func NewServer(database *db.Queries, conn *sql.DB, cfg *config.Config, cache cac
 	userService := users.NewService(userRepository, cache, events)
 	userHandler := users.NewHandler(userService)
 
-	jwtService := auth.NewJWTService(cfg.JWTSecret, cfg.JWTExpiry)
-	authMiddleware := auth.NewMiddleware(jwtService)
-	authService := auth.NewService(userService, events, jwtService)
+	tokenService := auth.NewTokenService(cfg.JWTSecret, cfg.JWTExpiry)
+	authMiddleware := auth.NewMiddleware(tokenService)
+	authService := auth.NewService(tokenService, events, conn, database, cfg.RefreshTokenExpiry)
 	authHandler := auth.NewHandler(authService)
 
 	postRepository := posts.NewRepository(database)

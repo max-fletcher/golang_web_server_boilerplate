@@ -2,7 +2,9 @@ package auth
 
 import (
 	"database/sql"
+	"errors"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -50,7 +52,7 @@ func (handler *Handler) UserRegistration(w http.ResponseWriter, r *http.Request)
 
 	// 1st param: context for the request
 	// 2nd param: the struct that we want to pass so it saves the underlying data in DB
-	authUser, jwt, err := handler.service.UserRegistration(r.Context(), registerUserInput)
+	authUser, jwt, refreshToken, err := handler.service.UserRegistration(r.Context(), registerUserInput)
 	if err != nil {
 		return err
 	}
@@ -59,7 +61,7 @@ func (handler *Handler) UserRegistration(w http.ResponseWriter, r *http.Request)
 		w,
 		http.StatusCreated,
 		"Registered successfully",
-		formatters.ToAuthenticatedUserWithJWT(jwt, formatters.AuthenticatedUser(authUser)))
+		formatters.ToAuthenticatedUserWithJWT(jwt, refreshToken, formatters.AuthenticatedUser(authUser)))
 	return nil
 }
 
@@ -80,7 +82,7 @@ func (handler *Handler) UserLogin(w http.ResponseWriter, r *http.Request) error 
 
 	// 1st param: context for the request
 	// 2nd param: the struct that we want to pass so it saves the underlying data in DB
-	authUser, jwt, err := handler.service.UserLogin(r.Context(), params)
+	authUser, jwt, refreshToken, err := handler.service.UserLogin(r.Context(), params)
 	if err != nil {
 		return err
 	}
@@ -89,6 +91,35 @@ func (handler *Handler) UserLogin(w http.ResponseWriter, r *http.Request) error 
 		w,
 		http.StatusAccepted,
 		"Login successfully",
-		formatters.ToAuthenticatedUserWithJWT(jwt, formatters.AuthenticatedUser(authUser)))
+		formatters.ToAuthenticatedUserWithJWT(jwt, refreshToken, formatters.AuthenticatedUser(authUser)))
+	return nil
+}
+
+func (handler *Handler) RefreshToken(w http.ResponseWriter, r *http.Request) error {
+	authHeader := r.Header.Get("Authorization")
+	if authHeader == "" {
+		return ErrInvalidAuthorizationHeader{
+			Err: errors.New("Invalid authorization header"),
+		}
+	}
+
+	parts := strings.SplitN(authHeader, " ", 2)
+	if len(parts) != 2 || !strings.EqualFold(parts[0], "Bearer") {
+		return ErrInvalidAuthorizationHeader{
+			Err: errors.New("Invalid authorization header"),
+		}
+	}
+	refreshToken := parts[1]
+
+	accessToken, authUser, err := handler.service.RefreshToken(r.Context(), refreshToken)
+	if err != nil {
+		return err
+	}
+
+	responses.RespondWithSuccess(
+		w,
+		http.StatusAccepted,
+		"Refreshed successfully",
+		formatters.ToAuthenticatedUserWithJWT(accessToken, refreshToken, formatters.AuthenticatedUser(authUser)))
 	return nil
 }

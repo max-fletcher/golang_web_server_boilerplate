@@ -13,13 +13,17 @@ type contextKey string
 
 const userIDContextKey contextKey = "userID"
 
-type Middleware struct {
-	jwtService JWTService
+type JWTTokenServiceForMiddleware interface {
+	ValidateAccessToken(tokenString string) (uuid.UUID, error)
 }
 
-func NewMiddleware(jwtService JWTService) *Middleware {
+type Middleware struct {
+	tokenService JWTTokenServiceForMiddleware
+}
+
+func NewMiddleware(tokenService JWTTokenServiceForMiddleware) *Middleware {
 	return &Middleware{
-		jwtService: jwtService,
+		tokenService: tokenService,
 	}
 }
 
@@ -41,7 +45,7 @@ func (middleware *Middleware) Authenticate(next http.Handler) http.Handler {
 
 		token := parts[1]
 
-		userID, err := middleware.jwtService.ValidateAccessToken(token)
+		userID, err := middleware.tokenService.ValidateAccessToken(token)
 		if err != nil {
 			responses.RespondWithError(w, http.StatusUnauthorized, "Invalid or expired token")
 			return

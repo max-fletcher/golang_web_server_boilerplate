@@ -50,6 +50,7 @@ func (server *Server) routes() http.Handler {
 		router.Route("/auth", func(router chi.Router) {
 			router.Post("/register", server.Handle(server.Authhandler.UserRegistration))
 			router.Post("/login", server.Handle(server.Authhandler.UserLogin))
+			router.Get("/refresh-token", server.Handle(server.Authhandler.RefreshToken))
 		})
 
 		router.Route("/users", func(router chi.Router) {

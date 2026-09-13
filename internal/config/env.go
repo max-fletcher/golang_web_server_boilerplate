@@ -8,16 +8,17 @@ import (
 )
 
 type Config struct {
-	Port             string
-	DbURL            string
-	AppMode          string
-	LocalBaseUrl     string
-	LiveBaseUrl      string
-	RedisURL         string
-	RedisCacheExpiry time.Duration
-	CacheActive      bool
-	JWTSecret        string
-	JWTExpiry        time.Duration
+	Port               string
+	DbURL              string
+	AppMode            string
+	LocalBaseUrl       string
+	LiveBaseUrl        string
+	RedisURL           string
+	RedisCacheExpiry   time.Duration
+	CacheActive        bool
+	JWTSecret          string
+	JWTExpiry          time.Duration
+	RefreshTokenExpiry time.Duration
 }
 
 func Load() (*Config, error) {
@@ -45,6 +46,16 @@ func Load() (*Config, error) {
 		return nil, fmt.Errorf("Error converting JWT_EXPIRY to int")
 	}
 	JWT_EXPIRY_DURATION := time.Duration(JWT_EXPIRY_INT) * time.Minute
+
+	REFRESH_TOKEN_EXPIRY := os.Getenv("REFRESH_TOKEN_EXPIRY")
+	if REFRESH_TOKEN_EXPIRY == "" {
+		return nil, fmt.Errorf("REFRESH_TOKEN_EXPIRY is not set")
+	}
+	REFRESH_TOKEN_EXPIRY_INT, err := strconv.Atoi(REFRESH_TOKEN_EXPIRY)
+	if err != nil {
+		return nil, fmt.Errorf("Error converting REFRESH_TOKEN_EXPIRY to int")
+	}
+	REFRESH_TOKEN_EXPIRY_DURATION := time.Duration(REFRESH_TOKEN_EXPIRY_INT) * time.Minute
 
 	APP_MODE := os.Getenv("APP_MODE")
 	if APP_MODE == "" {
@@ -89,15 +100,16 @@ func Load() (*Config, error) {
 	}
 
 	return &Config{
-		Port:             port,
-		DbURL:            DB_URL,
-		AppMode:          APP_MODE,
-		LocalBaseUrl:     LOCAL_BASE_URL,
-		LiveBaseUrl:      LIVE_BASE_URL,
-		RedisURL:         REDIS_URL,
-		RedisCacheExpiry: REDIS_CACHE_EXPIRY_MINUTES,
-		CacheActive:      CACHE_ACTIVE_BOOL,
-		JWTSecret:        JWT_SECRET,
-		JWTExpiry:        JWT_EXPIRY_DURATION,
+		Port:               port,
+		DbURL:              DB_URL,
+		AppMode:            APP_MODE,
+		LocalBaseUrl:       LOCAL_BASE_URL,
+		LiveBaseUrl:        LIVE_BASE_URL,
+		RedisURL:           REDIS_URL,
+		RedisCacheExpiry:   REDIS_CACHE_EXPIRY_MINUTES,
+		CacheActive:        CACHE_ACTIVE_BOOL,
+		JWTSecret:          JWT_SECRET,
+		JWTExpiry:          JWT_EXPIRY_DURATION,
+		RefreshTokenExpiry: REFRESH_TOKEN_EXPIRY_DURATION,
 	}, nil
 }

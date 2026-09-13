@@ -107,7 +107,7 @@ func (service *service) GetAll(ctx context.Context, filterString string, limit i
 	posts, err := service.repository.GetAll(ctx, filterString, limit, offset)
 	if err != nil {
 		return []db.Post{}, 0, ErrPostsFetchFailed{
-			fetchErr: err,
+			FetchErr: err,
 		}
 	}
 
@@ -119,7 +119,7 @@ func (service *service) GetAll(ctx context.Context, filterString string, limit i
 		}
 
 		return []db.Post{}, 0, ErrPostsFetchFailed{
-			fetchErr: err,
+			FetchErr: err,
 		}
 	}
 
@@ -163,7 +163,7 @@ func (service *service) GetByID(ctx context.Context, id uuid.UUID) (db.Post, err
 		}
 
 		return db.Post{}, ErrPostFetchFailed{
-			fetchErr: err,
+			FetchErr: err,
 		}
 	}
 

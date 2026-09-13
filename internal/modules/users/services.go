@@ -10,7 +10,7 @@ import (
 
 	"github.com/google/uuid"
 	constants "github.com/max-fletcher/golang_web_server_boilerplate/helpers/const"
-	"github.com/max-fletcher/golang_web_server_boilerplate/helpers/crypto"
+	"github.com/max-fletcher/golang_web_server_boilerplate/helpers/cryptography"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/cache"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/db"
 	common_errors "github.com/max-fletcher/golang_web_server_boilerplate/internal/errors"
@@ -65,7 +65,7 @@ func (service *service) Create(ctx context.Context, params CreateUserRequest) (d
 		}
 	}
 
-	hashedPassword, err := crypto.HashPassword(params.Password)
+	hashedPassword, err := cryptography.HashPassword(params.Password)
 	if err != nil {
 		return db.User{}, common_errors.ErrHashingPassword{
 			HashErr: err,
@@ -130,7 +130,7 @@ func (service *service) GetAll(ctx context.Context, filterString string, limit i
 	users, err := service.repository.GetAll(ctx, filterString, limit, offset)
 	if err != nil {
 		return []db.User{}, 0, ErrUsersFetchFailed{
-			fetchErr: err,
+			FetchErr: err,
 		}
 	}
 
@@ -142,7 +142,7 @@ func (service *service) GetAll(ctx context.Context, filterString string, limit i
 		}
 
 		return []db.User{}, 0, ErrUsersFetchFailed{
-			fetchErr: err,
+			FetchErr: err,
 		}
 	}
 
@@ -186,7 +186,7 @@ func (service *service) GetByID(ctx context.Context, id uuid.UUID) (db.User, err
 		}
 
 		return db.User{}, ErrUserFetchFailed{
-			fetchErr: err,
+			FetchErr: err,
 		}
 	}
 
@@ -211,7 +211,7 @@ func (service *service) GetByEmail(ctx context.Context, email string) (db.User, 
 		}
 
 		return db.User{}, ErrUserFetchFailed{
-			fetchErr: err,
+			FetchErr: err,
 		}
 	}
 
@@ -236,11 +236,11 @@ func (service *service) Update(ctx context.Context, id uuid.UUID, params UpdateU
 	var userFetchFailedErr ErrUserFetchFailed
 	if err != nil && !errors.As(err, &userWithEmailNotFoundErr) && !errors.As(err, &userFetchFailedErr) {
 		return db.User{}, ErrUserFetchFailed{
-			fetchErr: err,
+			FetchErr: err,
 		}
 	}
 
-	hashedPassword, err := crypto.HashPassword(params.Password)
+	hashedPassword, err := cryptography.HashPassword(params.Password)
 	if err != nil {
 		return db.User{}, common_errors.ErrHashingPassword{
 			HashErr: err,

@@ -235,11 +235,12 @@ type InnerAuthenticatedUser struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 type AuthenticatedUserWithJWT struct {
-	JWT  string `json:"jwt"`
-	User InnerAuthenticatedUser
+	JWT          string `json:"jwt"`
+	RefreshToken string `json:"refresh_token"`
+	User         InnerAuthenticatedUser
 }
 
-func ToAuthenticatedUserWithJWT(jwt string, authUser AuthenticatedUser) AuthenticatedUserWithJWT {
+func ToAuthenticatedUserWithJWT(jwt string, refreshToken string, authUser AuthenticatedUser) AuthenticatedUserWithJWT {
 	// var description *string // a var containing a pointer to a string
 	// if dbPost.Content.Valid {
 	// 	description = &dbPost.Description.String
@@ -253,7 +254,8 @@ func ToAuthenticatedUserWithJWT(jwt string, authUser AuthenticatedUser) Authenti
 	}
 
 	return AuthenticatedUserWithJWT{
-		JWT: jwt,
+		JWT:          jwt,
+		RefreshToken: refreshToken,
 		User: InnerAuthenticatedUser{
 			ID:        authUser.ID,
 			Name:      authUser.Name,
