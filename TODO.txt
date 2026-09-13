@@ -15,7 +15,7 @@
 # store encrypted/hashed password instead of raw password(DONE)
 # Go for a better abstraction for dealing with and logging errors globally(DONE)
 # Circular dependency concern(DONE. Followed a binding tree with root inside server.go)
-# user registration & login route with access and refresh tokens
+# user authentication(registration & login) routes with access and refresh tokens(DONE)
 # Add rate limiter(DONE)
 # Add cors(DONE)
 # Global error handler and logger(DONE but might need a notepad version. Also, not sure if a request logger is needed)
