@@ -89,7 +89,7 @@ func (handler *Handler) UserLogin(w http.ResponseWriter, r *http.Request) error 
 
 	responses.RespondWithSuccess(
 		w,
-		http.StatusAccepted,
+		http.StatusOK,
 		"Login successfully",
 		formatters.ToAuthenticatedUserWithJWT(jwt, refreshToken, formatters.AuthenticatedUser(authUser)))
 	return nil
@@ -118,7 +118,7 @@ func (handler *Handler) RefreshToken(w http.ResponseWriter, r *http.Request) err
 
 	responses.RespondWithSuccess(
 		w,
-		http.StatusAccepted,
+		http.StatusOK,
 		"Refreshed successfully",
 		formatters.ToAuthenticatedUserWithJWT(accessToken, refreshToken, formatters.AuthenticatedUser(authUser)))
 	return nil

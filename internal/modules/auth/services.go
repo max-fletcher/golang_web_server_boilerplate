@@ -92,15 +92,6 @@ func (service *service) UserRegistration(ctx context.Context, params UserRegistr
 		}
 	}
 
-	authUser := AuthenticatedUser{
-		ID:        user.ID,
-		Name:      user.Name,
-		Email:     user.Email,
-		Avatar:    formatters.StringPointerToNullString(params.Avatar),
-		CreatedAt: user.CreatedAt,
-		UpdatedAt: user.UpdatedAt,
-	}
-
 	err = service.events.Publish(ctx, events.QueueEventAuthRegistration,
 		events.AuthRegistration{
 			ID:    user.ID,
@@ -109,11 +100,6 @@ func (service *service) UserRegistration(ctx context.Context, params UserRegistr
 	)
 	if err != nil {
 		log.Printf("Failed to publish user registration event: %v", err)
-		return AuthenticatedUser{}, "", "", err
-	}
-
-	jwt, err := service.tokenService.GenerateJWTAccessToken(ctx, user.ID)
-	if err != nil {
 		return AuthenticatedUser{}, "", "", err
 	}
 
@@ -138,6 +124,21 @@ func (service *service) UserRegistration(ctx context.Context, params UserRegistr
 	}
 
 	if err := tx.Commit(); err != nil {
+		return AuthenticatedUser{}, "", "", err
+	}
+
+	// Moved these 2 blocks  down here because we don't want to hold DB transactions too long
+	authUser := AuthenticatedUser{
+		ID:        user.ID,
+		Name:      user.Name,
+		Email:     user.Email,
+		Avatar:    formatters.StringPointerToNullString(params.Avatar),
+		CreatedAt: user.CreatedAt,
+		UpdatedAt: user.UpdatedAt,
+	}
+
+	jwt, err := service.tokenService.GenerateJWTAccessToken(ctx, user.ID)
+	if err != nil {
 		return AuthenticatedUser{}, "", "", err
 	}
 
@@ -176,15 +177,6 @@ func (service *service) UserLogin(ctx context.Context, params UserLoginRequest) 
 		}
 	}
 
-	authUser := AuthenticatedUser{
-		ID:        user.ID,
-		Name:      user.Name,
-		Email:     user.Email,
-		Avatar:    user.Avatar,
-		CreatedAt: user.CreatedAt,
-		UpdatedAt: user.UpdatedAt,
-	}
-
 	err = service.events.Publish(ctx, events.QueueEventAuthLogin,
 		events.AuthRegistration{
 			ID:    user.ID,
@@ -193,11 +185,6 @@ func (service *service) UserLogin(ctx context.Context, params UserLoginRequest) 
 	)
 	if err != nil {
 		log.Printf("Failed to publish user login event: %v", err)
-		return AuthenticatedUser{}, "", "", err
-	}
-
-	jwt, err := service.tokenService.GenerateJWTAccessToken(ctx, user.ID)
-	if err != nil {
 		return AuthenticatedUser{}, "", "", err
 	}
 
@@ -222,6 +209,21 @@ func (service *service) UserLogin(ctx context.Context, params UserLoginRequest) 
 	}
 
 	if err := tx.Commit(); err != nil {
+		return AuthenticatedUser{}, "", "", err
+	}
+
+	// Moved the 2 blocks down here because we don't want to hold transactions too long
+	authUser := AuthenticatedUser{
+		ID:        user.ID,
+		Name:      user.Name,
+		Email:     user.Email,
+		Avatar:    user.Avatar,
+		CreatedAt: user.CreatedAt,
+		UpdatedAt: user.UpdatedAt,
+	}
+
+	jwt, err := service.tokenService.GenerateJWTAccessToken(ctx, user.ID)
+	if err != nil {
 		return AuthenticatedUser{}, "", "", err
 	}
 
@@ -260,10 +262,10 @@ func (service *service) RefreshToken(ctx context.Context, refreshToken string) (
 		UpdatedAt: user.UpdatedAt,
 	}
 
-	accessToken, err := service.tokenService.GenerateJWTAccessToken(ctx, storedToken.UserID)
+	jwt, err := service.tokenService.GenerateJWTAccessToken(ctx, storedToken.UserID)
 	if err != nil {
 		return "", AuthenticatedUser{}, err
 	}
 
-	return accessToken, authUser, nil
+	return jwt, authUser, nil
 }
