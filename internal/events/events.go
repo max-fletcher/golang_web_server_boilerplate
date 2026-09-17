@@ -29,4 +29,8 @@ const (
 	QueueEventUserCreated EventType = "user.created"
 	QueueEventUserUpdated EventType = "user.updated"
 	QueueEventUserDeleted EventType = "user.deleted"
+
+	QueueEventRoleCreated EventType = "role.created"
+	QueueEventRoleUpdated EventType = "role.updated"
+	QueueEventRoleDeleted EventType = "role.deleted"
 )

@@ -7,6 +7,7 @@ import (
 
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/events"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/posts"
+	"github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/roles"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/users"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/queue"
 	redis_queue "github.com/max-fletcher/golang_web_server_boilerplate/internal/queue/redis"
@@ -71,6 +72,25 @@ func New(
 	dispatcher.Register(
 		string(events.QueueEventPostDeleted),
 		postWorker.HandleDeleted,
+	)
+
+	roleWorker := roles.NewWorker(
+	// cacheClient // To bind any depencencies to this worker(if needed), send it here
+	)
+
+	dispatcher.Register(
+		string(events.QueueEventRoleCreated),
+		roleWorker.HandleCreated,
+	)
+
+	dispatcher.Register(
+		string(events.QueueEventRoleUpdated),
+		roleWorker.HandleUpdated,
+	)
+
+	dispatcher.Register(
+		string(events.QueueEventRoleDeleted),
+		roleWorker.HandleDeleted,
 	)
 
 	return redis_queue.NewWorker(

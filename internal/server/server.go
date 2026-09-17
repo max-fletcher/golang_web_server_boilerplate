@@ -12,8 +12,11 @@ import (
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/handlers"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/logger"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/auth"
+	"github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/modules"
+	"github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/permissions"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/posts"
 	posts_with_users "github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/posts-with-users"
+	"github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/roles"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/users"
 )
 
@@ -29,6 +32,9 @@ type Server struct {
 	UsersHandler         *users.Handler
 	PostsHandler         *posts.Handler
 	PostsWithUserHandler *posts_with_users.Handler
+	RolesHandler         *roles.Handler
+	ModulesHandler       *modules.Handler
+	PermissionsHandler   *permissions.Handler
 	Logger               *slog.Logger
 }
 
@@ -56,7 +62,7 @@ func NewServer(database *db.Queries, conn *sql.DB, cfg *config.Config, cache cac
 	userHandler := users.NewHandler(userService)
 
 	tokenService := auth.NewTokenService(cfg.JWTSecret, cfg.JWTExpiry)
-	authMiddleware := auth.NewMiddleware(tokenService)
+	authMiddleware := auth.NewMiddleware(tokenService, userService)
 	authService := auth.NewService(tokenService, events, conn, database, cfg.RefreshTokenExpiry)
 	authHandler := auth.NewHandler(authService)
 
@@ -68,6 +74,18 @@ func NewServer(database *db.Queries, conn *sql.DB, cfg *config.Config, cache cac
 	postWithUserService := posts_with_users.NewService(postWithUserRepository, conn, database, cache)
 	postWithUserHandler := posts_with_users.NewHandler(postWithUserService)
 
+	roleRepository := roles.NewRepository(database)
+	roleService := roles.NewService(roleRepository, cache, events)
+	roleHandler := roles.NewHandler(roleService)
+
+	moduleRepository := modules.NewRepository(database)
+	moduleService := modules.NewService(moduleRepository)
+	moduleHandler := modules.NewHandler(moduleService)
+
+	permissionRepository := permissions.NewRepository(database)
+	permissionService := permissions.NewService(permissionRepository, moduleService)
+	permissionHandler := permissions.NewHandler(permissionService)
+
 	server := &Server{
 		config:               cfg,
 		CommonHandler:        handlers.New(database),
@@ -76,6 +94,9 @@ func NewServer(database *db.Queries, conn *sql.DB, cfg *config.Config, cache cac
 		UsersHandler:         userHandler,
 		PostsHandler:         postHandler,
 		PostsWithUserHandler: postWithUserHandler,
+		RolesHandler:         roleHandler,
+		ModulesHandler:       moduleHandler,
+		PermissionsHandler:   permissionHandler,
 		Logger:               logger.New(),
 	}
 

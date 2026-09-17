@@ -53,44 +53,51 @@ func (server *Server) routes() http.Handler {
 			router.Get("/refresh-token", server.Handle(server.Authhandler.RefreshToken))
 		})
 
-		router.Route("/users", func(router chi.Router) {
-			router.Get("/", server.Handle(server.UsersHandler.GetAll))
-			router.Post("/", server.Handle(server.UsersHandler.Create))
-			router.Get("/{id}", server.Handle(server.UsersHandler.GetByID))
-			router.Patch("/{id}", server.Handle(server.UsersHandler.Update))
-			router.Delete("/{id}", server.Handle(server.UsersHandler.Delete))
-		})
-
-		router.Route("/posts", func(router chi.Router) {
+		router.Group(func(router chi.Router) {
 			router.Use(server.AuthMiddleware.Authenticate)
 
-			router.Get("/", server.Handle(server.PostsHandler.GetAll))
-			router.Post("/", server.Handle(server.PostsHandler.Create))
-			router.Get("/{id}", server.Handle(server.PostsHandler.GetByID))
-			router.Patch("/{id}", server.Handle(server.PostsHandler.Update))
-			router.Delete("/{id}", server.Handle(server.PostsHandler.Delete))
+			router.Route("/users", func(router chi.Router) {
+				router.Get("/", server.Handle(server.UsersHandler.GetAll))
+				router.Post("/", server.Handle(server.UsersHandler.Create))
+				router.Get("/{id}", server.Handle(server.UsersHandler.GetByID))
+				router.Patch("/{id}", server.Handle(server.UsersHandler.Update))
+				router.Delete("/{id}", server.Handle(server.UsersHandler.Delete))
+			})
+
+			router.Route("/posts", func(router chi.Router) {
+				router.Get("/", server.Handle(server.PostsHandler.GetAll))
+				router.Post("/", server.Handle(server.PostsHandler.Create))
+				router.Get("/{id}", server.Handle(server.PostsHandler.GetByID))
+				router.Patch("/{id}", server.Handle(server.PostsHandler.Update))
+				router.Delete("/{id}", server.Handle(server.PostsHandler.Delete))
+			})
+
+			router.Route("/posts-with-user", func(router chi.Router) {
+				router.Post("/", server.Handle(server.PostsWithUserHandler.Create))
+				router.Get("/", server.Handle(server.PostsWithUserHandler.GetAll))
+				router.Get("/{id}", server.Handle(server.PostsWithUserHandler.GetByID))
+			})
+
+			router.Route("/roles", func(router chi.Router) {
+				router.Get("/", server.Handle(server.RolesHandler.GetAll))
+				router.Post("/", server.Handle(server.RolesHandler.Create))
+				router.Get("/{id}", server.Handle(server.RolesHandler.GetByID))
+				router.Patch("/{id}", server.Handle(server.RolesHandler.Update))
+				router.Delete("/{id}", server.Handle(server.RolesHandler.Delete))
+			})
+
+			router.Route("/modules", func(router chi.Router) {
+				router.Get("/", server.Handle(server.ModulesHandler.GetAll))
+				router.Post("/", server.Handle(server.ModulesHandler.Create))
+				router.Get("/{id}", server.Handle(server.ModulesHandler.GetByID))
+			})
+
+			router.Route("/permissions", func(router chi.Router) {
+				router.Get("/", server.Handle(server.PermissionsHandler.GetAll))
+				router.Post("/", server.Handle(server.PermissionsHandler.Create))
+				router.Get("/{id}", server.Handle(server.PermissionsHandler.GetByID))
+			})
 		})
-
-		router.Route("/posts-with-user", func(router chi.Router) {
-			router.Post("/", server.Handle(server.PostsWithUserHandler.Create))
-			router.Get("/", server.Handle(server.PostsWithUserHandler.GetAll))
-			router.Get("/{id}", server.Handle(server.PostsWithUserHandler.GetByID))
-		})
-
-		// Authenticated
-		// v1router.Group(func(v1router chi.Router) {
-		// 	v1router.Use(middleware.Authenticated)
-
-		// 	v1router.Get("/users", s.Handler.HandleGetUser)
-		// 	v1router.Post("/feeds", s.Handler.HandleCreateFeed)
-		// 	v1router.Get("/feeds", s.Handler.HandleGetFeeds)
-		// 	v1router.Post("/feed-follows", s.Handler.HandleCreateFeedFollow)
-		// })
-
-		// v1router.Route("/users", func(r chi.Router) {
-		// 	v1router.Post("/", s.Handler.HandleCreateUser)
-		// 	v1router.Get("/", s.Handler.HandleGetUser)
-		// })
 	})
 
 	return router

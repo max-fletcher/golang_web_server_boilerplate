@@ -48,7 +48,7 @@ func NewService(repository Repository, cache cache.Cache, events events.Publishe
 }
 
 func (service *service) Create(ctx context.Context, params CreateUserRequest) (db.User, error) {
-	// Not sure if this is needed anymore since I am checking unique constraint violation below on creat
+	// Not sure if this is needed anymore since I am checking unique constraint violation below on create
 	// and throwing the exact same error
 	_, err := service.GetByEmail(ctx, params.Email)
 	if err == nil {

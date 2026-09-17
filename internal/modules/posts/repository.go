@@ -32,8 +32,6 @@ func NewRepository(database *db.Queries) *repository {
 // this is called from (i.e service) works just fine instead of passing the response writer, then using r.Context() as first param of sqlc function
 
 func (repository *repository) Create(ctx context.Context, params db.CreatePostParams) (db.Post, error) {
-	// #TODO: File uploader
-
 	return repository.DB.CreatePost(ctx, db.CreatePostParams{
 		ID:        uuid.New(),
 		Title:     params.Title,

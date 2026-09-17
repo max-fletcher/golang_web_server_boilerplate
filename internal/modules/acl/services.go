@@ -1,4 +1,4 @@
-package posts
+package acl
 
 import (
 	"context"
@@ -17,7 +17,7 @@ import (
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/events"
 )
 
-type UserService interface { // For DI. Used in validating user in structs.go
+type UserExistenceChecker interface { // For DI. Used in validating user in structs.go
 	GetByID(ctx context.Context, id uuid.UUID) (db.User, error)
 }
 
@@ -31,27 +31,27 @@ type Service interface {
 
 type service struct {
 	repository  Repository
-	userService UserService // Using DI. See server/server.go where we are passing user service as 2nd param here.
+	userChecker UserExistenceChecker // Using DI. See server/server.go where we are passing user service as 2nd param here.
 	cache       cache.Cache
 	events      events.Publisher
 }
 
 func NewService(
 	repository Repository,
-	userService UserService,
+	userChecker UserExistenceChecker,
 	cache cache.Cache,
 	events events.Publisher,
 ) *service {
 	return &service{
 		repository:  repository,
-		userService: userService, // Using DI. See server/server.go where we are passing user service as 2nd param here.
+		userChecker: userChecker, // Using DI. See server/server.go where we are passing user service as 2nd param here.
 		cache:       cache,
 		events:      events,
 	}
 }
 
 func (service *service) Create(ctx context.Context, createPostInput CreatePostInput) (db.Post, error) {
-	_, err := service.userService.GetByID(ctx, createPostInput.UserId)
+	_, err := service.userChecker.GetByID(ctx, createPostInput.UserId)
 	if err != nil {
 		return db.Post{}, err
 	}

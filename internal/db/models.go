@@ -6,10 +6,71 @@ package db
 
 import (
 	"database/sql"
+	"database/sql/driver"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
 )
+
+type PermissionNamesEnum string
+
+const (
+	PermissionNamesEnumCreate PermissionNamesEnum = "create"
+	PermissionNamesEnumRead   PermissionNamesEnum = "read"
+	PermissionNamesEnumUpdate PermissionNamesEnum = "update"
+	PermissionNamesEnumDelete PermissionNamesEnum = "delete"
+)
+
+func (e *PermissionNamesEnum) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = PermissionNamesEnum(s)
+	case string:
+		*e = PermissionNamesEnum(s)
+	default:
+		return fmt.Errorf("unsupported scan type for PermissionNamesEnum: %T", src)
+	}
+	return nil
+}
+
+type NullPermissionNamesEnum struct {
+	PermissionNamesEnum PermissionNamesEnum
+	Valid               bool // Valid is true if PermissionNamesEnum is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullPermissionNamesEnum) Scan(value interface{}) error {
+	if value == nil {
+		ns.PermissionNamesEnum, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.PermissionNamesEnum.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullPermissionNamesEnum) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.PermissionNamesEnum), nil
+}
+
+type Module struct {
+	ID        uuid.UUID
+	Name      string
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
+type Permission struct {
+	ID        uuid.UUID
+	Name      PermissionNamesEnum
+	ModuleID  uuid.UUID
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
 
 type Post struct {
 	ID        uuid.UUID
@@ -31,12 +92,35 @@ type RefreshToken struct {
 	UpdatedAt time.Time
 }
 
+type Role struct {
+	ID        uuid.UUID
+	Name      string
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
+type RolePermission struct {
+	ID           uuid.UUID
+	RoleID       uuid.UUID
+	PermissionID uuid.UUID
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
+}
+
 type User struct {
 	ID        uuid.UUID
 	Name      string
 	Email     string
 	Password  string
 	Avatar    sql.NullString
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
+type UserRole struct {
+	ID        uuid.UUID
+	UserID    uuid.UUID
+	RoleID    uuid.UUID
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }

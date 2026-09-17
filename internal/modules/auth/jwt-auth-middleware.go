@@ -7,22 +7,29 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/max-fletcher/golang_web_server_boilerplate/helpers/responses"
+	"github.com/max-fletcher/golang_web_server_boilerplate/internal/db"
 )
 
 type contextKey string
 
 const userIDContextKey contextKey = "userID"
 
-type JWTTokenServiceForMiddleware interface {
+type JWTTokenService interface {
 	ValidateAccessToken(tokenString string) (uuid.UUID, error)
 }
 
-type Middleware struct {
-	tokenService JWTTokenServiceForMiddleware
+type UserService interface {
+	GetByID(ctx context.Context, id uuid.UUID) (db.User, error)
 }
 
-func NewMiddleware(tokenService JWTTokenServiceForMiddleware) *Middleware {
+type Middleware struct {
+	userService  UserService
+	tokenService JWTTokenService
+}
+
+func NewMiddleware(tokenService JWTTokenService, userService UserService) *Middleware {
 	return &Middleware{
+		userService:  userService,
 		tokenService: tokenService,
 	}
 }
@@ -56,6 +63,12 @@ func (middleware *Middleware) Authenticate(next http.Handler) http.Handler {
 			userIDContextKey,
 			userID,
 		)
+
+		_, err = middleware.userService.GetByID(ctx, userID)
+		if err != nil {
+			responses.RespondWithError(w, http.StatusUnauthorized, "Invalid or expired token")
+			return
+		}
 
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})

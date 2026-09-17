@@ -266,3 +266,96 @@ func ToAuthenticatedUserWithJWT(jwt string, refreshToken string, authUser Authen
 		},
 	}
 }
+
+type Role struct {
+	ID        uuid.UUID `json:"id"`
+	Name      string    `json:"name"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+func DatabaseRoleToRole(dbRole db.Role) Role {
+	return Role{
+		ID:        dbRole.ID,
+		Name:      dbRole.Name,
+		CreatedAt: dbRole.CreatedAt,
+		UpdatedAt: dbRole.UpdatedAt,
+	}
+}
+
+func DatabaseRolesToRoles(dbRoles []db.Role) []Role {
+	roles := []Role{}
+	for _, dbRole := range dbRoles {
+		roles = append(roles, Role{
+			ID:        dbRole.ID,
+			Name:      dbRole.Name,
+			CreatedAt: dbRole.CreatedAt,
+			UpdatedAt: dbRole.UpdatedAt,
+		})
+	}
+
+	return roles
+}
+
+type Module struct {
+	ID        uuid.UUID `json:"id"`
+	Name      string    `json:"name"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+func DatabaseModuleToModule(dbModule db.Module) Module {
+	return Module{
+		ID:        dbModule.ID,
+		Name:      dbModule.Name,
+		CreatedAt: dbModule.CreatedAt,
+		UpdatedAt: dbModule.UpdatedAt,
+	}
+}
+
+func DatabaseModulesToModules(dbModule []db.Module) []Module {
+	modules := []Module{}
+	for _, dbModule := range dbModule {
+		modules = append(modules, Module{
+			ID:        dbModule.ID,
+			Name:      dbModule.Name,
+			CreatedAt: dbModule.CreatedAt,
+			UpdatedAt: dbModule.UpdatedAt,
+		})
+	}
+
+	return modules
+}
+
+type Permission struct {
+	ID        uuid.UUID              `json:"id"`
+	Name      db.PermissionNamesEnum `json:"name"`
+	ModuleID  uuid.UUID              `json:"module_id"`
+	CreatedAt time.Time              `json:"created_at"`
+	UpdatedAt time.Time              `json:"updated_at"`
+}
+
+func DatabasePermissionToPermission(dbPermission db.Permission) Permission {
+	return Permission{
+		ID:        dbPermission.ID,
+		Name:      dbPermission.Name,
+		ModuleID:  dbPermission.ModuleID,
+		CreatedAt: dbPermission.CreatedAt,
+		UpdatedAt: dbPermission.UpdatedAt,
+	}
+}
+
+func DatabasePermissionsToPermissions(dbPermission []db.Permission) []Permission {
+	permissions := []Permission{}
+	for _, dbPermission := range dbPermission {
+		permissions = append(permissions, Permission{
+			ID:        dbPermission.ID,
+			Name:      dbPermission.Name,
+			ModuleID:  dbPermission.ModuleID,
+			CreatedAt: dbPermission.CreatedAt,
+			UpdatedAt: dbPermission.UpdatedAt,
+		})
+	}
+
+	return permissions
+}
