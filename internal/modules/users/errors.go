@@ -171,7 +171,7 @@ func (e ErrUserUpdateFailed) Unwrap() error {
 var _ common_errors.ErrHTTPServerError = ErrUserUpdateFailed{}
 
 type ErrUserDeleteFailed struct {
-	deleteErr error
+	DeleteErr error
 }
 
 func (e ErrUserDeleteFailed) StatusCode() int {
@@ -187,7 +187,7 @@ func (e ErrUserDeleteFailed) Error() string {
 }
 
 func (e ErrUserDeleteFailed) Unwrap() error {
-	return e.deleteErr
+	return e.DeleteErr
 }
 
 var _ common_errors.ErrHTTPServerError = ErrUserDeleteFailed{}

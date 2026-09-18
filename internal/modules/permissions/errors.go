@@ -91,7 +91,7 @@ func (e ErrPermissionFetchFailed) Unwrap() error { // Unwrap shows underlying de
 var _ common_errors.ErrHTTPServerError = ErrPermissionFetchFailed{}
 
 type ErrPermissionCreateFailed struct {
-	createErr error
+	CreateErr error
 }
 
 func (e ErrPermissionCreateFailed) Error() string {
@@ -107,7 +107,7 @@ func (e ErrPermissionCreateFailed) ClientMsg() string {
 }
 
 func (e ErrPermissionCreateFailed) Unwrap() error {
-	return e.createErr
+	return e.CreateErr
 }
 
 var _ common_errors.ErrHTTPServerError = ErrPermissionCreateFailed{}
@@ -135,7 +135,7 @@ func (e ErrPermissionUpdateFailed) Unwrap() error {
 var _ common_errors.ErrHTTPServerError = ErrPermissionUpdateFailed{}
 
 type ErrPermissionDeleteFailed struct {
-	deleteErr error
+	DeleteErr error
 }
 
 func (e ErrPermissionDeleteFailed) StatusCode() int {
@@ -151,7 +151,7 @@ func (e ErrPermissionDeleteFailed) Error() string {
 }
 
 func (e ErrPermissionDeleteFailed) Unwrap() error {
-	return e.deleteErr
+	return e.DeleteErr
 }
 
 var _ common_errors.ErrHTTPServerError = ErrPermissionDeleteFailed{}

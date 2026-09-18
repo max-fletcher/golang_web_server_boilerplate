@@ -14,6 +14,8 @@ type Repository interface {
 	Create(ctx context.Context, params db.CreateRolePermissionParams) (db.RolePermission, error)
 	GetAll(ctx context.Context, filterString string, limit int, offset int) ([]db.GetUsersWithRolesAndPermissionsRow, error)
 	GetAllCount(ctx context.Context, filterString string) (int, error)
+	GetByID(ctx context.Context, id uuid.UUID) (db.GetRolePermissionByIDRow, error)
+	GetByRoleIDAndPermissionID(ctx context.Context, roleID uuid.UUID, permissionID uuid.UUID) (db.GetRolePermissionByRoleIDAndPermissionIDRow, error)
 	GetByUserID(ctx context.Context, id uuid.UUID) ([]db.GetUserWithRolesAndPermissionsByUserIDRow, error)
 	UserHasPermission(ctx context.Context, userID uuid.UUID, moduleName permissions.EnumModule, permissionName db.PermissionNamesEnum) (bool, error)
 	DeleteByID(ctx context.Context, id uuid.UUID) (int64, error)
@@ -56,6 +58,18 @@ func (repository *repository) GetAllCount(ctx context.Context, filterString stri
 	countInt64, err := repository.DB.GetRolePermissionUsersCount(ctx, filterString)
 	count, err := numbers.BigInt64ToInt(countInt64)
 	return count, err
+}
+
+func (repository *repository) GetByID(ctx context.Context, id uuid.UUID) (db.GetRolePermissionByIDRow, error) {
+	return repository.DB.GetRolePermissionByID(ctx, id)
+}
+
+func (repository *repository) GetByRoleIDAndPermissionID(ctx context.Context, roleID uuid.UUID, permissionID uuid.UUID) (db.GetRolePermissionByRoleIDAndPermissionIDRow, error) {
+	params := db.GetRolePermissionByRoleIDAndPermissionIDParams{
+		RoleID:       roleID,
+		PermissionID: permissionID,
+	}
+	return repository.DB.GetRolePermissionByRoleIDAndPermissionID(ctx, params)
 }
 
 func (repository *repository) GetByUserID(ctx context.Context, id uuid.UUID) ([]db.GetUserWithRolesAndPermissionsByUserIDRow, error) {

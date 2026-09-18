@@ -12,10 +12,10 @@ import (
 // 1. Define static errors for static strings(see below example)
 // 2. Define error interfaces for dynamic errors(errors that need to be constructed using variables)(see below example)
 // rule of thumb for handling custom errors:
-// 1. use "if errors.Is(err, ErrPostNotFound) {...}" for static errors to figure out what type of error it is and determine what status
+// 1. use "if errors.Is(err, ErrRolePermissionNotFound) {...}" for static errors to figure out what type of error it is and determine what status
 // code should be conditionally returned with the response from handler/controller/topmost func)
 // 2. use (handler/controller/topmost func):
-// 	var emailExistsErr users.ErrPostWithEmailAlreadyExists
+// 	var emailExistsErr users.ErrRolePermissionWithEmailAlreadyExists
 // 	if errors.As(err, &emailExistsErr) {
 //    // log error e.g server.Logger.Error(...)
 // 		responses.ConflictError(w, emailExistsErr.Error())
@@ -28,135 +28,192 @@ import (
 // In this project, we are handling all errors in HandleError func from internal/server/errors.go
 
 // // Dynamic errors
-type ErrPostWithIdNotFound struct {
+type ErrRolePermissionWithIdNotFound struct {
 	ID uuid.UUID
 }
 
-func (e ErrPostWithIdNotFound) Error() string {
-	return fmt.Sprintf("Post with id %s not found", e.ID)
+func (e ErrRolePermissionWithIdNotFound) Error() string {
+	return fmt.Sprintf("Role-permission with id %s not found", e.ID)
 }
 
-func (e ErrPostWithIdNotFound) StatusCode() int {
+func (e ErrRolePermissionWithIdNotFound) StatusCode() int {
 	return http.StatusNotFound
 }
 
-func (e ErrPostWithIdNotFound) ClientMsg() string {
-	return fmt.Sprintf("Post with id %s not found", e.ID)
+func (e ErrRolePermissionWithIdNotFound) ClientMsg() string {
+	return fmt.Sprintf("Role-permission with id %s not found", e.ID)
 }
 
-var _ common_errors.ErrHTTPBaseError = ErrPostWithIdNotFound{}
+var _ common_errors.ErrHTTPBaseError = ErrRolePermissionWithIdNotFound{}
 
-type ErrPostsFetchFailed struct {
+type ErrRolePermissionWithRoleIdAndPermissionIDNotFound struct {
+	RoleID       uuid.UUID
+	PermissionID uuid.UUID
+}
+
+func (e ErrRolePermissionWithRoleIdAndPermissionIDNotFound) Error() string {
+	return fmt.Sprintf("Role-permission with role id %s and permission id %s not found", e.RoleID, e.PermissionID)
+}
+
+func (e ErrRolePermissionWithRoleIdAndPermissionIDNotFound) StatusCode() int {
+	return http.StatusNotFound
+}
+
+func (e ErrRolePermissionWithRoleIdAndPermissionIDNotFound) ClientMsg() string {
+	return fmt.Sprintf("Role-permission with role id %s and permission id %s not found", e.RoleID, e.PermissionID)
+}
+
+var _ common_errors.ErrHTTPBaseError = ErrRolePermissionWithRoleIdAndPermissionIDNotFound{}
+
+type ErrRolePermissionWithUserIdNotFound struct {
+	ID uuid.UUID
+}
+
+func (e ErrRolePermissionWithUserIdNotFound) Error() string {
+	return fmt.Sprintf("User with id %s not found", e.ID)
+}
+
+func (e ErrRolePermissionWithUserIdNotFound) StatusCode() int {
+	return http.StatusNotFound
+}
+
+func (e ErrRolePermissionWithUserIdNotFound) ClientMsg() string {
+	return fmt.Sprintf("User with id %s not found", e.ID)
+}
+
+var _ common_errors.ErrHTTPBaseError = ErrRolePermissionWithUserIdNotFound{}
+
+type ErrRolePermissionsFetchFailed struct {
 	FetchErr error
 }
 
-func (e ErrPostsFetchFailed) Error() string {
-	return "Failed to fetch posts"
+func (e ErrRolePermissionsFetchFailed) Error() string {
+	return "Failed to fetch user with role-permissions"
 }
 
-func (e ErrPostsFetchFailed) StatusCode() int {
+func (e ErrRolePermissionsFetchFailed) StatusCode() int {
 	return http.StatusInternalServerError
 }
 
-func (e ErrPostsFetchFailed) ClientMsg() string {
-	return "Failed to fetch posts"
+func (e ErrRolePermissionsFetchFailed) ClientMsg() string {
+	return "Failed to fetch user with role-permissions"
 }
 
-func (e ErrPostsFetchFailed) Unwrap() error { // Unwrap shows underlying details of errors
+func (e ErrRolePermissionsFetchFailed) Unwrap() error { // Unwrap shows underlying details of errors
 	return e.FetchErr
 }
 
-var _ common_errors.ErrHTTPServerError = ErrPostsFetchFailed{}
+var _ common_errors.ErrHTTPServerError = ErrRolePermissionsFetchFailed{}
 
-type ErrPostFetchFailed struct {
+type ErrRolePermissionFetchFailed struct {
 	FetchErr error
 }
 
-func (e ErrPostFetchFailed) Error() string {
-	return "Failed to fetch post"
+func (e ErrRolePermissionFetchFailed) Error() string {
+	return "Failed to fetch role-permissions"
 }
 
-func (e ErrPostFetchFailed) StatusCode() int {
+func (e ErrRolePermissionFetchFailed) StatusCode() int {
 	return http.StatusInternalServerError
 }
 
-func (e ErrPostFetchFailed) ClientMsg() string {
-	return "Failed to fetch post"
+func (e ErrRolePermissionFetchFailed) ClientMsg() string {
+	return "Failed to fetch role-permissions"
 }
 
-func (e ErrPostFetchFailed) Unwrap() error { // Unwrap shows underlying details of errors
+func (e ErrRolePermissionFetchFailed) Unwrap() error { // Unwrap shows underlying details of errors
 	return e.FetchErr
 }
 
-var _ common_errors.ErrHTTPServerError = ErrPostFetchFailed{}
+var _ common_errors.ErrHTTPServerError = ErrRolePermissionFetchFailed{}
 
-type ErrPostCreateFailed struct {
-	createErr error
+type ErrRolePermissionWithUserFetchFailed struct {
+	FetchErr error
 }
 
-func (e ErrPostCreateFailed) Error() string {
-	return "Failed to create post"
+func (e ErrRolePermissionWithUserFetchFailed) Error() string {
+	return "Failed to fetch user with role-permissions"
 }
 
-func (e ErrPostCreateFailed) StatusCode() int {
+func (e ErrRolePermissionWithUserFetchFailed) StatusCode() int {
 	return http.StatusInternalServerError
 }
 
-func (e ErrPostCreateFailed) ClientMsg() string {
-	return "Failed to create post"
+func (e ErrRolePermissionWithUserFetchFailed) ClientMsg() string {
+	return "Failed to fetch user with role-permissions"
 }
 
-func (e ErrPostCreateFailed) Unwrap() error {
-	return e.createErr
+func (e ErrRolePermissionWithUserFetchFailed) Unwrap() error { // Unwrap shows underlying details of errors
+	return e.FetchErr
 }
 
-var _ common_errors.ErrHTTPServerError = ErrPostCreateFailed{}
+var _ common_errors.ErrHTTPServerError = ErrRolePermissionWithUserFetchFailed{}
 
-type ErrPostUpdateFailed struct {
-	updatePost error
+type ErrRolePermissionCreateFailed struct {
+	CreateErr error
 }
 
-func (e ErrPostUpdateFailed) Error() string {
-	return "Failed to update post"
+func (e ErrRolePermissionCreateFailed) Error() string {
+	return "Failed to assign role-permission to user"
 }
 
-func (e ErrPostUpdateFailed) StatusCode() int {
+func (e ErrRolePermissionCreateFailed) StatusCode() int {
 	return http.StatusInternalServerError
 }
 
-func (e ErrPostUpdateFailed) ClientMsg() string {
-	return "Failed to update post"
+func (e ErrRolePermissionCreateFailed) ClientMsg() string {
+	return "Failed to assign role-permission to user"
 }
 
-func (e ErrPostUpdateFailed) Unwrap() error {
-	return e.updatePost
+func (e ErrRolePermissionCreateFailed) Unwrap() error {
+	return e.CreateErr
 }
 
-var _ common_errors.ErrHTTPServerError = ErrPostUpdateFailed{}
+var _ common_errors.ErrHTTPServerError = ErrRolePermissionCreateFailed{}
 
-type ErrPostDeleteFailed struct {
-	deleteErr error
+type ErrRolePermissionWithRoleIDAndPermissionIDAlreadyExists struct {
+	RoleID       uuid.UUID
+	PermissionID uuid.UUID
+	Err          error
 }
 
-func (e ErrPostDeleteFailed) StatusCode() int {
+func (e ErrRolePermissionWithRoleIDAndPermissionIDAlreadyExists) Error() string {
+	return fmt.Sprintf("Role-permission with role ID %v and permission ID %v already exists", e.RoleID, e.PermissionID)
+}
+
+func (e ErrRolePermissionWithRoleIDAndPermissionIDAlreadyExists) StatusCode() int {
+	return http.StatusConflict
+}
+
+func (e ErrRolePermissionWithRoleIDAndPermissionIDAlreadyExists) ClientMsg() string {
+	return fmt.Sprintf("Role-permission with role ID %v and permission ID %v already exists", e.RoleID, e.PermissionID)
+}
+
+var _ common_errors.ErrHTTPBaseError = ErrRolePermissionWithRoleIDAndPermissionIDAlreadyExists{}
+
+type ErrRolePermissionDeleteFailed struct {
+	DeleteErr error
+}
+
+func (e ErrRolePermissionDeleteFailed) Error() string {
+	return "Failed to remove role-permission from user"
+}
+
+func (e ErrRolePermissionDeleteFailed) StatusCode() int {
 	return http.StatusInternalServerError
 }
 
-func (e ErrPostDeleteFailed) ClientMsg() string {
-	return "Failed to delete post"
+func (e ErrRolePermissionDeleteFailed) ClientMsg() string {
+	return "Failed to remove role-permission from user"
 }
 
-func (e ErrPostDeleteFailed) Error() string {
-	return "Failed to delete post"
+func (e ErrRolePermissionDeleteFailed) Unwrap() error {
+	return e.DeleteErr
 }
 
-func (e ErrPostDeleteFailed) Unwrap() error {
-	return e.deleteErr
-}
-
-var _ common_errors.ErrHTTPServerError = ErrPostDeleteFailed{}
+var _ common_errors.ErrHTTPServerError = ErrRolePermissionDeleteFailed{}
 
 // Static errors
 // var (
-// 	ErrPostWithIdNotFound   = errors.New("Post with this id doesn't exist")
+// 	ErrRolePermissionWithIdNotFound   = errors.New("RolePermission with this id doesn't exist")
 // )

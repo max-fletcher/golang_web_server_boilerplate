@@ -91,7 +91,7 @@ func (e ErrPostFetchFailed) Unwrap() error { // Unwrap shows underlying details 
 var _ common_errors.ErrHTTPServerError = ErrPostFetchFailed{}
 
 type ErrPostCreateFailed struct {
-	createErr error
+	CreateErr error
 }
 
 func (e ErrPostCreateFailed) Error() string {
@@ -107,7 +107,7 @@ func (e ErrPostCreateFailed) ClientMsg() string {
 }
 
 func (e ErrPostCreateFailed) Unwrap() error {
-	return e.createErr
+	return e.CreateErr
 }
 
 var _ common_errors.ErrHTTPServerError = ErrPostCreateFailed{}
@@ -135,7 +135,7 @@ func (e ErrPostUpdateFailed) Unwrap() error {
 var _ common_errors.ErrHTTPServerError = ErrPostUpdateFailed{}
 
 type ErrPostDeleteFailed struct {
-	deleteErr error
+	DeleteErr error
 }
 
 func (e ErrPostDeleteFailed) StatusCode() int {
@@ -151,7 +151,7 @@ func (e ErrPostDeleteFailed) Error() string {
 }
 
 func (e ErrPostDeleteFailed) Unwrap() error {
-	return e.deleteErr
+	return e.DeleteErr
 }
 
 var _ common_errors.ErrHTTPServerError = ErrPostDeleteFailed{}

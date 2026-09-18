@@ -135,7 +135,7 @@ func (e ErrModuleUpdateFailed) Unwrap() error {
 var _ common_errors.ErrHTTPServerError = ErrModuleUpdateFailed{}
 
 type ErrModuleDeleteFailed struct {
-	deleteErr error
+	DeleteErr error
 }
 
 func (e ErrModuleDeleteFailed) StatusCode() int {
@@ -151,7 +151,7 @@ func (e ErrModuleDeleteFailed) Error() string {
 }
 
 func (e ErrModuleDeleteFailed) Unwrap() error {
-	return e.deleteErr
+	return e.DeleteErr
 }
 
 var _ common_errors.ErrHTTPServerError = ErrModuleDeleteFailed{}

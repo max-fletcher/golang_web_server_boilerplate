@@ -79,6 +79,28 @@ WHERE
     OR m.name ILIKE '%' || $1 || '%'
     OR p.name ILIKE '%' || $1 || '%';
 
+-- name: GetRolePermissionByID :one
+SELECT rp.id, rp.role_id, rp.permission_id, r.name as role_name, p.name as permission_name, m.name as module_name
+FROM role_permissions as rp
+INNER JOIN roles AS r
+  ON r.id = rp.role_id
+INNER JOIN permissions AS p
+  ON p.id = rp.permission_id
+INNER JOIN modules AS m
+  ON m.id = p.module_id
+WHERE rp.id = $1;
+
+-- name: GetRolePermissionByRoleIDAndPermissionID :one
+SELECT rp.id, rp.role_id, rp.permission_id, r.name as role_name, p.name as permission_name, m.name as module_name
+FROM role_permissions as rp
+INNER JOIN roles AS r
+  ON r.id = rp.role_id
+INNER JOIN permissions AS p
+  ON p.id = rp.permission_id
+INNER JOIN modules AS m
+  ON m.id = p.module_id
+WHERE rp.role_id = $1 AND rp.permission_id = $2;
+
 -- name: GetUserWithRolesAndPermissionsByUserID :many
 SELECT
     u.id,

@@ -100,7 +100,7 @@ func (service *service) Create(ctx context.Context, createPostWithUserInput Crea
 	})
 	if err != nil {
 		return db.User{}, ErrPostCreateFailed{
-			createErr: err,
+			CreateErr: err,
 		}
 	}
 

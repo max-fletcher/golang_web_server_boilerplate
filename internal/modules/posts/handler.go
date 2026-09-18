@@ -45,7 +45,7 @@ func (handler *Handler) Create(w http.ResponseWriter, r *http.Request) error {
 	params := CreatePostRequest{
 		Title:   r.FormValue("title"),
 		Content: r.FormValue("content"),
-		UserId:  r.FormValue("user_id"),
+		UserID:  r.FormValue("user_id"),
 		Photo:   fileHeaders["photo"],
 	}
 
@@ -140,7 +140,7 @@ func (handler *Handler) Update(w http.ResponseWriter, r *http.Request) error {
 	params := UpdatePostRequest{
 		Title:   r.FormValue("title"),
 		Content: r.FormValue("content"),
-		UserId:  r.FormValue("user_id"),
+		UserID:  r.FormValue("user_id"),
 		Photo:   fileHeaders["photo"],
 	}
 

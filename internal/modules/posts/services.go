@@ -51,7 +51,7 @@ func NewService(
 }
 
 func (service *service) Create(ctx context.Context, createPostInput CreatePostInput) (db.Post, error) {
-	_, err := service.userService.GetByID(ctx, createPostInput.UserId)
+	_, err := service.userService.GetByID(ctx, createPostInput.UserID)
 	if err != nil {
 		return db.Post{}, err
 	}
@@ -63,13 +63,13 @@ func (service *service) Create(ctx context.Context, createPostInput CreatePostIn
 		Title:     createPostInput.Title,
 		Content:   formatters.StringPointerToNullString(createPostInput.Content),
 		Photo:     formatters.StringPointerToNullString(createPostInput.Photo),
-		UserID:    createPostInput.UserId,
+		UserID:    createPostInput.UserID,
 		CreatedAt: time.Now().UTC(),
 		UpdatedAt: time.Now().UTC(),
 	})
 	if err != nil {
 		return db.Post{}, ErrPostCreateFailed{
-			createErr: err,
+			CreateErr: err,
 		}
 	}
 
@@ -194,7 +194,7 @@ func (service *service) Update(ctx context.Context, id uuid.UUID, updatePostInpu
 		Title:     updatePostInput.Title,
 		Content:   formatters.StringPointerToNullString(updatePostInput.Content),
 		Photo:     photoToUpload,
-		UserID:    updatePostInput.UserId,
+		UserID:    updatePostInput.UserID,
 		UpdatedAt: time.Now().UTC(),
 	})
 	if err != nil {
@@ -240,7 +240,7 @@ func (service *service) Delete(ctx context.Context, id uuid.UUID, baseUrl string
 	_, err = service.repository.Delete(ctx, id)
 	if err != nil {
 		return db.Post{}, ErrPostDeleteFailed{
-			deleteErr: err,
+			DeleteErr: err,
 		}
 	}
 

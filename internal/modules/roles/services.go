@@ -52,7 +52,7 @@ func (service *service) Create(ctx context.Context, createRoleInput CreateRoleIn
 	})
 	if err != nil {
 		return db.Role{}, ErrRoleCreateFailed{
-			createErr: err,
+			CreateErr: err,
 		}
 	}
 
@@ -208,7 +208,7 @@ func (service *service) Delete(ctx context.Context, id uuid.UUID) (db.Role, erro
 	_, err = service.repository.Delete(ctx, id)
 	if err != nil {
 		return db.Role{}, ErrRoleDeleteFailed{
-			deleteErr: err,
+			DeleteErr: err,
 		}
 	}
 

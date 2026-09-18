@@ -83,6 +83,81 @@ func (q *Queries) DeleteRolePermissionByRoleIDAndPermissionID(ctx context.Contex
 	return result.RowsAffected()
 }
 
+const getRolePermissionByID = `-- name: GetRolePermissionByID :one
+SELECT rp.id, rp.role_id, rp.permission_id, r.name as role_name, p.name as permission_name, m.name as module_name
+FROM role_permissions as rp
+INNER JOIN roles AS r
+  ON r.id = rp.role_id
+INNER JOIN permissions AS p
+  ON p.id = rp.permission_id
+INNER JOIN modules AS m
+  ON m.id = p.module_id
+WHERE rp.id = $1
+`
+
+type GetRolePermissionByIDRow struct {
+	ID             uuid.UUID
+	RoleID         uuid.UUID
+	PermissionID   uuid.UUID
+	RoleName       string
+	PermissionName PermissionNamesEnum
+	ModuleName     string
+}
+
+func (q *Queries) GetRolePermissionByID(ctx context.Context, id uuid.UUID) (GetRolePermissionByIDRow, error) {
+	row := q.db.QueryRowContext(ctx, getRolePermissionByID, id)
+	var i GetRolePermissionByIDRow
+	err := row.Scan(
+		&i.ID,
+		&i.RoleID,
+		&i.PermissionID,
+		&i.RoleName,
+		&i.PermissionName,
+		&i.ModuleName,
+	)
+	return i, err
+}
+
+const getRolePermissionByRoleIDAndPermissionID = `-- name: GetRolePermissionByRoleIDAndPermissionID :one
+SELECT rp.id, rp.role_id, rp.permission_id, r.name as role_name, p.name as permission_name, m.name as module_name
+FROM role_permissions as rp
+INNER JOIN roles AS r
+  ON r.id = rp.role_id
+INNER JOIN permissions AS p
+  ON p.id = rp.permission_id
+INNER JOIN modules AS m
+  ON m.id = p.module_id
+WHERE rp.role_id = $1 AND rp.permission_id = $2
+`
+
+type GetRolePermissionByRoleIDAndPermissionIDParams struct {
+	RoleID       uuid.UUID
+	PermissionID uuid.UUID
+}
+
+type GetRolePermissionByRoleIDAndPermissionIDRow struct {
+	ID             uuid.UUID
+	RoleID         uuid.UUID
+	PermissionID   uuid.UUID
+	RoleName       string
+	PermissionName PermissionNamesEnum
+	ModuleName     string
+}
+
+func (q *Queries) GetRolePermissionByRoleIDAndPermissionID(ctx context.Context, arg GetRolePermissionByRoleIDAndPermissionIDParams) (GetRolePermissionByRoleIDAndPermissionIDRow, error) {
+	row := q.db.QueryRowContext(ctx, getRolePermissionByRoleIDAndPermissionID, arg.RoleID, arg.PermissionID)
+	var i GetRolePermissionByRoleIDAndPermissionIDRow
+	err := row.Scan(
+		&i.ID,
+		&i.RoleID,
+		&i.PermissionID,
+		&i.RoleName,
+		&i.PermissionName,
+		&i.ModuleName,
+	)
+	return i, err
+}
+
 const getRolePermissionUsersCount = `-- name: GetRolePermissionUsersCount :one
 SELECT COUNT(DISTINCT u.id)
 FROM users AS u

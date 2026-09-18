@@ -149,7 +149,7 @@ func (e ErrUserCreateFailed) Unwrap() error {
 var _ common_errors.ErrHTTPServerError = ErrUserCreateFailed{}
 
 type ErrPostCreateFailed struct {
-	createErr error
+	CreateErr error
 }
 
 func (e ErrPostCreateFailed) Error() string {
@@ -165,7 +165,7 @@ func (e ErrPostCreateFailed) ClientMsg() string {
 }
 
 func (e ErrPostCreateFailed) Unwrap() error {
-	return e.createErr
+	return e.CreateErr
 }
 
 var _ common_errors.ErrHTTPServerError = ErrPostCreateFailed{}

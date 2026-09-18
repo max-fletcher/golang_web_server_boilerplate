@@ -11,6 +11,7 @@ import (
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/events"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/handlers"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/logger"
+	"github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/acl"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/auth"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/modules"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/permissions"
@@ -35,6 +36,7 @@ type Server struct {
 	RolesHandler         *roles.Handler
 	ModulesHandler       *modules.Handler
 	PermissionsHandler   *permissions.Handler
+	ACLHandler           *acl.Handler
 	Logger               *slog.Logger
 }
 
@@ -74,6 +76,7 @@ func NewServer(database *db.Queries, conn *sql.DB, cfg *config.Config, cache cac
 	postWithUserService := posts_with_users.NewService(postWithUserRepository, conn, database, cache)
 	postWithUserHandler := posts_with_users.NewHandler(postWithUserService)
 
+	// RBAC Entities
 	roleRepository := roles.NewRepository(database)
 	roleService := roles.NewService(roleRepository, cache, events)
 	roleHandler := roles.NewHandler(roleService)
@@ -86,6 +89,10 @@ func NewServer(database *db.Queries, conn *sql.DB, cfg *config.Config, cache cac
 	permissionService := permissions.NewService(permissionRepository, moduleService)
 	permissionHandler := permissions.NewHandler(permissionService)
 
+	aclRepository := acl.NewRepository(database)
+	aclService := acl.NewService(aclRepository)
+	aclHandler := acl.NewHandler(aclService)
+
 	server := &Server{
 		config:               cfg,
 		CommonHandler:        handlers.New(database),
@@ -97,6 +104,7 @@ func NewServer(database *db.Queries, conn *sql.DB, cfg *config.Config, cache cac
 		RolesHandler:         roleHandler,
 		ModulesHandler:       moduleHandler,
 		PermissionsHandler:   permissionHandler,
+		ACLHandler:           aclHandler,
 		Logger:               logger.New(),
 	}
 

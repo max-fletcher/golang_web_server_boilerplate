@@ -38,7 +38,7 @@ func (handler *Handler) Create(w http.ResponseWriter, r *http.Request) error {
 		ConfirmPassword: r.FormValue("confirm_password"),
 		Title:           r.FormValue("title"),
 		Content:         r.FormValue("content"),
-		UserId:          r.FormValue("user_id"),
+		UserID:          r.FormValue("user_id"),
 		Photo:           fileHeaders["photo"],
 	}
 

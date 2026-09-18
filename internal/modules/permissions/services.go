@@ -59,7 +59,7 @@ func (service *service) Create(ctx context.Context, createPermissionInput Create
 		}
 
 		return db.Permission{}, ErrPermissionCreateFailed{
-			createErr: err,
+			CreateErr: err,
 		}
 	}
 

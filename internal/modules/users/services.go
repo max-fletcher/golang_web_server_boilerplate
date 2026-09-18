@@ -293,7 +293,7 @@ func (service *service) Delete(ctx context.Context, id uuid.UUID) (db.User, erro
 	_, err = service.repository.Delete(ctx, id)
 	if err != nil {
 		return db.User{}, ErrUserDeleteFailed{
-			deleteErr: err,
+			DeleteErr: err,
 		}
 	}
 

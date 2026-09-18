@@ -12,7 +12,7 @@ FROM user_roles
 WHERE id = $1
 LIMIT 1;
 
--- name: GetUserRoleByUserId :one
+-- name: GetUserRoleByUserID :one
 SELECT u.id, u.name, u.email, u.created_at, u.updated_at, r.name
 FROM user_roles AS ur
 INNER JOIN users AS u ON u.id = ur.user_id
@@ -44,7 +44,7 @@ DELETE FROM user_roles
 WHERE id = $1
 RETURNING *;
 
--- name: DeleteUserRoleByUserIdAndRoleId :execrows
+-- name: DeleteUserRoleByUserIDAndRoleId :execrows
 DELETE FROM user_roles
 WHERE user_id = $1 AND role_id = $2
 RETURNING *;

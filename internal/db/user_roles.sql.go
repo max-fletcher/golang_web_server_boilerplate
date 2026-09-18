@@ -62,19 +62,19 @@ func (q *Queries) DeleteUserRoleById(ctx context.Context, id uuid.UUID) (int64, 
 	return result.RowsAffected()
 }
 
-const deleteUserRoleByUserIdAndRoleId = `-- name: DeleteUserRoleByUserIdAndRoleId :execrows
+const deleteUserRoleByUserIDAndRoleId = `-- name: DeleteUserRoleByUserIDAndRoleId :execrows
 DELETE FROM user_roles
 WHERE user_id = $1 AND role_id = $2
 RETURNING id, user_id, role_id, created_at, updated_at
 `
 
-type DeleteUserRoleByUserIdAndRoleIdParams struct {
+type DeleteUserRoleByUserIDAndRoleIdParams struct {
 	UserID uuid.UUID
 	RoleID uuid.UUID
 }
 
-func (q *Queries) DeleteUserRoleByUserIdAndRoleId(ctx context.Context, arg DeleteUserRoleByUserIdAndRoleIdParams) (int64, error) {
-	result, err := q.db.ExecContext(ctx, deleteUserRoleByUserIdAndRoleId, arg.UserID, arg.RoleID)
+func (q *Queries) DeleteUserRoleByUserIDAndRoleId(ctx context.Context, arg DeleteUserRoleByUserIDAndRoleIdParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, deleteUserRoleByUserIDAndRoleId, arg.UserID, arg.RoleID)
 	if err != nil {
 		return 0, err
 	}
@@ -101,7 +101,7 @@ func (q *Queries) GetUserRoleById(ctx context.Context, id uuid.UUID) (UserRole, 
 	return i, err
 }
 
-const getUserRoleByUserId = `-- name: GetUserRoleByUserId :one
+const getUserRoleByUserID = `-- name: GetUserRoleByUserID :one
 SELECT u.id, u.name, u.email, u.created_at, u.updated_at, r.name
 FROM user_roles AS ur
 INNER JOIN users AS u ON u.id = ur.user_id
@@ -110,7 +110,7 @@ WHERE ur.user_id = $1
 LIMIT 1
 `
 
-type GetUserRoleByUserIdRow struct {
+type GetUserRoleByUserIDRow struct {
 	ID        uuid.UUID
 	Name      string
 	Email     string
@@ -119,9 +119,9 @@ type GetUserRoleByUserIdRow struct {
 	Name_2    string
 }
 
-func (q *Queries) GetUserRoleByUserId(ctx context.Context, userID uuid.UUID) (GetUserRoleByUserIdRow, error) {
-	row := q.db.QueryRowContext(ctx, getUserRoleByUserId, userID)
-	var i GetUserRoleByUserIdRow
+func (q *Queries) GetUserRoleByUserID(ctx context.Context, userID uuid.UUID) (GetUserRoleByUserIDRow, error) {
+	row := q.db.QueryRowContext(ctx, getUserRoleByUserID, userID)
+	var i GetUserRoleByUserIDRow
 	err := row.Scan(
 		&i.ID,
 		&i.Name,

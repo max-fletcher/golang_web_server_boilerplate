@@ -91,7 +91,7 @@ func (e ErrRoleFetchFailed) Unwrap() error { // Unwrap shows underlying details 
 var _ common_errors.ErrHTTPServerError = ErrRoleFetchFailed{}
 
 type ErrRoleCreateFailed struct {
-	createErr error
+	CreateErr error
 }
 
 func (e ErrRoleCreateFailed) Error() string {
@@ -107,7 +107,7 @@ func (e ErrRoleCreateFailed) ClientMsg() string {
 }
 
 func (e ErrRoleCreateFailed) Unwrap() error {
-	return e.createErr
+	return e.CreateErr
 }
 
 var _ common_errors.ErrHTTPServerError = ErrRoleCreateFailed{}
@@ -135,7 +135,7 @@ func (e ErrRoleUpdateFailed) Unwrap() error {
 var _ common_errors.ErrHTTPServerError = ErrRoleUpdateFailed{}
 
 type ErrRoleDeleteFailed struct {
-	deleteErr error
+	DeleteErr error
 }
 
 func (e ErrRoleDeleteFailed) StatusCode() int {
@@ -151,7 +151,7 @@ func (e ErrRoleDeleteFailed) Error() string {
 }
 
 func (e ErrRoleDeleteFailed) Unwrap() error {
-	return e.deleteErr
+	return e.DeleteErr
 }
 
 var _ common_errors.ErrHTTPServerError = ErrRoleDeleteFailed{}

@@ -23,7 +23,7 @@ type CreatePostWithUserRequest struct {
 	Title           string                `json:"title"`
 	Content         string                `json:"content"`
 	Photo           *multipart.FileHeader `json:"photo"`
-	UserId          string                `json:"user_id"`
+	UserID          string                `json:"user_id"`
 }
 
 type CreatePostWithUserInput struct {
@@ -33,7 +33,7 @@ type CreatePostWithUserInput struct {
 	Title    string    `json:"title"`
 	Content  *string   `json:"content"`
 	Photo    *string   `json:"photo"`
-	UserId   uuid.UUID `json:"user_id"`
+	UserID   uuid.UUID `json:"user_id"`
 }
 
 // Rules
@@ -69,7 +69,7 @@ func (params CreatePostWithUserRequest) ValidateCreatePostWithUserData() (Create
 			validation.Length(2, 100).Error("Content must be between 10 and 200 characters"),
 		),
 		validation.Field(
-			&params.UserId,
+			&params.UserID,
 			validation.Required.Error("User is required"),
 			is.UUID.Error("Not a valid UUID"),
 		),
@@ -82,7 +82,7 @@ func (params CreatePostWithUserRequest) ValidateCreatePostWithUserData() (Create
 
 	formattedErrors, hasValidationErrors := validator.FormatValidationErrors(err)
 	_, exists := formattedErrors["user_id"]                           // check if err with key "user_id" exists
-	userID, uuidErr := id_helpers.ParseUUID(params.UserId, "user ID") // parsing UserId field
+	userID, uuidErr := id_helpers.ParseUUID(params.UserID, "user ID") // parsing UserID field
 	// if userID is not valid uuid and err with key "user_id" doesn't exist, put it in formattedErrors and set hasValidationErrors to false
 	if uuidErr != nil && !exists {
 		formattedErrors["user_id"] = uuidErr.Error()
@@ -114,7 +114,7 @@ func (params CreatePostWithUserRequest) ValidateCreatePostWithUserData() (Create
 		Title:    params.Title,
 		Content:  content,
 		Photo:    photo,
-		UserId:   userID,
+		UserID:   userID,
 	}
 
 	return createPostWithUserInput, nil
