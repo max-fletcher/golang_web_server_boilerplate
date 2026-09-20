@@ -11,13 +11,13 @@ import (
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/events"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/handlers"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/logger"
-	"github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/acl"
+	modules "github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/acl/module-names"
+	"github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/acl/permissions"
+	role_permissions "github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/acl/role-permissions"
+	"github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/acl/roles"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/auth"
-	"github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/modules"
-	"github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/permissions"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/posts"
 	posts_with_users "github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/posts-with-users"
-	"github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/roles"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/users"
 )
 
@@ -25,19 +25,19 @@ import (
 
 // Struct containing a router instance
 type Server struct {
-	config               *config.Config
-	Router               http.Handler // Reference to router instance
-	CommonHandler        *handlers.Handler
-	Authhandler          *auth.Handler
-	AuthMiddleware       *auth.Middleware
-	UsersHandler         *users.Handler
-	PostsHandler         *posts.Handler
-	PostsWithUserHandler *posts_with_users.Handler
-	RolesHandler         *roles.Handler
-	ModulesHandler       *modules.Handler
-	PermissionsHandler   *permissions.Handler
-	ACLHandler           *acl.Handler
-	Logger               *slog.Logger
+	config                 *config.Config
+	Router                 http.Handler // Reference to router instance
+	CommonHandler          *handlers.Handler
+	Authhandler            *auth.Handler
+	AuthMiddleware         *auth.Middleware
+	UsersHandler           *users.Handler
+	PostsHandler           *posts.Handler
+	PostsWithUserHandler   *posts_with_users.Handler
+	RolesHandler           *roles.Handler
+	ModulesHandler         *modules.Handler
+	PermissionsHandler     *permissions.Handler
+	RolePermissionsHandler *role_permissions.Handler
+	Logger                 *slog.Logger
 }
 
 // The name "NewServer" is a naming convention for functions that behave like a constructor. This func will create a new server.
@@ -89,23 +89,23 @@ func NewServer(database *db.Queries, conn *sql.DB, cfg *config.Config, cache cac
 	permissionService := permissions.NewService(permissionRepository, moduleService)
 	permissionHandler := permissions.NewHandler(permissionService)
 
-	aclRepository := acl.NewRepository(database)
-	aclService := acl.NewService(aclRepository)
-	aclHandler := acl.NewHandler(aclService)
+	rolePermissionsRepository := role_permissions.NewRepository(database)
+	rolePermissionsService := role_permissions.NewService(rolePermissionsRepository)
+	rolePermissionsHandler := role_permissions.NewHandler(rolePermissionsService)
 
 	server := &Server{
-		config:               cfg,
-		CommonHandler:        handlers.New(database),
-		Authhandler:          authHandler,
-		AuthMiddleware:       authMiddleware,
-		UsersHandler:         userHandler,
-		PostsHandler:         postHandler,
-		PostsWithUserHandler: postWithUserHandler,
-		RolesHandler:         roleHandler,
-		ModulesHandler:       moduleHandler,
-		PermissionsHandler:   permissionHandler,
-		ACLHandler:           aclHandler,
-		Logger:               logger.New(),
+		config:                 cfg,
+		CommonHandler:          handlers.New(database),
+		Authhandler:            authHandler,
+		AuthMiddleware:         authMiddleware,
+		UsersHandler:           userHandler,
+		PostsHandler:           postHandler,
+		PostsWithUserHandler:   postWithUserHandler,
+		RolesHandler:           roleHandler,
+		ModulesHandler:         moduleHandler,
+		PermissionsHandler:     permissionHandler,
+		RolePermissionsHandler: rolePermissionsHandler,
+		Logger:                 logger.New(),
 	}
 
 	server.Router = server.routes()

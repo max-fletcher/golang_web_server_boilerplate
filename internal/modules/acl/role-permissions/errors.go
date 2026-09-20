@@ -1,4 +1,4 @@
-package acl
+package role_permissions
 
 import (
 	"fmt"
@@ -46,31 +46,31 @@ func (e ErrRolePermissionWithIdNotFound) ClientMsg() string {
 
 var _ common_errors.ErrHTTPBaseError = ErrRolePermissionWithIdNotFound{}
 
-type ErrRolePermissionWithRoleIdAndPermissionIDNotFound struct {
+type ErrRolePermissionWithRoleIdAndPermissionIdNotFound struct {
 	RoleID       uuid.UUID
 	PermissionID uuid.UUID
 }
 
-func (e ErrRolePermissionWithRoleIdAndPermissionIDNotFound) Error() string {
+func (e ErrRolePermissionWithRoleIdAndPermissionIdNotFound) Error() string {
 	return fmt.Sprintf("Role-permission with role id %s and permission id %s not found", e.RoleID, e.PermissionID)
 }
 
-func (e ErrRolePermissionWithRoleIdAndPermissionIDNotFound) StatusCode() int {
+func (e ErrRolePermissionWithRoleIdAndPermissionIdNotFound) StatusCode() int {
 	return http.StatusNotFound
 }
 
-func (e ErrRolePermissionWithRoleIdAndPermissionIDNotFound) ClientMsg() string {
+func (e ErrRolePermissionWithRoleIdAndPermissionIdNotFound) ClientMsg() string {
 	return fmt.Sprintf("Role-permission with role id %s and permission id %s not found", e.RoleID, e.PermissionID)
 }
 
-var _ common_errors.ErrHTTPBaseError = ErrRolePermissionWithRoleIdAndPermissionIDNotFound{}
+var _ common_errors.ErrHTTPBaseError = ErrRolePermissionWithRoleIdAndPermissionIdNotFound{}
 
 type ErrRolePermissionWithUserIdNotFound struct {
 	ID uuid.UUID
 }
 
 func (e ErrRolePermissionWithUserIdNotFound) Error() string {
-	return fmt.Sprintf("User with id %s not found", e.ID)
+	return fmt.Sprintf("Role-permission with id %s not found", e.ID)
 }
 
 func (e ErrRolePermissionWithUserIdNotFound) StatusCode() int {
@@ -78,7 +78,7 @@ func (e ErrRolePermissionWithUserIdNotFound) StatusCode() int {
 }
 
 func (e ErrRolePermissionWithUserIdNotFound) ClientMsg() string {
-	return fmt.Sprintf("User with id %s not found", e.ID)
+	return fmt.Sprintf("Role-permission with id %s not found", e.ID)
 }
 
 var _ common_errors.ErrHTTPBaseError = ErrRolePermissionWithUserIdNotFound{}
@@ -171,32 +171,52 @@ func (e ErrRolePermissionCreateFailed) Unwrap() error {
 
 var _ common_errors.ErrHTTPServerError = ErrRolePermissionCreateFailed{}
 
-type ErrRolePermissionWithRoleIDAndPermissionIDAlreadyExists struct {
+type ErrRolePermissionWithRoleIdAndPermissionIdAlreadyExists struct {
 	RoleID       uuid.UUID
 	PermissionID uuid.UUID
 	Err          error
 }
 
-func (e ErrRolePermissionWithRoleIDAndPermissionIDAlreadyExists) Error() string {
+func (e ErrRolePermissionWithRoleIdAndPermissionIdAlreadyExists) Error() string {
 	return fmt.Sprintf("Role-permission with role ID %v and permission ID %v already exists", e.RoleID, e.PermissionID)
 }
 
-func (e ErrRolePermissionWithRoleIDAndPermissionIDAlreadyExists) StatusCode() int {
+func (e ErrRolePermissionWithRoleIdAndPermissionIdAlreadyExists) StatusCode() int {
 	return http.StatusConflict
 }
 
-func (e ErrRolePermissionWithRoleIDAndPermissionIDAlreadyExists) ClientMsg() string {
+func (e ErrRolePermissionWithRoleIdAndPermissionIdAlreadyExists) ClientMsg() string {
 	return fmt.Sprintf("Role-permission with role ID %v and permission ID %v already exists", e.RoleID, e.PermissionID)
 }
 
-var _ common_errors.ErrHTTPBaseError = ErrRolePermissionWithRoleIDAndPermissionIDAlreadyExists{}
+var _ common_errors.ErrHTTPBaseError = ErrRolePermissionWithRoleIdAndPermissionIdAlreadyExists{}
+
+type ErrRolePermissionInvalidRoleIdOrPermissionId struct {
+	RoleID       uuid.UUID
+	PermissionID uuid.UUID
+	Err          error
+}
+
+func (e ErrRolePermissionInvalidRoleIdOrPermissionId) Error() string {
+	return fmt.Sprintf("Either role ID %v or permission ID %v is invalid", e.RoleID, e.PermissionID)
+}
+
+func (e ErrRolePermissionInvalidRoleIdOrPermissionId) StatusCode() int {
+	return http.StatusBadRequest
+}
+
+func (e ErrRolePermissionInvalidRoleIdOrPermissionId) ClientMsg() string {
+	return fmt.Sprintf("Either role ID %v or permission ID %v is invalid", e.RoleID, e.PermissionID)
+}
+
+var _ common_errors.ErrHTTPBaseError = ErrRolePermissionInvalidRoleIdOrPermissionId{}
 
 type ErrRolePermissionDeleteFailed struct {
 	DeleteErr error
 }
 
 func (e ErrRolePermissionDeleteFailed) Error() string {
-	return "Failed to remove role-permission from user"
+	return "Failed to remove permission from user"
 }
 
 func (e ErrRolePermissionDeleteFailed) StatusCode() int {
@@ -204,7 +224,7 @@ func (e ErrRolePermissionDeleteFailed) StatusCode() int {
 }
 
 func (e ErrRolePermissionDeleteFailed) ClientMsg() string {
-	return "Failed to remove role-permission from user"
+	return "Failed to remove permission from user"
 }
 
 func (e ErrRolePermissionDeleteFailed) Unwrap() error {

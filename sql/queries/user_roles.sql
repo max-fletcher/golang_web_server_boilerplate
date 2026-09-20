@@ -12,32 +12,33 @@ FROM user_roles
 WHERE id = $1
 LIMIT 1;
 
--- name: GetUserRoleByUserID :one
-SELECT u.id, u.name, u.email, u.created_at, u.updated_at, r.name
+-- name: GetUserRolesByUserID :many
+SELECT u.id, u.name, u.email, u.created_at, u.updated_at, r.name as role_name
+FROM user_roles AS ur
+INNER JOIN users AS u ON u.id = ur.user_id
+INNER JOIN roles AS r ON r.id = ur.role_id
+WHERE ur.user_id = $1;
+
+-- name: GetUserRoleByUserIDAndRoleID :one
+SELECT u.id, u.name, u.email, u.created_at, u.updated_at, r.name as role_name
 FROM user_roles AS ur
 INNER JOIN users AS u ON u.id = ur.user_id
 INNER JOIN roles AS r ON r.id = ur.role_id
 WHERE ur.user_id = $1
-LIMIT 1;
+AND r.id = $2;
 
 -- name: GetUserRoles :many
-SELECT * 
-FROM user_roles 
-ORDER BY created_at DESC
+SELECT u.id, u.name, u.email, u.created_at, u.updated_at, ur.role_id, r.name as role_name
+FROM user_roles AS ur
+INNER JOIN users AS u ON u.id = ur.user_id
+INNER JOIN roles AS r ON r.id = ur.role_id
+ORDER BY u.created_at DESC
 LIMIT $1
 OFFSET $2;
 
 -- name: GetUserRolesCount :one
 SELECT COUNT(*)
 FROM user_roles;
-
--- name: UpdateUserRole :one
-UPDATE user_roles
-SET user_id = $1,
-    role_id = $2,
-    updated_at = $3
-WHERE id = $4
-RETURNING *;
 
 -- name: DeleteUserRoleById :execrows
 DELETE FROM user_roles

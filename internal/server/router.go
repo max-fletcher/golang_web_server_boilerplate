@@ -73,29 +73,41 @@ func (server *Server) routes() http.Handler {
 			})
 
 			router.Route("/posts-with-user", func(router chi.Router) {
-				router.Post("/", server.Handle(server.PostsWithUserHandler.Create))
 				router.Get("/", server.Handle(server.PostsWithUserHandler.GetAll))
+				router.Post("/", server.Handle(server.PostsWithUserHandler.Create))
 				router.Get("/{id}", server.Handle(server.PostsWithUserHandler.GetByID))
 			})
 
-			router.Route("/roles", func(router chi.Router) {
-				router.Get("/", server.Handle(server.RolesHandler.GetAll))
-				router.Post("/", server.Handle(server.RolesHandler.Create))
-				router.Get("/{id}", server.Handle(server.RolesHandler.GetByID))
-				router.Patch("/{id}", server.Handle(server.RolesHandler.Update))
-				router.Delete("/{id}", server.Handle(server.RolesHandler.Delete))
-			})
+			router.Route("/acl", func(router chi.Router) {
+				router.Route("/roles", func(router chi.Router) {
+					router.Get("/", server.Handle(server.RolesHandler.GetAll))
+					router.Post("/", server.Handle(server.RolesHandler.Create))
+					router.Get("/{id}", server.Handle(server.RolesHandler.GetByID))
+					router.Patch("/{id}", server.Handle(server.RolesHandler.Update))
+					router.Delete("/{id}", server.Handle(server.RolesHandler.Delete))
+				})
 
-			router.Route("/modules", func(router chi.Router) {
-				router.Get("/", server.Handle(server.ModulesHandler.GetAll))
-				router.Post("/", server.Handle(server.ModulesHandler.Create))
-				router.Get("/{id}", server.Handle(server.ModulesHandler.GetByID))
-			})
+				router.Route("/modules", func(router chi.Router) {
+					router.Get("/", server.Handle(server.ModulesHandler.GetAll))
+					router.Post("/", server.Handle(server.ModulesHandler.Create))
+					router.Get("/{id}", server.Handle(server.ModulesHandler.GetByID))
+				})
 
-			router.Route("/permissions", func(router chi.Router) {
-				router.Get("/", server.Handle(server.PermissionsHandler.GetAll))
-				router.Post("/", server.Handle(server.PermissionsHandler.Create))
-				router.Get("/{id}", server.Handle(server.PermissionsHandler.GetByID))
+				router.Route("/permissions", func(router chi.Router) {
+					router.Get("/", server.Handle(server.PermissionsHandler.GetAll))
+					router.Post("/", server.Handle(server.PermissionsHandler.Create))
+					router.Get("/{id}", server.Handle(server.PermissionsHandler.GetByID))
+				})
+
+				router.Route("/role-permissions", func(router chi.Router) {
+					router.Get("/", server.Handle(server.RolePermissionsHandler.GetAll))
+					router.Get("/{id}", server.Handle(server.RolePermissionsHandler.GetByID))
+					router.Post("/", server.Handle(server.RolePermissionsHandler.Create))
+					router.Get("/users", server.Handle(server.RolePermissionsHandler.GetAllUsersWithRolePermissions))
+					router.Get("/user/{userID}", server.Handle(server.RolePermissionsHandler.GetByUserID))
+					router.Delete("/{id}", server.Handle(server.RolePermissionsHandler.Delete))
+					router.Delete("/roles/{roleID}/permissions/{permissionID}", server.Handle(server.RolePermissionsHandler.DeleteByRoleIDAndPermissionID))
+				})
 			})
 		})
 	})

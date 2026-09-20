@@ -1,4 +1,4 @@
-package acl
+package role_permissions
 
 import (
 	"errors"
@@ -7,6 +7,8 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	id_helpers "github.com/max-fletcher/golang_web_server_boilerplate/helpers/ID"
+	"github.com/max-fletcher/golang_web_server_boilerplate/helpers/formatters"
+	"github.com/max-fletcher/golang_web_server_boilerplate/helpers/pagination"
 	"github.com/max-fletcher/golang_web_server_boilerplate/helpers/requests"
 	"github.com/max-fletcher/golang_web_server_boilerplate/helpers/responses"
 	validator "github.com/max-fletcher/golang_web_server_boilerplate/helpers/validation"
@@ -71,10 +73,58 @@ func (handler *Handler) GetAll(w http.ResponseWriter, r *http.Request) error {
 
 	// #TODO: SEE HOW TO FORMAT DATA INSIDE SERVICE AND HERE(2 LINES BELOW), AND SEND IT BACK AS RESPONSE
 	fmt.Printf("ACL Handler GetAll. Data: %v | Total: %v \n", rolePermissions, total)
-	// formattedRolePermissionData := formatters.DatabaseRolePermissionsToRolePermissions(rolePermissions)
-	// paginatedData := pagination.GeneratePaginationFormat(validatedQSData, total, formattedRolePermissionData)
+	formattedRolePermissionData := formatters.DatabaseRolePermissionsToRolePermissions(rolePermissions)
+	paginatedData := pagination.GeneratePaginationFormat(validatedQSData, total, formattedRolePermissionData)
 
-	responses.RespondWithSuccess(w, http.StatusOK, "Fetched successfully", rolePermissions)
+	responses.RespondWithSuccess(w, http.StatusOK, "Fetched successfully", paginatedData)
+	return nil
+}
+
+func (handler *Handler) GetAllUsersWithRolePermissions(w http.ResponseWriter, r *http.Request) error {
+	userID, ok := auth.UserIDFromContext(r.Context())
+	fmt.Println("Auth user ID:", userID)
+	if !ok {
+		// This should normally never happen because middleware protects the route.
+		return errors.New("User ID not found")
+	}
+
+	validatedQSData, err := validator.ValidatePaginationQS(r.URL.Query())
+	if err != nil {
+		return err
+	}
+
+	// 1st param: context for the request
+	rolePermissions, total, err := handler.service.GetAll(r.Context(), validatedQSData.FilterString, validatedQSData.Limit, validatedQSData.Offset)
+	if err != nil {
+		return err
+	}
+
+	// #TODO: SEE HOW TO FORMAT DATA INSIDE SERVICE AND HERE(2 LINES BELOW), AND SEND IT BACK AS RESPONSE
+	fmt.Printf("ACL Handler GetAll. Data: %v | Total: %v \n", rolePermissions, total)
+	formattedRolePermissionData := formatters.DatabaseRolePermissionsToRolePermissions(rolePermissions)
+	paginatedData := pagination.GeneratePaginationFormat(validatedQSData, total, formattedRolePermissionData)
+
+	responses.RespondWithSuccess(w, http.StatusOK, "Fetched successfully", paginatedData)
+	return nil
+}
+
+func (handler *Handler) GetByID(w http.ResponseWriter, r *http.Request) error {
+	id, err := id_helpers.ParseUUID(chi.URLParam(r, "id"), "id")
+	if err != nil {
+		return err
+	}
+
+	// 1st param: context for the request
+	// 2nd param: id(type uuid) param
+	rolePermission, err := handler.service.GetByID(r.Context(), id)
+	if err != nil {
+		return err
+	}
+
+	// #TODO: SEE HOW TO FORMAT DATA INSIDE SERVICE AND HERE(1 LINE BELOW), AND SEND IT BACK AS RESPONSE
+	fmt.Printf("ACL Handler. Data: %v \n", rolePermission)
+	// formatters.DatabaseRolePermissionToRolePermission(rolePermission)
+	responses.RespondWithSuccess(w, http.StatusOK, "Fetched successfully", rolePermission)
 	return nil
 }
 
@@ -107,6 +157,31 @@ func (handler *Handler) Delete(w http.ResponseWriter, r *http.Request) error {
 	// 1st param: context for the request
 	// 2nd param: id(type uuid) param
 	rolePermission, err := handler.service.Delete(r.Context(), id)
+	if err != nil {
+		return err
+	}
+
+	// #TODO: SEE HOW TO FORMAT DATA INSIDE SERVICE AND HERE(1 LINE BELOW), AND SEND IT BACK AS RESPONSE
+	fmt.Printf("ACL Handler. Data: %v \n", rolePermission)
+	// formatters.DatabaseRolePermissionToRolePermission(rolePermission)
+	responses.RespondWithSuccess(w, http.StatusOK, "Deleted successfully", rolePermission)
+	return nil
+}
+
+func (handler *Handler) DeleteByRoleIDAndPermissionID(w http.ResponseWriter, r *http.Request) error {
+	roleID, err := id_helpers.ParseUUID(chi.URLParam(r, "roleID"), "role ID")
+	if err != nil {
+		return err
+	}
+
+	permissionID, err := id_helpers.ParseUUID(chi.URLParam(r, "permissionID"), "permission ID")
+	if err != nil {
+		return err
+	}
+
+	// 1st param: context for the request
+	// 2nd param: id(type uuid) param
+	rolePermission, err := handler.service.DeleteByRoleIDAndPermissionID(r.Context(), roleID, permissionID)
 	if err != nil {
 		return err
 	}

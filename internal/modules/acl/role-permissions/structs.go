@@ -1,4 +1,4 @@
-package acl
+package role_permissions
 
 import (
 	validation "github.com/go-ozzo/ozzo-validation/v4"
@@ -36,8 +36,8 @@ func (params CreateRolePermissionRequest) ValidateCreateRolePermissionData() (Cr
 	)
 
 	formattedErrors, hasValidationErrors := validator.FormatValidationErrors(err)
-	roleID, uuidErr := id_helpers.ParseUUID(params.PermissionID, "role ID") // parsing RoleID field
-	if uuidErr != nil {                                                     // if roleID is not valid uuid, put it in formattedErrors and set hasValidationErrors to false
+	roleID, uuidErr := id_helpers.ParseUUID(params.RoleID, "role ID") // parsing RoleID field
+	if uuidErr != nil {                                               // if roleID is not valid uuid, put it in formattedErrors and set hasValidationErrors to false
 		formattedErrors["role_id"] = uuidErr.Error()
 		hasValidationErrors = true
 	}

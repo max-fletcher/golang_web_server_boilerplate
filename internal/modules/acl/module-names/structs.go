@@ -4,7 +4,7 @@ import (
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	validator "github.com/max-fletcher/golang_web_server_boilerplate/helpers/validation"
 	common_errors "github.com/max-fletcher/golang_web_server_boilerplate/internal/errors"
-	"github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/permissions"
+	"github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/acl/permissions"
 )
 
 // Struct to be validated

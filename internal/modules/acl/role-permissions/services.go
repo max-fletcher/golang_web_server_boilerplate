@@ -1,4 +1,4 @@
-package acl
+package role_permissions
 
 import (
 	"context"
@@ -15,7 +15,8 @@ import (
 
 type Service interface {
 	Create(ctx context.Context, createRolePermissionInput CreateRolePermissionInput) (db.GetRolePermissionByIDRow, error)
-	GetAll(ctx context.Context, filterString string, limit int, offset int) ([]db.GetUsersWithRolesAndPermissionsRow, int, error)
+	GetAll(ctx context.Context, filterString string, limit int, offset int) ([]db.GetRolePermissionsRow, int, error)
+	GetAllUsersWithRolePermissions(ctx context.Context, filterString string, limit int, offset int) ([]db.GetUsersWithRolesAndPermissionsRow, int, error)
 	GetByUserID(ctx context.Context, id uuid.UUID) (db.GetUserWithRolesAndPermissionsByUserIDRow, error)
 	GetByID(ctx context.Context, id uuid.UUID) (db.GetRolePermissionByIDRow, error)
 	Delete(ctx context.Context, id uuid.UUID) (db.GetRolePermissionByIDRow, error)
@@ -49,7 +50,15 @@ func (service *service) Create(ctx context.Context, createRolePermissionInput Cr
 	if err != nil {
 		pgErr := common_errors.GetPostgresError(err)
 		if pgErr.Code == constants.PGUniqueViolationCode {
-			return db.GetRolePermissionByIDRow{}, ErrRolePermissionWithRoleIDAndPermissionIDAlreadyExists{
+			return db.GetRolePermissionByIDRow{}, ErrRolePermissionWithRoleIdAndPermissionIdAlreadyExists{
+				RoleID:       createRolePermissionInput.RoleID,
+				PermissionID: createRolePermissionInput.PermissionID,
+				Err:          err,
+			}
+		}
+
+		if pgErr.Code == constants.PGForeignKeyViolationCode {
+			return db.GetRolePermissionByIDRow{}, ErrRolePermissionInvalidRoleIdOrPermissionId{
 				RoleID:       createRolePermissionInput.RoleID,
 				PermissionID: createRolePermissionInput.PermissionID,
 				Err:          err,
@@ -61,31 +70,50 @@ func (service *service) Create(ctx context.Context, createRolePermissionInput Cr
 		}
 	}
 
-	// Fetch with details/names(uses JOIN)
-	fmt.Println("Creat Here1")
 	rolePermissionWithDetails, err := service.repository.GetByID(ctx, rolePermission.ID)
 	if err != nil {
-		fmt.Println("Creat Here2")
 		return db.GetRolePermissionByIDRow{}, ErrRolePermissionCreateFailed{
 			CreateErr: err,
 		}
 	}
-	fmt.Println("Creat Here3")
 
-	// #TODO: FORMAT rolePermissionWithDetails AND RETURN A STRUCT
 	return rolePermissionWithDetails, nil
 }
 
-func (service *service) GetAll(ctx context.Context, filterString string, limit int, offset int) ([]db.GetUsersWithRolesAndPermissionsRow, int, error) {
+func (service *service) GetAll(ctx context.Context, filterString string, limit int, offset int) ([]db.GetRolePermissionsRow, int, error) {
 	// 1st param: context for the request
 	usersWithRolesAndPermissions, err := service.repository.GetAll(ctx, filterString, limit, offset)
+	if err != nil {
+		return []db.GetRolePermissionsRow{}, 0, ErrRolePermissionsFetchFailed{
+			FetchErr: err,
+		}
+	}
+
+	total, err := service.repository.GetAllCount(ctx, filterString)
+	if err != nil {
+		var bigInt64ToIntError common_errors.ErrBigInt64ToIntError
+		if errors.As(err, &bigInt64ToIntError) {
+			return []db.GetRolePermissionsRow{}, 0, fmt.Errorf("Limit and/or offset value out of range")
+		}
+
+		return []db.GetRolePermissionsRow{}, 0, ErrRolePermissionsFetchFailed{
+			FetchErr: err,
+		}
+	}
+
+	return usersWithRolesAndPermissions, total, nil
+}
+
+func (service *service) GetAllUsersWithRolePermissions(ctx context.Context, filterString string, limit int, offset int) ([]db.GetUsersWithRolesAndPermissionsRow, int, error) {
+	// 1st param: context for the request
+	usersWithRolesAndPermissions, err := service.repository.GetAllUsersWithRolePermissions(ctx, filterString, limit, offset)
 	if err != nil {
 		return []db.GetUsersWithRolesAndPermissionsRow{}, 0, ErrRolePermissionsFetchFailed{
 			FetchErr: err,
 		}
 	}
 
-	total, err := service.repository.GetAllCount(ctx, filterString)
+	total, err := service.repository.GetAllUsersWithRolePermissionsCount(ctx, filterString)
 	if err != nil {
 		var bigInt64ToIntError common_errors.ErrBigInt64ToIntError
 		if errors.As(err, &bigInt64ToIntError) {
@@ -97,8 +125,26 @@ func (service *service) GetAll(ctx context.Context, filterString string, limit i
 		}
 	}
 
-	// #TODO: FORMAT rolePermissionWithDetails AND RETURN A STRUCT
 	return usersWithRolesAndPermissions, total, nil
+}
+
+func (service *service) GetByID(ctx context.Context, id uuid.UUID) (db.GetRolePermissionByIDRow, error) {
+	// 1st param: context for the request
+	// 2nd param: id(type uuid) param
+	rolePermission, err := service.repository.GetByID(ctx, id)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) { // check if error is of type sql.ErrNoRows
+			return db.GetRolePermissionByIDRow{}, ErrRolePermissionWithUserIdNotFound{
+				ID: id,
+			}
+		}
+
+		return db.GetRolePermissionByIDRow{}, ErrRolePermissionWithUserFetchFailed{
+			FetchErr: err,
+		}
+	}
+
+	return rolePermission, nil
 }
 
 func (service *service) GetByUserID(ctx context.Context, id uuid.UUID) (db.GetUserWithRolesAndPermissionsByUserIDRow, error) {
@@ -123,27 +169,7 @@ func (service *service) GetByUserID(ctx context.Context, id uuid.UUID) (db.GetUs
 		}
 	}
 
-	// #TODO: FORMAT rolePermissions AND RETURN A UNIFIED STRUCT
 	return usersWithRolesAndPermissions[0], nil
-}
-
-func (service *service) GetByID(ctx context.Context, id uuid.UUID) (db.GetRolePermissionByIDRow, error) {
-	// 1st param: context for the request
-	// 2nd param: id(type uuid) param
-	rolePermission, err := service.repository.GetByID(ctx, id)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) { // check if error is of type sql.ErrNoRows
-			return db.GetRolePermissionByIDRow{}, ErrRolePermissionWithUserIdNotFound{
-				ID: id,
-			}
-		}
-
-		return db.GetRolePermissionByIDRow{}, ErrRolePermissionWithUserFetchFailed{
-			FetchErr: err,
-		}
-	}
-
-	return rolePermission, nil
 }
 
 func (service *service) Delete(ctx context.Context, id uuid.UUID) (db.GetRolePermissionByIDRow, error) {
@@ -174,7 +200,7 @@ func (service *service) DeleteByRoleIDAndPermissionID(ctx context.Context, roleI
 	existingRolePermission, err := service.repository.GetByRoleIDAndPermissionID(ctx, roleID, permissionID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) { // check if error is of type sql.ErrNoRows
-			return db.GetRolePermissionByRoleIDAndPermissionIDRow{}, ErrRolePermissionWithRoleIdAndPermissionIDNotFound{
+			return db.GetRolePermissionByRoleIDAndPermissionIDRow{}, ErrRolePermissionWithRoleIdAndPermissionIdNotFound{
 				RoleID:       roleID,
 				PermissionID: permissionID,
 			}

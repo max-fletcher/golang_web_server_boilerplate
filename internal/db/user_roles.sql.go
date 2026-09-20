@@ -101,42 +101,49 @@ func (q *Queries) GetUserRoleById(ctx context.Context, id uuid.UUID) (UserRole, 
 	return i, err
 }
 
-const getUserRoleByUserID = `-- name: GetUserRoleByUserID :one
-SELECT u.id, u.name, u.email, u.created_at, u.updated_at, r.name
+const getUserRoleByUserIDAndRoleID = `-- name: GetUserRoleByUserIDAndRoleID :one
+SELECT u.id, u.name, u.email, u.created_at, u.updated_at, r.name as role_name
 FROM user_roles AS ur
 INNER JOIN users AS u ON u.id = ur.user_id
 INNER JOIN roles AS r ON r.id = ur.role_id
 WHERE ur.user_id = $1
-LIMIT 1
+AND r.id = $2
 `
 
-type GetUserRoleByUserIDRow struct {
+type GetUserRoleByUserIDAndRoleIDParams struct {
+	UserID uuid.UUID
+	ID     uuid.UUID
+}
+
+type GetUserRoleByUserIDAndRoleIDRow struct {
 	ID        uuid.UUID
 	Name      string
 	Email     string
 	CreatedAt time.Time
 	UpdatedAt time.Time
-	Name_2    string
+	RoleName  string
 }
 
-func (q *Queries) GetUserRoleByUserID(ctx context.Context, userID uuid.UUID) (GetUserRoleByUserIDRow, error) {
-	row := q.db.QueryRowContext(ctx, getUserRoleByUserID, userID)
-	var i GetUserRoleByUserIDRow
+func (q *Queries) GetUserRoleByUserIDAndRoleID(ctx context.Context, arg GetUserRoleByUserIDAndRoleIDParams) (GetUserRoleByUserIDAndRoleIDRow, error) {
+	row := q.db.QueryRowContext(ctx, getUserRoleByUserIDAndRoleID, arg.UserID, arg.ID)
+	var i GetUserRoleByUserIDAndRoleIDRow
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
 		&i.Email,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.Name_2,
+		&i.RoleName,
 	)
 	return i, err
 }
 
 const getUserRoles = `-- name: GetUserRoles :many
-SELECT id, user_id, role_id, created_at, updated_at 
-FROM user_roles 
-ORDER BY created_at DESC
+SELECT u.id, u.name, u.email, u.created_at, u.updated_at, ur.role_id, r.name as role_name
+FROM user_roles AS ur
+INNER JOIN users AS u ON u.id = ur.user_id
+INNER JOIN roles AS r ON r.id = ur.role_id
+ORDER BY u.created_at DESC
 LIMIT $1
 OFFSET $2
 `
@@ -146,21 +153,80 @@ type GetUserRolesParams struct {
 	Offset int32
 }
 
-func (q *Queries) GetUserRoles(ctx context.Context, arg GetUserRolesParams) ([]UserRole, error) {
+type GetUserRolesRow struct {
+	ID        uuid.UUID
+	Name      string
+	Email     string
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	RoleID    uuid.UUID
+	RoleName  string
+}
+
+func (q *Queries) GetUserRoles(ctx context.Context, arg GetUserRolesParams) ([]GetUserRolesRow, error) {
 	rows, err := q.db.QueryContext(ctx, getUserRoles, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []UserRole
+	var items []GetUserRolesRow
 	for rows.Next() {
-		var i UserRole
+		var i GetUserRolesRow
 		if err := rows.Scan(
 			&i.ID,
-			&i.UserID,
-			&i.RoleID,
+			&i.Name,
+			&i.Email,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.RoleID,
+			&i.RoleName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getUserRolesByUserID = `-- name: GetUserRolesByUserID :many
+SELECT u.id, u.name, u.email, u.created_at, u.updated_at, r.name as role_name
+FROM user_roles AS ur
+INNER JOIN users AS u ON u.id = ur.user_id
+INNER JOIN roles AS r ON r.id = ur.role_id
+WHERE ur.user_id = $1
+`
+
+type GetUserRolesByUserIDRow struct {
+	ID        uuid.UUID
+	Name      string
+	Email     string
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	RoleName  string
+}
+
+func (q *Queries) GetUserRolesByUserID(ctx context.Context, userID uuid.UUID) ([]GetUserRolesByUserIDRow, error) {
+	rows, err := q.db.QueryContext(ctx, getUserRolesByUserID, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetUserRolesByUserIDRow
+	for rows.Next() {
+		var i GetUserRolesByUserIDRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Email,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.RoleName,
 		); err != nil {
 			return nil, err
 		}
@@ -185,38 +251,4 @@ func (q *Queries) GetUserRolesCount(ctx context.Context) (int64, error) {
 	var count int64
 	err := row.Scan(&count)
 	return count, err
-}
-
-const updateUserRole = `-- name: UpdateUserRole :one
-UPDATE user_roles
-SET user_id = $1,
-    role_id = $2,
-    updated_at = $3
-WHERE id = $4
-RETURNING id, user_id, role_id, created_at, updated_at
-`
-
-type UpdateUserRoleParams struct {
-	UserID    uuid.UUID
-	RoleID    uuid.UUID
-	UpdatedAt time.Time
-	ID        uuid.UUID
-}
-
-func (q *Queries) UpdateUserRole(ctx context.Context, arg UpdateUserRoleParams) (UserRole, error) {
-	row := q.db.QueryRowContext(ctx, updateUserRole,
-		arg.UserID,
-		arg.RoleID,
-		arg.UpdatedAt,
-		arg.ID,
-	)
-	var i UserRole
-	err := row.Scan(
-		&i.ID,
-		&i.UserID,
-		&i.RoleID,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
 }

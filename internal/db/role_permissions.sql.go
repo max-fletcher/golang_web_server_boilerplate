@@ -158,14 +158,18 @@ func (q *Queries) GetRolePermissionByRoleIDAndPermissionID(ctx context.Context, 
 	return i, err
 }
 
-const getRolePermissionUsersCount = `-- name: GetRolePermissionUsersCount :one
-SELECT COUNT(DISTINCT u.id)
-FROM users AS u
-INNER JOIN user_roles AS ur
-    ON u.id = ur.user_id
+const getRolePermissions = `-- name: GetRolePermissions :many
+SELECT
+    rp.id,
+    rp.role_id,
+    rp.permission_id,
+    m.name AS module_name,
+    r.name AS role_name,
+    p.name AS permission_name,
+    rp.created_at as created_at,
+    rp.updated_at as updated_at
+FROM role_permissions AS rp
 INNER JOIN roles AS r
-    ON r.id = ur.role_id
-INNER JOIN role_permissions AS rp
     ON r.id = rp.role_id
 INNER JOIN permissions AS p
     ON p.id = rp.permission_id
@@ -173,14 +177,81 @@ INNER JOIN modules AS m
     ON m.id = p.module_id
 WHERE
     $1 = ''
-    OR u.name ILIKE '%' || $1 || '%'
+    OR r.name ILIKE '%' || $1 || '%'
+    OR m.name ILIKE '%' || $1 || '%'
+    OR p.name ILIKE '%' || $1 || '%'
+ORDER BY rp.created_at DESC
+LIMIT $2
+OFFSET $3
+`
+
+type GetRolePermissionsParams struct {
+	Column1 interface{}
+	Limit   int32
+	Offset  int32
+}
+
+type GetRolePermissionsRow struct {
+	ID             uuid.UUID
+	RoleID         uuid.UUID
+	PermissionID   uuid.UUID
+	ModuleName     string
+	RoleName       string
+	PermissionName PermissionNamesEnum
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+}
+
+func (q *Queries) GetRolePermissions(ctx context.Context, arg GetRolePermissionsParams) ([]GetRolePermissionsRow, error) {
+	rows, err := q.db.QueryContext(ctx, getRolePermissions, arg.Column1, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetRolePermissionsRow
+	for rows.Next() {
+		var i GetRolePermissionsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.RoleID,
+			&i.PermissionID,
+			&i.ModuleName,
+			&i.RoleName,
+			&i.PermissionName,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getRolePermissionsCount = `-- name: GetRolePermissionsCount :one
+SELECT COUNT(*)
+FROM role_permissions AS rp
+INNER JOIN roles AS r
+    ON r.id = rp.role_id
+INNER JOIN permissions AS p
+    ON p.id = rp.permission_id
+INNER JOIN modules AS m
+    ON m.id = p.module_id
+WHERE
+    $1 = ''
     OR r.name ILIKE '%' || $1 || '%'
     OR m.name ILIKE '%' || $1 || '%'
     OR p.name ILIKE '%' || $1 || '%'
 `
 
-func (q *Queries) GetRolePermissionUsersCount(ctx context.Context, dollar_1 interface{}) (int64, error) {
-	row := q.db.QueryRowContext(ctx, getRolePermissionUsersCount, dollar_1)
+func (q *Queries) GetRolePermissionsCount(ctx context.Context, dollar_1 interface{}) (int64, error) {
+	row := q.db.QueryRowContext(ctx, getRolePermissionsCount, dollar_1)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
@@ -252,6 +323,34 @@ func (q *Queries) GetUserWithRolesAndPermissionsByUserID(ctx context.Context, id
 		return nil, err
 	}
 	return items, nil
+}
+
+const getUsersRolePermissionCount = `-- name: GetUsersRolePermissionCount :one
+SELECT COUNT(DISTINCT u.id)
+FROM users AS u
+INNER JOIN user_roles AS ur
+    ON u.id = ur.user_id
+INNER JOIN roles AS r
+    ON r.id = ur.role_id
+INNER JOIN role_permissions AS rp
+    ON r.id = rp.role_id
+INNER JOIN permissions AS p
+    ON p.id = rp.permission_id
+INNER JOIN modules AS m
+    ON m.id = p.module_id
+WHERE
+    $1 = ''
+    OR u.name ILIKE '%' || $1 || '%'
+    OR r.name ILIKE '%' || $1 || '%'
+    OR m.name ILIKE '%' || $1 || '%'
+    OR p.name ILIKE '%' || $1 || '%'
+`
+
+func (q *Queries) GetUsersRolePermissionCount(ctx context.Context, dollar_1 interface{}) (int64, error) {
+	row := q.db.QueryRowContext(ctx, getUsersRolePermissionCount, dollar_1)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
 }
 
 const getUsersWithRolesAndPermissions = `-- name: GetUsersWithRolesAndPermissions :many

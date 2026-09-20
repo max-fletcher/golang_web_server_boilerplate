@@ -8,6 +8,47 @@ INSERT INTO role_permissions (id, role_id, permission_id, created_at, updated_at
 VALUES ($1, $2, $3, $4, $5)
 RETURNING *;
 
+-- name: GetRolePermissions :many
+SELECT
+    rp.id,
+    rp.role_id,
+    rp.permission_id,
+    m.name AS module_name,
+    r.name AS role_name,
+    p.name AS permission_name,
+    rp.created_at as created_at,
+    rp.updated_at as updated_at
+FROM role_permissions AS rp
+INNER JOIN roles AS r
+    ON r.id = rp.role_id
+INNER JOIN permissions AS p
+    ON p.id = rp.permission_id
+INNER JOIN modules AS m
+    ON m.id = p.module_id
+WHERE
+    $1 = ''
+    OR r.name ILIKE '%' || $1 || '%'
+    OR m.name ILIKE '%' || $1 || '%'
+    OR p.name ILIKE '%' || $1 || '%'
+ORDER BY rp.created_at DESC
+LIMIT $2
+OFFSET $3;
+
+-- name: GetRolePermissionsCount :one
+SELECT COUNT(*)
+FROM role_permissions AS rp
+INNER JOIN roles AS r
+    ON r.id = rp.role_id
+INNER JOIN permissions AS p
+    ON p.id = rp.permission_id
+INNER JOIN modules AS m
+    ON m.id = p.module_id
+WHERE
+    $1 = ''
+    OR r.name ILIKE '%' || $1 || '%'
+    OR m.name ILIKE '%' || $1 || '%'
+    OR p.name ILIKE '%' || $1 || '%';
+
 -- name: GetUsersWithRolesAndPermissions :many
 WITH paginated_users AS (
     SELECT DISTINCT
@@ -59,7 +100,7 @@ INNER JOIN modules AS m
     ON m.id = p.module_id
 ORDER BY u.created_at DESC;
 
--- name: GetRolePermissionUsersCount :one
+-- name: GetUsersRolePermissionCount :one
 SELECT COUNT(DISTINCT u.id)
 FROM users AS u
 INNER JOIN user_roles AS ur

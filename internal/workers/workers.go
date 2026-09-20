@@ -6,8 +6,8 @@ import (
 	"log/slog"
 
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/events"
+	"github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/acl/roles"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/posts"
-	"github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/roles"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/users"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/queue"
 	redis_queue "github.com/max-fletcher/golang_web_server_boilerplate/internal/queue/redis"
