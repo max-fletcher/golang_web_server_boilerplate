@@ -83,6 +83,24 @@ func (e ErrUserRoleWithUserIdNotFound) ClientMsg() string {
 
 var _ common_errors.ErrHTTPBaseError = ErrUserRoleWithUserIdNotFound{}
 
+type ErrUserHasNoRoles struct {
+	ID uuid.UUID
+}
+
+func (e ErrUserHasNoRoles) Error() string {
+	return fmt.Sprintf("User with id %s has no assigned roled", e.ID)
+}
+
+func (e ErrUserHasNoRoles) StatusCode() int {
+	return http.StatusNotFound
+}
+
+func (e ErrUserHasNoRoles) ClientMsg() string {
+	return fmt.Sprintf("User with id %s has no assigned roled", e.ID)
+}
+
+var _ common_errors.ErrHTTPBaseError = ErrUserHasNoRoles{}
+
 type ErrUserRolesFetchFailed struct {
 	FetchErr error
 }

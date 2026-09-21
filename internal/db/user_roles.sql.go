@@ -7,6 +7,7 @@ package db
 
 import (
 	"context"
+	"database/sql"
 	"time"
 
 	"github.com/google/uuid"
@@ -82,21 +83,34 @@ func (q *Queries) DeleteUserRoleByUserIDAndRoleId(ctx context.Context, arg Delet
 }
 
 const getUserRoleById = `-- name: GetUserRoleById :one
-SELECT id, user_id, role_id, created_at, updated_at 
-FROM user_roles 
-WHERE id = $1
-LIMIT 1
+SELECT u.id, u.name, u.email, u.created_at, u.updated_at, r.name as role_name
+FROM user_roles AS ur
+INNER JOIN users AS u 
+  ON u.id = ur.user_id
+INNER JOIN roles AS r 
+  ON r.id = ur.role_id
+WHERE ur.id = $1
 `
 
-func (q *Queries) GetUserRoleById(ctx context.Context, id uuid.UUID) (UserRole, error) {
+type GetUserRoleByIdRow struct {
+	ID        uuid.UUID
+	Name      string
+	Email     string
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	RoleName  string
+}
+
+func (q *Queries) GetUserRoleById(ctx context.Context, id uuid.UUID) (GetUserRoleByIdRow, error) {
 	row := q.db.QueryRowContext(ctx, getUserRoleById, id)
-	var i UserRole
+	var i GetUserRoleByIdRow
 	err := row.Scan(
 		&i.ID,
-		&i.UserID,
-		&i.RoleID,
+		&i.Name,
+		&i.Email,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.RoleName,
 	)
 	return i, err
 }
@@ -104,8 +118,10 @@ func (q *Queries) GetUserRoleById(ctx context.Context, id uuid.UUID) (UserRole, 
 const getUserRoleByUserIDAndRoleID = `-- name: GetUserRoleByUserIDAndRoleID :one
 SELECT u.id, u.name, u.email, u.created_at, u.updated_at, r.name as role_name
 FROM user_roles AS ur
-INNER JOIN users AS u ON u.id = ur.user_id
-INNER JOIN roles AS r ON r.id = ur.role_id
+INNER JOIN users AS u 
+  ON u.id = ur.user_id
+INNER JOIN roles AS r 
+  ON r.id = ur.role_id
 WHERE ur.user_id = $1
 AND r.id = $2
 `
@@ -139,18 +155,37 @@ func (q *Queries) GetUserRoleByUserIDAndRoleID(ctx context.Context, arg GetUserR
 }
 
 const getUserRoles = `-- name: GetUserRoles :many
+WITH paginated_users AS (
+  SELECT u.id, u.name, u.email, u.created_at, u.updated_at
+  FROM users AS u
+  WHERE
+    $1 = ''
+    OR u.name ILIKE '%' || $1 || '%'
+    OR EXISTS (
+        SELECT 1
+        FROM user_roles AS ur
+        INNER JOIN roles AS r
+          ON r.id = ur.role_id
+        WHERE ur.user_id = u.id
+          AND r.name ILIKE '%' || $1 || '%'
+    )
+  ORDER BY u.created_at DESC
+  LIMIT $2
+  OFFSET $3
+)
 SELECT u.id, u.name, u.email, u.created_at, u.updated_at, ur.role_id, r.name as role_name
-FROM user_roles AS ur
-INNER JOIN users AS u ON u.id = ur.user_id
-INNER JOIN roles AS r ON r.id = ur.role_id
+FROM paginated_users AS u
+LEFT JOIN user_roles AS ur 
+  ON u.id = ur.user_id
+LEFT JOIN roles AS r 
+  ON r.id = ur.role_id
 ORDER BY u.created_at DESC
-LIMIT $1
-OFFSET $2
 `
 
 type GetUserRolesParams struct {
-	Limit  int32
-	Offset int32
+	Column1 interface{}
+	Limit   int32
+	Offset  int32
 }
 
 type GetUserRolesRow struct {
@@ -159,12 +194,12 @@ type GetUserRolesRow struct {
 	Email     string
 	CreatedAt time.Time
 	UpdatedAt time.Time
-	RoleID    uuid.UUID
-	RoleName  string
+	RoleID    uuid.NullUUID
+	RoleName  sql.NullString
 }
 
 func (q *Queries) GetUserRoles(ctx context.Context, arg GetUserRolesParams) ([]GetUserRolesRow, error) {
-	rows, err := q.db.QueryContext(ctx, getUserRoles, arg.Limit, arg.Offset)
+	rows, err := q.db.QueryContext(ctx, getUserRoles, arg.Column1, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
@@ -197,8 +232,10 @@ func (q *Queries) GetUserRoles(ctx context.Context, arg GetUserRolesParams) ([]G
 const getUserRolesByUserID = `-- name: GetUserRolesByUserID :many
 SELECT u.id, u.name, u.email, u.created_at, u.updated_at, r.name as role_name
 FROM user_roles AS ur
-INNER JOIN users AS u ON u.id = ur.user_id
-INNER JOIN roles AS r ON r.id = ur.role_id
+INNER JOIN users AS u 
+  ON u.id = ur.user_id
+INNER JOIN roles AS r 
+  ON r.id = ur.role_id
 WHERE ur.user_id = $1
 `
 
@@ -243,11 +280,22 @@ func (q *Queries) GetUserRolesByUserID(ctx context.Context, userID uuid.UUID) ([
 
 const getUserRolesCount = `-- name: GetUserRolesCount :one
 SELECT COUNT(*)
-FROM user_roles
+FROM users AS u
+WHERE
+  $1 = ''
+  OR u.name ILIKE '%' || $1 || '%'
+  OR EXISTS (
+      SELECT 1
+      FROM user_roles AS ur
+      INNER JOIN roles AS r
+        ON r.id = ur.role_id
+      WHERE ur.user_id = u.id
+        AND r.name ILIKE '%' || $1 || '%'
+  )
 `
 
-func (q *Queries) GetUserRolesCount(ctx context.Context) (int64, error) {
-	row := q.db.QueryRowContext(ctx, getUserRolesCount)
+func (q *Queries) GetUserRolesCount(ctx context.Context, dollar_1 interface{}) (int64, error) {
+	row := q.db.QueryRowContext(ctx, getUserRolesCount, dollar_1)
 	var count int64
 	err := row.Scan(&count)
 	return count, err

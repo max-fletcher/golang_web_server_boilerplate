@@ -15,6 +15,7 @@ import (
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/acl/permissions"
 	role_permissions "github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/acl/role-permissions"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/acl/roles"
+	user_roles "github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/acl/user-roles"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/auth"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/posts"
 	posts_with_users "github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/posts-with-users"
@@ -37,6 +38,7 @@ type Server struct {
 	ModulesHandler         *modules.Handler
 	PermissionsHandler     *permissions.Handler
 	RolePermissionsHandler *role_permissions.Handler
+	UserRoleHandler        *user_roles.Handler
 	Logger                 *slog.Logger
 }
 
@@ -93,6 +95,10 @@ func NewServer(database *db.Queries, conn *sql.DB, cfg *config.Config, cache cac
 	rolePermissionsService := role_permissions.NewService(rolePermissionsRepository)
 	rolePermissionsHandler := role_permissions.NewHandler(rolePermissionsService)
 
+	userRoleRepository := user_roles.NewRepository(database)
+	userRoleService := user_roles.NewService(userRoleRepository)
+	userRoleHandler := user_roles.NewHandler(userRoleService)
+
 	server := &Server{
 		config:                 cfg,
 		CommonHandler:          handlers.New(database),
@@ -105,6 +111,7 @@ func NewServer(database *db.Queries, conn *sql.DB, cfg *config.Config, cache cac
 		ModulesHandler:         moduleHandler,
 		PermissionsHandler:     permissionHandler,
 		RolePermissionsHandler: rolePermissionsHandler,
+		UserRoleHandler:        userRoleHandler,
 		Logger:                 logger.New(),
 	}
 

@@ -14,11 +14,11 @@ import (
 )
 
 type Service interface {
-	Create(ctx context.Context, createUserRoleInput CreateUserRoleInput) (db.UserRole, error)
+	Create(ctx context.Context, createUserRoleInput CreateUserRoleInput) (db.GetUserRoleByIdRow, error)
 	GetAll(ctx context.Context, filterString string, limit int, offset int) ([]db.GetUserRolesRow, int, error)
-	GetByID(ctx context.Context, id uuid.UUID) (db.UserRole, error)
-	GetByUserID(ctx context.Context, id uuid.UUID) (db.GetUserRolesByUserIDRow, error)
-	Delete(ctx context.Context, id uuid.UUID) (db.UserRole, error)
+	GetByID(ctx context.Context, id uuid.UUID) (db.GetUserRoleByIdRow, error)
+	GetByUserID(ctx context.Context, id uuid.UUID) ([]db.GetUserRolesByUserIDRow, error)
+	Delete(ctx context.Context, id uuid.UUID) (db.GetUserRoleByIdRow, error)
 	DeleteByUserIDAndRoleID(ctx context.Context, userID uuid.UUID, roleID uuid.UUID) (db.GetUserRoleByUserIDAndRoleIDRow, error)
 }
 
@@ -34,7 +34,7 @@ func NewService(
 	}
 }
 
-func (service *service) Create(ctx context.Context, createUserRoleInput CreateUserRoleInput) (db.UserRole, error) {
+func (service *service) Create(ctx context.Context, createUserRoleInput CreateUserRoleInput) (db.GetUserRoleByIdRow, error) {
 	// #TODO: CHECK IF ROLE AND PERMISSION EXISTS
 
 	// 1st param: context for the request
@@ -49,7 +49,7 @@ func (service *service) Create(ctx context.Context, createUserRoleInput CreateUs
 	if err != nil {
 		pgErr := common_errors.GetPostgresError(err)
 		if pgErr.Code == constants.PGUniqueViolationCode {
-			return db.UserRole{}, ErrUserRoleWithUserIdAndRoleIdAlreadyExists{
+			return db.GetUserRoleByIdRow{}, ErrUserRoleWithUserIdAndRoleIdAlreadyExists{
 				RoleID: createUserRoleInput.RoleID,
 				UserID: createUserRoleInput.UserID,
 				Err:    err,
@@ -57,21 +57,21 @@ func (service *service) Create(ctx context.Context, createUserRoleInput CreateUs
 		}
 
 		if pgErr.Code == constants.PGForeignKeyViolationCode {
-			return db.UserRole{}, ErrUserRoleInvaliduserIdOrRoleId{
+			return db.GetUserRoleByIdRow{}, ErrUserRoleInvaliduserIdOrRoleId{
 				RoleID: createUserRoleInput.RoleID,
 				UserID: createUserRoleInput.UserID,
 				Err:    err,
 			}
 		}
 
-		return db.UserRole{}, ErrUserRoleCreateFailed{
+		return db.GetUserRoleByIdRow{}, ErrUserRoleCreateFailed{
 			CreateErr: err,
 		}
 	}
 
 	userRoleWithDetails, err := service.repository.GetByID(ctx, userRole.ID)
 	if err != nil {
-		return db.UserRole{}, ErrUserRoleCreateFailed{
+		return db.GetUserRoleByIdRow{}, ErrUserRoleCreateFailed{
 			CreateErr: err,
 		}
 	}
@@ -88,7 +88,7 @@ func (service *service) GetAll(ctx context.Context, filterString string, limit i
 		}
 	}
 
-	total, err := service.repository.GetAllCount(ctx)
+	total, err := service.repository.GetAllCount(ctx, filterString)
 	if err != nil {
 		var bigInt64ToIntError common_errors.ErrBigInt64ToIntError
 		if errors.As(err, &bigInt64ToIntError) {
@@ -103,18 +103,18 @@ func (service *service) GetAll(ctx context.Context, filterString string, limit i
 	return userRoles, total, nil
 }
 
-func (service *service) GetByID(ctx context.Context, id uuid.UUID) (db.UserRole, error) {
+func (service *service) GetByID(ctx context.Context, id uuid.UUID) (db.GetUserRoleByIdRow, error) {
 	// 1st param: context for the request
 	// 2nd param: id(type uuid) param
 	userRole, err := service.repository.GetByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) { // check if error is of type sql.ErrNoRows
-			return db.UserRole{}, ErrUserRoleWithUserIdNotFound{
+			return db.GetUserRoleByIdRow{}, ErrUserRoleWithUserIdNotFound{
 				ID: id,
 			}
 		}
 
-		return db.UserRole{}, ErrUserRoleWithUserFetchFailed{
+		return db.GetUserRoleByIdRow{}, ErrUserRoleWithUserFetchFailed{
 			FetchErr: err,
 		}
 	}
@@ -122,14 +122,14 @@ func (service *service) GetByID(ctx context.Context, id uuid.UUID) (db.UserRole,
 	return userRole, nil
 }
 
-func (service *service) GetByUserID(ctx context.Context, id uuid.UUID) ([]db.GetUserRolesByUserIDRow, error) {
+func (service *service) GetByUserID(ctx context.Context, userID uuid.UUID) ([]db.GetUserRolesByUserIDRow, error) {
 	// 1st param: context for the request
 	// 2nd param: id(type uuid) param
-	userRoles, err := service.repository.GetByUserID(ctx, id)
+	userRoles, err := service.repository.GetByUserID(ctx, userID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) { // check if error is of type sql.ErrNoRows
 			return []db.GetUserRolesByUserIDRow{}, ErrUserRoleWithUserIdNotFound{
-				ID: id,
+				ID: userID,
 			}
 		}
 
@@ -137,29 +137,34 @@ func (service *service) GetByUserID(ctx context.Context, id uuid.UUID) ([]db.Get
 			FetchErr: err,
 		}
 	}
-	fmt.Println("GetById userRole", userRoles)
+
+	if len(userRoles) == 0 {
+		return []db.GetUserRolesByUserIDRow{}, ErrUserHasNoRoles{
+			ID: userID,
+		}
+	}
 
 	// #TODO: FORMAT userRoles AND RETURN A UNIFIED STRUCT
 	return userRoles, nil
 }
 
-func (service *service) Delete(ctx context.Context, id uuid.UUID) (db.UserRole, error) {
+func (service *service) Delete(ctx context.Context, id uuid.UUID) (db.GetUserRoleByIdRow, error) {
 	existingUserRole, err := service.repository.GetByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) { // check if error is of type sql.ErrNoRows
-			return db.UserRole{}, ErrUserRoleWithIdNotFound{
+			return db.GetUserRoleByIdRow{}, ErrUserRoleWithIdNotFound{
 				ID: id,
 			}
 		}
 
-		return db.UserRole{}, ErrUserRoleFetchFailed{
+		return db.GetUserRoleByIdRow{}, ErrUserRoleFetchFailed{
 			FetchErr: err,
 		}
 	}
 
 	_, err = service.repository.DeleteByID(ctx, id)
 	if err != nil {
-		return db.UserRole{}, ErrUserRoleDeleteFailed{
+		return db.GetUserRoleByIdRow{}, ErrUserRoleDeleteFailed{
 			DeleteErr: err,
 		}
 	}

@@ -443,3 +443,68 @@ func DatabaseUserWRolePermissionsToUserWRolePermissions(dbUserWRolePermission []
 
 	return usersWRolePermission
 }
+
+type UserWRoles struct {
+	ID        uuid.UUID `json:"id"`
+	Name      string    `json:"name"`
+	Email     string    `json:"email"`
+	RoleNames []string  `json:"roles"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+func DatabaseUserWRoleToUserWRole(dbUserWRoles []db.GetUserRolesByUserIDRow) []UserWRoles {
+	usersMap := make(map[uuid.UUID]int) // key is user-id and val is the index of that user-id's index for results array
+	results := []UserWRoles{}
+
+	for _, dbUserWRole := range dbUserWRoles {
+		index, exists := usersMap[dbUserWRole.ID] // exists is false if index(value) doesn't exist in map
+
+		if !exists {
+			index = len(results)             // next index to insert data(UserWRoles{}) into
+			usersMap[dbUserWRole.ID] = index // memoize user-id's index
+
+			results = append(results, UserWRoles{
+				ID:        dbUserWRole.ID,
+				Name:      dbUserWRole.Name,
+				Email:     dbUserWRole.Email,
+				RoleNames: []string{},
+				CreatedAt: dbUserWRole.CreatedAt,
+				UpdatedAt: dbUserWRole.UpdatedAt,
+			})
+		}
+
+		results[index].RoleNames = append(results[index].RoleNames, dbUserWRole.RoleName)
+	}
+
+	return results
+}
+
+func DatabaseUserWRolesToUserWRoles(dbUserWRoles []db.GetUserRolesRow) []UserWRoles {
+	usersMap := make(map[uuid.UUID]int) // key is user-id and val is the index of that user-id's index for results array
+	results := []UserWRoles{}
+
+	for _, dbUserWRole := range dbUserWRoles {
+		index, exists := usersMap[dbUserWRole.ID] // exists is false if index(value) doesn't exist in map
+
+		if !exists {
+			index = len(results)             // next index to insert data(UserWRoles{}) into
+			usersMap[dbUserWRole.ID] = index // memoize user-id's index
+
+			results = append(results, UserWRoles{
+				ID:        dbUserWRole.ID,
+				Name:      dbUserWRole.Name,
+				Email:     dbUserWRole.Email,
+				RoleNames: []string{},
+				CreatedAt: dbUserWRole.CreatedAt,
+				UpdatedAt: dbUserWRole.UpdatedAt,
+			})
+		}
+
+		if dbUserWRole.RoleName.Valid {
+			results[index].RoleNames = append(results[index].RoleNames, dbUserWRole.RoleName.String)
+		}
+	}
+
+	return results
+}
