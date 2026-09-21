@@ -474,7 +474,9 @@ func DatabaseUserWRoleToUserWRole(dbUserWRoles []db.GetUserRolesByUserIDRow) []U
 			})
 		}
 
-		results[index].RoleNames = append(results[index].RoleNames, dbUserWRole.RoleName)
+		if dbUserWRole.RoleName.Valid {
+			results[index].RoleNames = append(results[index].RoleNames, dbUserWRole.RoleName.String)
+		}
 	}
 
 	return results

@@ -43,6 +43,11 @@
 # Add health check endpoint(DONE)
 # Add request logging middleware ??
 
+CRITIC:
+# Cacheing layer should be in handler/controller not in service. This is because of services calling each other.
+# Implement id checks in handler and merge that error to valdation error.
+# Formatters for ACL module handlers
+# 
 
 Possible path:  
 # Learn nginx as reverse proxy + load balancer

@@ -88,7 +88,7 @@ type ErrUserHasNoRoles struct {
 }
 
 func (e ErrUserHasNoRoles) Error() string {
-	return fmt.Sprintf("User with id %s has no assigned roled", e.ID)
+	return fmt.Sprintf("User with id %s has no assigned roles", e.ID)
 }
 
 func (e ErrUserHasNoRoles) StatusCode() int {
@@ -96,7 +96,7 @@ func (e ErrUserHasNoRoles) StatusCode() int {
 }
 
 func (e ErrUserHasNoRoles) ClientMsg() string {
-	return fmt.Sprintf("User with id %s has no assigned roled", e.ID)
+	return fmt.Sprintf("User with id %s has no assigned roles", e.ID)
 }
 
 var _ common_errors.ErrHTTPBaseError = ErrUserHasNoRoles{}

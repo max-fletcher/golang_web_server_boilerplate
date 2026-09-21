@@ -138,11 +138,11 @@ func (service *service) GetByUserID(ctx context.Context, userID uuid.UUID) ([]db
 		}
 	}
 
-	if len(userRoles) == 0 {
-		return []db.GetUserRolesByUserIDRow{}, ErrUserHasNoRoles{
-			ID: userID,
-		}
-	}
+	// if len(userRoles) == 0 {
+	// 	return []db.GetUserRolesByUserIDRow{}, ErrUserHasNoRoles{
+	// 		ID: userID,
+	// 	}
+	// }
 
 	// #TODO: FORMAT userRoles AND RETURN A UNIFIED STRUCT
 	return userRoles, nil

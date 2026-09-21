@@ -68,8 +68,8 @@ func (repository *repository) GetByUserID(ctx context.Context, id uuid.UUID) ([]
 
 func (repository *repository) GetUserRoleByUserIDAndRoleID(ctx context.Context, roleID uuid.UUID, userID uuid.UUID) (db.GetUserRoleByUserIDAndRoleIDRow, error) {
 	params := db.GetUserRoleByUserIDAndRoleIDParams{
-		ID:     roleID,
 		UserID: userID,
+		RoleID: roleID,
 	}
 
 	return repository.DB.GetUserRoleByUserIDAndRoleID(ctx, params)

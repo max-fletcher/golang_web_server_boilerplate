@@ -17,22 +17,28 @@ WHERE ur.id = $1;
 
 -- name: GetUserRolesByUserID :many
 SELECT u.id, u.name, u.email, u.created_at, u.updated_at, r.name as role_name
-FROM user_roles AS ur
-INNER JOIN users AS u 
+FROM users AS u
+LEFT JOIN user_roles AS ur
   ON u.id = ur.user_id
-INNER JOIN roles AS r 
+LEFT JOIN roles AS r 
   ON r.id = ur.role_id
-WHERE ur.user_id = $1;
+WHERE u.id = $1;
 
 -- name: GetUserRoleByUserIDAndRoleID :one
-SELECT u.id, u.name, u.email, u.created_at, u.updated_at, r.name as role_name
+SELECT
+    u.id,
+    u.name,
+    u.email,
+    u.created_at,
+    u.updated_at,
+    r.name AS role_name
 FROM user_roles AS ur
-INNER JOIN users AS u 
-  ON u.id = ur.user_id
-INNER JOIN roles AS r 
-  ON r.id = ur.role_id
+INNER JOIN users AS u
+    ON u.id = ur.user_id
+INNER JOIN roles AS r
+    ON r.id = ur.role_id
 WHERE ur.user_id = $1
-AND r.id = $2;
+  AND ur.role_id = $2;
 
 -- name: GetUserRoles :many
 WITH paginated_users AS (
