@@ -21,7 +21,7 @@
 # Global error handler and logger(DONE but might need a notepad version. Also, not sure if a request logger is needed)
 # Add custom exception handler(DONE added custom error responses)
 # Relations(DONE)
-# Nested Relations ??
+# Nested Relations(DONE)
 # Pagination for getAll calls(DONE)
 # DB Transactions when disjointing relational data(DONE)
 # Add seeders for roles, modules, permissions and superadmin account(DONE)
