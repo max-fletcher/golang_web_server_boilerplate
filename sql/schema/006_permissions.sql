@@ -22,4 +22,5 @@ CREATE TABLE permissions(
 
 -- +goose Down
 DROP TYPE permission_names_enum;
+DROP CONSTRAINT IF EXISTS permissions_module_id_name_key;
 DROP TABLE permissions;
