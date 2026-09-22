@@ -24,6 +24,7 @@
 # Nested Relations ??
 # Pagination for getAll calls(DONE)
 # DB Transactions when disjointing relational data(DONE)
+# Add seeders for roles, modules, permissions and superadmin account(DONE)
 # Authorization and Access Control
 # PDF/Invoice generation
 # Scheduled Tasks/ CRON job
