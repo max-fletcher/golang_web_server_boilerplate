@@ -99,16 +99,6 @@ func (server *Server) routes() http.Handler {
 					router.Get("/{id}", server.Handle(server.PermissionsHandler.GetByID))
 				})
 
-				router.Route("/role-permissions", func(router chi.Router) {
-					router.Get("/", server.Handle(server.RolePermissionsHandler.GetAll))
-					router.Get("/{id}", server.Handle(server.RolePermissionsHandler.GetByID))
-					router.Post("/", server.Handle(server.RolePermissionsHandler.Create))
-					router.Get("/users", server.Handle(server.RolePermissionsHandler.GetAllUsersWithRolePermissions))
-					router.Get("/users/{userID}", server.Handle(server.RolePermissionsHandler.GetByUserID))
-					router.Delete("/{id}", server.Handle(server.RolePermissionsHandler.Delete))
-					router.Delete("/roles/{roleID}/permissions/{permissionID}", server.Handle(server.RolePermissionsHandler.DeleteByRoleIDAndPermissionID))
-				})
-
 				router.Route("/user-roles", func(router chi.Router) {
 					router.Get("/", server.Handle(server.UserRoleHandler.GetAll))
 					router.Get("/{id}", server.Handle(server.UserRoleHandler.GetByID))
@@ -117,6 +107,16 @@ func (server *Server) routes() http.Handler {
 					router.Get("/users/{userID}", server.Handle(server.UserRoleHandler.GetByUserID))
 					router.Delete("/{id}", server.Handle(server.UserRoleHandler.Delete))
 					router.Delete("/roles/{roleID}/permissions/{permissionID}", server.Handle(server.UserRoleHandler.DeleteByUserIDAndRoleID))
+				})
+
+				router.Route("/role-permissions", func(router chi.Router) {
+					router.Get("/", server.Handle(server.RolePermissionsHandler.GetAll))
+					router.Get("/{id}", server.Handle(server.RolePermissionsHandler.GetByID))
+					router.Post("/", server.Handle(server.RolePermissionsHandler.Create))
+					router.Get("/users", server.Handle(server.RolePermissionsHandler.GetAllUsersWithRolePermissions))
+					router.Get("/users/{userID}", server.Handle(server.RolePermissionsHandler.GetByUserID))
+					router.Delete("/{id}", server.Handle(server.RolePermissionsHandler.Delete))
+					router.Delete("/roles/{roleID}/permissions/{permissionID}", server.Handle(server.RolePermissionsHandler.DeleteByRoleIDAndPermissionID))
 				})
 			})
 		})

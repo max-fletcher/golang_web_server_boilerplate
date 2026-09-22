@@ -45,10 +45,8 @@ func (handler *Handler) Create(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	// #TODO: SEE HOW TO FORMAT DATA INSIDE SERVICE AND HERE, AND SEND IT BACK AS RESPONSE
-	fmt.Printf("ACL Handler Create. Data: %v \n", rolePermission)
-
-	responses.RespondWithSuccess(w, http.StatusCreated, "Role assigned to permission successfully.", rolePermission)
+	formattedRolePermission := formatters.DatabaseGetRolePermissionByIDRowToRolePermissionNoTimestamp(rolePermission)
+	responses.RespondWithSuccess(w, http.StatusCreated, "Role assigned to permission successfully.", formattedRolePermission)
 	return nil
 }
 
@@ -71,39 +69,8 @@ func (handler *Handler) GetAll(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	// #TODO: SEE HOW TO FORMAT DATA INSIDE SERVICE AND HERE(2 LINES BELOW), AND SEND IT BACK AS RESPONSE
-	fmt.Printf("ACL Handler GetAll. Data: %v | Total: %v \n", rolePermissions, total)
 	formattedRolePermissionData := formatters.DatabaseRolePermissionsToRolePermissions(rolePermissions)
 	paginatedData := pagination.GeneratePaginationFormat(validatedQSData, total, formattedRolePermissionData)
-
-	responses.RespondWithSuccess(w, http.StatusOK, "Fetched successfully", paginatedData)
-	return nil
-}
-
-func (handler *Handler) GetAllUsersWithRolePermissions(w http.ResponseWriter, r *http.Request) error {
-	userID, ok := auth.UserIDFromContext(r.Context())
-	fmt.Println("Auth user ID:", userID)
-	if !ok {
-		// This should normally never happen because middleware protects the route.
-		return errors.New("User ID not found")
-	}
-
-	validatedQSData, err := validator.ValidatePaginationQS(r.URL.Query())
-	if err != nil {
-		return err
-	}
-
-	// 1st param: context for the request
-	rolePermissions, total, err := handler.service.GetAll(r.Context(), validatedQSData.FilterString, validatedQSData.Limit, validatedQSData.Offset)
-	if err != nil {
-		return err
-	}
-
-	// #TODO: SEE HOW TO FORMAT DATA INSIDE SERVICE AND HERE(2 LINES BELOW), AND SEND IT BACK AS RESPONSE
-	fmt.Printf("ACL Handler GetAll. Data: %v | Total: %v \n", rolePermissions, total)
-	formattedRolePermissionData := formatters.DatabaseRolePermissionsToRolePermissions(rolePermissions)
-	paginatedData := pagination.GeneratePaginationFormat(validatedQSData, total, formattedRolePermissionData)
-
 	responses.RespondWithSuccess(w, http.StatusOK, "Fetched successfully", paginatedData)
 	return nil
 }
@@ -121,10 +88,33 @@ func (handler *Handler) GetByID(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	// #TODO: SEE HOW TO FORMAT DATA INSIDE SERVICE AND HERE(1 LINE BELOW), AND SEND IT BACK AS RESPONSE
-	fmt.Printf("ACL Handler. Data: %v \n", rolePermission)
-	// formatters.DatabaseRolePermissionToRolePermission(rolePermission)
-	responses.RespondWithSuccess(w, http.StatusOK, "Fetched successfully", rolePermission)
+	formattedRolePermission := formatters.DatabaseGetRolePermissionByIDRowToRolePermissionNoTimestamp(rolePermission)
+	responses.RespondWithSuccess(w, http.StatusOK, "Fetched successfully", formattedRolePermission)
+	return nil
+}
+
+func (handler *Handler) GetAllUsersWithRolePermissions(w http.ResponseWriter, r *http.Request) error {
+	userID, ok := auth.UserIDFromContext(r.Context())
+	fmt.Println("Auth user ID:", userID)
+	if !ok {
+		// This should normally never happen because middleware protects the route.
+		return errors.New("User ID not found")
+	}
+
+	validatedQSData, err := validator.ValidatePaginationQS(r.URL.Query())
+	if err != nil {
+		return err
+	}
+
+	// 1st param: context for the request
+	rolePermissions, total, err := handler.service.GetAllUsersWithRolePermissions(r.Context(), validatedQSData.FilterString, validatedQSData.Limit, validatedQSData.Offset)
+	if err != nil {
+		return err
+	}
+
+	formattedRolePermissionData := formatters.DatabaseUserWRolePermissionsToUserWRolePermissions(rolePermissions)
+	paginatedData := pagination.GeneratePaginationFormat(validatedQSData, total, formattedRolePermissionData)
+	responses.RespondWithSuccess(w, http.StatusOK, "Fetched successfully", paginatedData)
 	return nil
 }
 
@@ -143,8 +133,8 @@ func (handler *Handler) GetByUserID(w http.ResponseWriter, r *http.Request) erro
 
 	// #TODO: SEE HOW TO FORMAT DATA INSIDE SERVICE AND HERE(1 LINE BELOW), AND SEND IT BACK AS RESPONSE
 	fmt.Printf("ACL Handler. Data: %v \n", rolePermission)
-	// formatters.DatabaseRolePermissionToRolePermission(rolePermission)
-	responses.RespondWithSuccess(w, http.StatusOK, "Fetched successfully", rolePermission)
+	formattedRolePermission := formatters.DatabaseUserWRolePermissionToUserWRolePermission((rolePermission))
+	responses.RespondWithSuccess(w, http.StatusOK, "Fetched successfully", formattedRolePermission)
 	return nil
 }
 
@@ -161,10 +151,8 @@ func (handler *Handler) Delete(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	// #TODO: SEE HOW TO FORMAT DATA INSIDE SERVICE AND HERE(1 LINE BELOW), AND SEND IT BACK AS RESPONSE
-	fmt.Printf("ACL Handler. Data: %v \n", rolePermission)
-	// formatters.DatabaseRolePermissionToRolePermission(rolePermission)
-	responses.RespondWithSuccess(w, http.StatusOK, "Deleted successfully", rolePermission)
+	formattedRolePermission := formatters.DatabaseGetRolePermissionByIDRowToRolePermissionNoTimestamp(rolePermission)
+	responses.RespondWithSuccess(w, http.StatusOK, "Deleted successfully", formattedRolePermission)
 	return nil
 }
 
@@ -186,9 +174,7 @@ func (handler *Handler) DeleteByRoleIDAndPermissionID(w http.ResponseWriter, r *
 		return err
 	}
 
-	// #TODO: SEE HOW TO FORMAT DATA INSIDE SERVICE AND HERE(1 LINE BELOW), AND SEND IT BACK AS RESPONSE
-	fmt.Printf("ACL Handler. Data: %v \n", rolePermission)
-	// formatters.DatabaseRolePermissionToRolePermission(rolePermission)
-	responses.RespondWithSuccess(w, http.StatusOK, "Deleted successfully", rolePermission)
+	formattedRolePermission := formatters.DatabaseGetRolePermissionByRoleIDAndPermissionIDRowToRolePermission(rolePermission)
+	responses.RespondWithSuccess(w, http.StatusOK, "Deleted successfully", formattedRolePermission)
 	return nil
 }

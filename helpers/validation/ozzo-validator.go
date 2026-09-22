@@ -1,4 +1,3 @@
-// #TODO: Do I even need this
 package validator
 
 import (

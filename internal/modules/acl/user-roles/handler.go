@@ -46,8 +46,6 @@ func (handler *Handler) Create(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	// #TODO: SEE HOW TO FORMAT DATA INSIDE SERVICE AND HERE, AND SEND IT BACK AS RESPONSE
-	fmt.Printf("ACL Handler Create. Data: %v \n", userRole)
-
 	responses.RespondWithSuccess(w, http.StatusCreated, "Role assigned to permission successfully.", userRole)
 	return nil
 }
@@ -71,12 +69,26 @@ func (handler *Handler) GetAll(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	// #TODO: SEE HOW TO FORMAT DATA INSIDE SERVICE AND HERE(2 LINES BELOW), AND SEND IT BACK AS RESPONSE
-	// fmt.Printf("ACL Handler GetAll. Data: %v | Total: %v \n", userRoles, total)
-	// formattedUsersWithRolesData := formatters.DatabaseUserRolesToUserRoles(userRoles)
 	paginatedData := pagination.GeneratePaginationFormat(validatedQSData, total, userRoles)
-
 	responses.RespondWithSuccess(w, http.StatusOK, "Fetched successfully", paginatedData)
+	return nil
+}
+
+func (handler *Handler) GetByID(w http.ResponseWriter, r *http.Request) error {
+	id, err := id_helpers.ParseUUID(chi.URLParam(r, "id"), "id")
+	if err != nil {
+		return err
+	}
+
+	// 1st param: context for the request
+	// 2nd param: id(type uuid) param
+	userRole, err := handler.service.GetByID(r.Context(), id)
+	if err != nil {
+		return err
+	}
+
+	// formatters.DatabaseUserRoleToUserRole(userRole)
+	responses.RespondWithSuccess(w, http.StatusOK, "Fetched successfully", userRole)
 	return nil
 }
 
@@ -99,32 +111,10 @@ func (handler *Handler) GetAllUsersWithUserRoles(w http.ResponseWriter, r *http.
 		return err
 	}
 
-	// #TODO: SEE HOW TO FORMAT DATA INSIDE SERVICE AND HERE(2 LINES BELOW), AND SEND IT BACK AS RESPONSE
-	// fmt.Printf("ACL Handler GetAll. Data: %v | Total: %v \n", userRoles, total)
 	formattedUserWithRolesData := formatters.DatabaseUserWRolesToUserWRoles(userRoles)
 	paginatedData := pagination.GeneratePaginationFormat(validatedQSData, total, formattedUserWithRolesData)
 
 	responses.RespondWithSuccess(w, http.StatusOK, "Fetched successfully", paginatedData)
-	return nil
-}
-
-func (handler *Handler) GetByID(w http.ResponseWriter, r *http.Request) error {
-	id, err := id_helpers.ParseUUID(chi.URLParam(r, "id"), "id")
-	if err != nil {
-		return err
-	}
-
-	// 1st param: context for the request
-	// 2nd param: id(type uuid) param
-	userRole, err := handler.service.GetByID(r.Context(), id)
-	if err != nil {
-		return err
-	}
-
-	// #TODO: SEE HOW TO FORMAT DATA INSIDE SERVICE AND HERE(1 LINE BELOW), AND SEND IT BACK AS RESPONSE
-	fmt.Printf("ACL Handler. Data: %v \n", userRole)
-	// formatters.DatabaseUserRoleToUserRole(userRole)
-	responses.RespondWithSuccess(w, http.StatusOK, "Fetched successfully", userRole)
 	return nil
 }
 
@@ -141,8 +131,6 @@ func (handler *Handler) GetByUserID(w http.ResponseWriter, r *http.Request) erro
 		return err
 	}
 
-	// #TODO: SEE HOW TO FORMAT DATA INSIDE SERVICE AND HERE(1 LINE BELOW), AND SEND IT BACK AS RESPONSE
-	fmt.Printf("ACL Handler. Data: %v \n", userRoles)
 	formattedUserRoles := formatters.DatabaseUserWRoleToUserWRole(userRoles)
 	responses.RespondWithSuccess(w, http.StatusOK, "Fetched successfully", formattedUserRoles)
 	return nil
@@ -161,9 +149,6 @@ func (handler *Handler) Delete(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	// #TODO: SEE HOW TO FORMAT DATA INSIDE SERVICE AND HERE(1 LINE BELOW), AND SEND IT BACK AS RESPONSE
-	fmt.Printf("ACL Handler. Data: %v \n", userRole)
-	// formatters.DatabaseUserRoleToUserRole(userRole)
 	responses.RespondWithSuccess(w, http.StatusOK, "Deleted successfully", userRole)
 	return nil
 }
@@ -186,9 +171,6 @@ func (handler *Handler) DeleteByUserIDAndRoleID(w http.ResponseWriter, r *http.R
 		return err
 	}
 
-	// #TODO: SEE HOW TO FORMAT DATA INSIDE SERVICE AND HERE(1 LINE BELOW), AND SEND IT BACK AS RESPONSE
-	fmt.Printf("ACL Handler. Data: %v \n", userRole)
-	// formatters.DatabaseUserRoleToUserRole(userRole)
 	responses.RespondWithSuccess(w, http.StatusOK, "Deleted successfully", userRole)
 	return nil
 }

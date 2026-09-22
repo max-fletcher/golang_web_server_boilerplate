@@ -17,7 +17,7 @@ type Service interface {
 	Create(ctx context.Context, createRolePermissionInput CreateRolePermissionInput) (db.GetRolePermissionByIDRow, error)
 	GetAll(ctx context.Context, filterString string, limit int, offset int) ([]db.GetRolePermissionsRow, int, error)
 	GetAllUsersWithRolePermissions(ctx context.Context, filterString string, limit int, offset int) ([]db.GetUsersWithRolesAndPermissionsRow, int, error)
-	GetByUserID(ctx context.Context, id uuid.UUID) (db.GetUserWithRolesAndPermissionsByUserIDRow, error)
+	GetByUserID(ctx context.Context, id uuid.UUID) ([]db.GetUserWithRolesAndPermissionsByUserIDRow, error)
 	GetByID(ctx context.Context, id uuid.UUID) (db.GetRolePermissionByIDRow, error)
 	Delete(ctx context.Context, id uuid.UUID) (db.GetRolePermissionByIDRow, error)
 	DeleteByRoleIDAndPermissionID(ctx context.Context, roleID uuid.UUID, permissionID uuid.UUID) (db.GetRolePermissionByRoleIDAndPermissionIDRow, error)
@@ -147,29 +147,29 @@ func (service *service) GetByID(ctx context.Context, id uuid.UUID) (db.GetRolePe
 	return rolePermission, nil
 }
 
-func (service *service) GetByUserID(ctx context.Context, id uuid.UUID) (db.GetUserWithRolesAndPermissionsByUserIDRow, error) {
+func (service *service) GetByUserID(ctx context.Context, id uuid.UUID) ([]db.GetUserWithRolesAndPermissionsByUserIDRow, error) {
 	// 1st param: context for the request
 	// 2nd param: id(type uuid) param
 	usersWithRolesAndPermissions, err := service.repository.GetByUserID(ctx, id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) { // check if error is of type sql.ErrNoRows
-			return db.GetUserWithRolesAndPermissionsByUserIDRow{}, ErrRolePermissionWithUserIdNotFound{
+			return []db.GetUserWithRolesAndPermissionsByUserIDRow{}, ErrRolePermissionWithUserIdNotFound{
 				ID: id,
 			}
 		}
 
-		return db.GetUserWithRolesAndPermissionsByUserIDRow{}, ErrRolePermissionWithUserFetchFailed{
+		return []db.GetUserWithRolesAndPermissionsByUserIDRow{}, ErrRolePermissionWithUserFetchFailed{
 			FetchErr: err,
 		}
 	}
 	fmt.Println("GetById rolePermission", usersWithRolesAndPermissions)
 	if len(usersWithRolesAndPermissions) == 0 {
-		return db.GetUserWithRolesAndPermissionsByUserIDRow{}, ErrRolePermissionWithUserIdNotFound{
+		return []db.GetUserWithRolesAndPermissionsByUserIDRow{}, ErrRolePermissionWithUserIdNotFound{
 			ID: id,
 		}
 	}
 
-	return usersWithRolesAndPermissions[0], nil
+	return usersWithRolesAndPermissions, nil
 }
 
 func (service *service) Delete(ctx context.Context, id uuid.UUID) (db.GetRolePermissionByIDRow, error) {
