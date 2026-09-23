@@ -1,17 +1,5 @@
 package permissions
 
-type EnumModule string
-
-const (
-	ModulePosts       EnumModule = "posts"
-	ModuleUsers       EnumModule = "users"
-	ModuleRoles       EnumModule = "roles"
-	ModulePermissions EnumModule = "permissions"
-	ModuleACL         EnumModule = "acl"
-)
-
-var ModulesList = []EnumModule{ModulePosts, ModuleUsers, ModuleRoles, ModulePermissions, ModuleACL}
-
 type EnumPermission string
 
 const (

@@ -11,14 +11,17 @@ import (
 	constants "github.com/max-fletcher/golang_web_server_boilerplate/helpers/const"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/db"
 	common_errors "github.com/max-fletcher/golang_web_server_boilerplate/internal/errors"
+	modules "github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/acl/module-names"
+	"github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/auth"
 )
 
 type Service interface {
 	Create(ctx context.Context, createRolePermissionInput CreateRolePermissionInput) (db.GetRolePermissionByIDRow, error)
 	GetAll(ctx context.Context, filterString string, limit int, offset int) ([]db.GetRolePermissionsRow, int, error)
+	GetByID(ctx context.Context, id uuid.UUID) (db.GetRolePermissionByIDRow, error)
 	GetAllUsersWithRolePermissions(ctx context.Context, filterString string, limit int, offset int) ([]db.GetUsersWithRolesAndPermissionsRow, int, error)
 	GetByUserID(ctx context.Context, id uuid.UUID) ([]db.GetUserWithRolesAndPermissionsByUserIDRow, error)
-	GetByID(ctx context.Context, id uuid.UUID) (db.GetRolePermissionByIDRow, error)
+	UserHasPermission(ctx context.Context, moduleName modules.EnumModuleNames, permissionName db.PermissionNamesEnum) (bool, error)
 	Delete(ctx context.Context, id uuid.UUID) (db.GetRolePermissionByIDRow, error)
 	DeleteByRoleIDAndPermissionID(ctx context.Context, roleID uuid.UUID, permissionID uuid.UUID) (db.GetRolePermissionByRoleIDAndPermissionIDRow, error)
 }
@@ -104,6 +107,25 @@ func (service *service) GetAll(ctx context.Context, filterString string, limit i
 	return usersWithRolesAndPermissions, total, nil
 }
 
+func (service *service) GetByID(ctx context.Context, id uuid.UUID) (db.GetRolePermissionByIDRow, error) {
+	// 1st param: context for the request
+	// 2nd param: id(type uuid) param
+	rolePermission, err := service.repository.GetByID(ctx, id)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) { // check if error is of type sql.ErrNoRows
+			return db.GetRolePermissionByIDRow{}, ErrRolePermissionWithUserIdNotFound{
+				ID: id,
+			}
+		}
+
+		return db.GetRolePermissionByIDRow{}, ErrRolePermissionWithUserFetchFailed{
+			FetchErr: err,
+		}
+	}
+
+	return rolePermission, nil
+}
+
 func (service *service) GetAllUsersWithRolePermissions(ctx context.Context, filterString string, limit int, offset int) ([]db.GetUsersWithRolesAndPermissionsRow, int, error) {
 	// 1st param: context for the request
 	usersWithRolesAndPermissions, err := service.repository.GetAllUsersWithRolePermissions(ctx, filterString, limit, offset)
@@ -128,25 +150,6 @@ func (service *service) GetAllUsersWithRolePermissions(ctx context.Context, filt
 	return usersWithRolesAndPermissions, total, nil
 }
 
-func (service *service) GetByID(ctx context.Context, id uuid.UUID) (db.GetRolePermissionByIDRow, error) {
-	// 1st param: context for the request
-	// 2nd param: id(type uuid) param
-	rolePermission, err := service.repository.GetByID(ctx, id)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) { // check if error is of type sql.ErrNoRows
-			return db.GetRolePermissionByIDRow{}, ErrRolePermissionWithUserIdNotFound{
-				ID: id,
-			}
-		}
-
-		return db.GetRolePermissionByIDRow{}, ErrRolePermissionWithUserFetchFailed{
-			FetchErr: err,
-		}
-	}
-
-	return rolePermission, nil
-}
-
 func (service *service) GetByUserID(ctx context.Context, id uuid.UUID) ([]db.GetUserWithRolesAndPermissionsByUserIDRow, error) {
 	// 1st param: context for the request
 	// 2nd param: id(type uuid) param
@@ -162,14 +165,33 @@ func (service *service) GetByUserID(ctx context.Context, id uuid.UUID) ([]db.Get
 			FetchErr: err,
 		}
 	}
-	fmt.Println("GetById rolePermission", usersWithRolesAndPermissions)
-	if len(usersWithRolesAndPermissions) == 0 {
-		return []db.GetUserWithRolesAndPermissionsByUserIDRow{}, ErrRolePermissionWithUserIdNotFound{
-			ID: id,
+	// if len(usersWithRolesAndPermissions) == 0 {
+	// 	return []db.GetUserWithRolesAndPermissionsByUserIDRow{}, ErrRolePermissionWithUserIdNotFound{
+	// 		ID: id,
+	// 	}
+	// }
+
+	return usersWithRolesAndPermissions, nil
+}
+
+func (service *service) UserHasPermission(ctx context.Context, moduleName modules.EnumModuleNames, permissionName db.PermissionNamesEnum) (bool, error) {
+	userID, ok := auth.UserIDFromContext(ctx)
+	if !ok {
+		return false, nil
+	}
+
+	allowed, err := service.repository.UserHasPermission(ctx, userID, moduleName, permissionName)
+	if err != nil {
+		return false, auth.ErrNotAuthenticated{
+			Err: err,
 		}
 	}
 
-	return usersWithRolesAndPermissions, nil
+	if !allowed {
+		return false, nil
+	}
+
+	return true, nil
 }
 
 func (service *service) Delete(ctx context.Context, id uuid.UUID) (db.GetRolePermissionByIDRow, error) {

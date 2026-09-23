@@ -153,15 +153,15 @@ SELECT
     p.name AS permission_name,
     m.name AS module_name
 FROM users AS u
-INNER JOIN user_roles AS ur
+LEFT JOIN user_roles AS ur
     ON u.id = ur.user_id
-INNER JOIN roles AS r
+LEFT JOIN roles AS r
     ON r.id = ur.role_id
-INNER JOIN role_permissions AS rp
+LEFT JOIN role_permissions AS rp
     ON r.id = rp.role_id
-INNER JOIN permissions AS p
+LEFT JOIN permissions AS p
     ON p.id = rp.permission_id
-INNER JOIN modules AS m
+LEFT JOIN modules AS m
     ON m.id = p.module_id
 WHERE u.id = $1
 ORDER BY r.name, m.name, p.name;

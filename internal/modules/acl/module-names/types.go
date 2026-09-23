@@ -12,3 +12,14 @@ const (
 	EnumModuleUserRoles       EnumModuleNames = "user-roles"
 	EnumModuleRolePermissions EnumModuleNames = "role-permissions"
 )
+
+var ModulesList = []EnumModuleNames{
+	EnumModuleACL,
+	EnumModuleUsers,
+	EnumModulePosts,
+	EnumModuleRoles,
+	EnumModuleModules,
+	EnumModulePermissions,
+	EnumModuleUserRoles,
+	EnumModuleRolePermissions,
+}

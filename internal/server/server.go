@@ -20,6 +20,7 @@ import (
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/posts"
 	posts_with_users "github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/posts-with-users"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/users"
+	"github.com/max-fletcher/golang_web_server_boilerplate/middleware"
 )
 
 // The file and the function named NewServer(below) is for creating a server instance and binding dependencies to it before returning it.
@@ -30,7 +31,6 @@ type Server struct {
 	Router                 http.Handler // Reference to router instance
 	CommonHandler          *handlers.Handler
 	Authhandler            *auth.Handler
-	AuthMiddleware         *auth.Middleware
 	UsersHandler           *users.Handler
 	PostsHandler           *posts.Handler
 	PostsWithUserHandler   *posts_with_users.Handler
@@ -40,6 +40,8 @@ type Server struct {
 	RolePermissionsHandler *role_permissions.Handler
 	UserRoleHandler        *user_roles.Handler
 	Logger                 *slog.Logger
+	AuthMiddleware         *auth.Middleware
+	ACLMiddleware          *middleware.ACLMiddleware
 }
 
 // The name "NewServer" is a naming convention for functions that behave like a constructor. This func will create a new server.
@@ -99,6 +101,8 @@ func NewServer(database *db.Queries, conn *sql.DB, cfg *config.Config, cache cac
 	userRoleService := user_roles.NewService(userRoleRepository)
 	userRoleHandler := user_roles.NewHandler(userRoleService)
 
+	aclMiddleware := middleware.NewACLMiddleware(rolePermissionsService)
+
 	server := &Server{
 		config:                 cfg,
 		CommonHandler:          handlers.New(database),
@@ -113,6 +117,7 @@ func NewServer(database *db.Queries, conn *sql.DB, cfg *config.Config, cache cac
 		RolePermissionsHandler: rolePermissionsHandler,
 		UserRoleHandler:        userRoleHandler,
 		Logger:                 logger.New(),
+		ACLMiddleware:          aclMiddleware,
 	}
 
 	server.Router = server.routes()

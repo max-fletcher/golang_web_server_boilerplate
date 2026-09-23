@@ -483,18 +483,18 @@ func DatabaseRolePermissionToRolePermission(dbRolePermission db.GetRolePermissio
 	}
 }
 
-func DatabaseRolePermissionsToRolePermissions(dbRolePermission []db.GetRolePermissionsRow) []RolePermission {
+func DatabaseRolePermissionsToRolePermissions(dbRolePermissions []db.GetRolePermissionsRow) []RolePermission {
 	rolePermission := []RolePermission{}
-	for _, dbRolePermission := range dbRolePermission {
+	for _, dbRolePermissions := range dbRolePermissions {
 		rolePermission = append(rolePermission, RolePermission{
-			ID:             dbRolePermission.ID,
-			RoleID:         dbRolePermission.RoleID.String(),
-			PermissionID:   dbRolePermission.PermissionID.String(),
-			RoleName:       dbRolePermission.RoleName,
-			ModuleName:     dbRolePermission.ModuleName,
-			PermissionName: string(dbRolePermission.PermissionName),
-			CreatedAt:      dbRolePermission.CreatedAt,
-			UpdatedAt:      dbRolePermission.UpdatedAt,
+			ID:             dbRolePermissions.ID,
+			RoleID:         dbRolePermissions.RoleID.String(),
+			PermissionID:   dbRolePermissions.PermissionID.String(),
+			RoleName:       dbRolePermissions.RoleName,
+			ModuleName:     dbRolePermissions.ModuleName,
+			PermissionName: string(dbRolePermissions.PermissionName),
+			CreatedAt:      dbRolePermissions.CreatedAt,
+			UpdatedAt:      dbRolePermissions.UpdatedAt,
 		})
 	}
 
@@ -509,46 +509,65 @@ type UserWRolePermission struct {
 	ID         uuid.UUID                  `json:"id"`
 	Name       string                     `json:"name"`
 	Email      string                     `json:"email"`
-	ModuleName string                     `json:"module_name"`
+	ModuleName string                     `json:"module_name,omitempty"`
 	Roles      []UserWRolePermissionRoles `json:"roles"`
 	CreatedAt  time.Time                  `json:"created_at"`
 	UpdatedAt  time.Time                  `json:"updated_at"`
 }
 
-func DatabaseUserWRolePermissionToUserWRolePermission(dbRolePermission []db.GetUserWithRolesAndPermissionsByUserIDRow) UserWRolePermission {
+func DatabaseUserWRolePermissionToUserWRolePermission(dbRolePermissions []db.GetUserWithRolesAndPermissionsByUserIDRow) UserWRolePermission {
+	validModuleName := ""
+	if dbRolePermissions[0].ModuleName.Valid {
+		validModuleName = dbRolePermissions[0].ModuleName.String
+	}
 	usersWRolePermission := UserWRolePermission{
-		ID:         dbRolePermission[0].ID,
-		Name:       dbRolePermission[0].Name,
-		Email:      dbRolePermission[0].Email,
-		ModuleName: dbRolePermission[0].ModuleName,
+		ID:         dbRolePermissions[0].ID,
+		Name:       dbRolePermissions[0].Name,
+		Email:      dbRolePermissions[0].Email,
+		ModuleName: validModuleName,
 		Roles:      []UserWRolePermissionRoles{},
-		CreatedAt:  dbRolePermission[0].CreatedAt,
-		UpdatedAt:  dbRolePermission[0].UpdatedAt,
+		CreatedAt:  dbRolePermissions[0].CreatedAt,
+		UpdatedAt:  dbRolePermissions[0].UpdatedAt,
 	}
 
-	for _, row := range dbRolePermission {
-		roleIndex := -1                                       // Doubles as a flag
-		for index, role := range usersWRolePermission.Roles { // Find the role within this user
-			if role.Name == row.RoleName {
-				roleIndex = index
-				break
+	for _, row := range dbRolePermissions {
+		roleIndex := -1         // Doubles as a flag
+		validRoleName := ""     // used to convert sql.Nullstring
+		if row.RoleName.Valid { // Will skip appending a row if RoleName is not valid i.e is null
+			validRoleName = row.RoleName.String
+
+			for index, role := range usersWRolePermission.Roles { // Find the role within this user
+				if role.Name == validRoleName {
+					roleIndex = index
+					break
+				}
 			}
-		}
 
-		if roleIndex == -1 { // If not found, append a new UserWRolePermissionRoles struct to this user's Roles field and continue loop
-			fmt.Println("henlo", row, string(row.PermissionName), row.ModuleName)
-			usersWRolePermission.Roles = append(usersWRolePermission.Roles, UserWRolePermissionRoles{
-				Name:        row.RoleName,
-				Permissions: []string{fmt.Sprintf("%v:%v", string(row.PermissionName), row.ModuleName)},
-			})
-			continue
-		}
+			validModuleName := "" // simply used to convert sql.Nullstring
+			if row.ModuleName.Valid {
+				validModuleName = string(row.ModuleName.String)
+			}
 
-		// If role found, append permission to that role
-		usersWRolePermission.Roles[roleIndex].Permissions = append(
-			usersWRolePermission.Roles[roleIndex].Permissions,
-			fmt.Sprintf("%v:%v", string(row.PermissionName), row.ModuleName),
-		)
+			validPermissionName := "" // simply used to convert sql.nullEnum
+			if row.PermissionName.Valid {
+				validPermissionName = string(row.PermissionName.PermissionNamesEnum)
+			}
+
+			if roleIndex == -1 { // If not found, append a new UserWRolePermissionRoles struct to this user's Roles field and continue loop
+				usersWRolePermission.Roles = append(usersWRolePermission.Roles, UserWRolePermissionRoles{
+					Name:        validRoleName,
+					Permissions: []string{fmt.Sprintf("%v:%v", validPermissionName, validModuleName)},
+				})
+				continue
+			}
+
+			// If role found, append permission to that role
+			usersWRolePermission.Roles[roleIndex].Permissions = append(
+				usersWRolePermission.Roles[roleIndex].Permissions,
+				fmt.Sprintf("%v:%v", validPermissionName, validModuleName),
+			)
+
+		}
 	}
 
 	return usersWRolePermission

@@ -47,7 +47,7 @@
 CRITIC:
 # Cacheing layer should be in handler/controller not in service. This is because of services calling each other (??)
 # Implement id checks in handler and merge that error to valdation error
-# 
+# Rate-limiter's httprate.KeyByRealIP seems to be deprecated. Replace it with appropriate logic.
 
 Possible path:  
 # Learn nginx as reverse proxy + load balancer

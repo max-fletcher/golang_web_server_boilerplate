@@ -5,10 +5,12 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/max-fletcher/golang_web_server_boilerplate/helpers/responses"
+	modules "github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/acl/module-names"
+	"github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/acl/permissions"
 	"github.com/max-fletcher/golang_web_server_boilerplate/middleware"
 )
 
-// This func creates a server and returns it as an http handler function. Added as a method to server(server is in server.go)
+// This method creates a set of routes and returns it as an http handler function. Added as a method to server(server is in server.go)
 func (server *Server) routes() http.Handler {
 	router := chi.NewRouter()
 
@@ -65,7 +67,14 @@ func (server *Server) routes() http.Handler {
 			})
 
 			router.Route("/posts", func(router chi.Router) {
-				router.Get("/", server.Handle(server.PostsHandler.GetAll))
+				router.With(
+					server.ACLMiddleware.RequirePermission(
+						middleware.AclRequirement{
+							Module:     modules.EnumModulePosts,
+							Permission: permissions.PermissionRead,
+						},
+					),
+				).Get("/", server.Handle(server.PostsHandler.GetAll))
 				router.Post("/", server.Handle(server.PostsHandler.Create))
 				router.Get("/{id}", server.Handle(server.PostsHandler.GetByID))
 				router.Patch("/{id}", server.Handle(server.PostsHandler.Update))

@@ -142,3 +142,25 @@ func (e ErrInvalidRefreshToken) ClientMsg() string {
 }
 
 var _ common_errors.ErrHTTPBaseError = ErrInvalidRefreshToken{}
+
+type ErrNotAuthenticated struct {
+	Err error
+}
+
+func (e ErrNotAuthenticated) Error() string {
+	return "You are not authenticated"
+}
+
+func (e ErrNotAuthenticated) StatusCode() int {
+	return http.StatusUnauthorized
+}
+
+func (e ErrNotAuthenticated) ClientMsg() string {
+	return "You are not authenticated"
+}
+
+func (e ErrNotAuthenticated) Unwrap() error { // Unwrap shows underlying details of errors
+	return e.Err
+}
+
+var _ common_errors.ErrHTTPServerError = ErrNotAuthenticated{}
