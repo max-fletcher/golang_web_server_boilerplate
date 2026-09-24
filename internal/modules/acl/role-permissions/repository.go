@@ -7,7 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/max-fletcher/golang_web_server_boilerplate/helpers/numbers"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/db"
-	modules "github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/acl/module-names"
+	acl_constants "github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/acl/constants"
 )
 
 type Repository interface {
@@ -19,7 +19,7 @@ type Repository interface {
 	GetByID(ctx context.Context, id uuid.UUID) (db.GetRolePermissionByIDRow, error)
 	GetByRoleIDAndPermissionID(ctx context.Context, roleID uuid.UUID, permissionID uuid.UUID) (db.GetRolePermissionByRoleIDAndPermissionIDRow, error)
 	GetByUserID(ctx context.Context, id uuid.UUID) ([]db.GetUserWithRolesAndPermissionsByUserIDRow, error)
-	UserHasPermission(ctx context.Context, userID uuid.UUID, moduleName modules.EnumModuleNames, permissionName db.PermissionNamesEnum) (bool, error)
+	UserHasPermission(ctx context.Context, userID uuid.UUID, moduleName acl_constants.EnumModuleNames, permissionName db.PermissionNamesEnum) (bool, error)
 	DeleteByID(ctx context.Context, id uuid.UUID) (int64, error)
 	DeleteByRoleIDAndPermissionID(ctx context.Context, roleID uuid.UUID, PermissionID uuid.UUID) (int64, error)
 }
@@ -93,7 +93,7 @@ func (repository *repository) GetByUserID(ctx context.Context, id uuid.UUID) ([]
 	return repository.DB.GetUserWithRolesAndPermissionsByUserID(ctx, id)
 }
 
-func (repository *repository) UserHasPermission(ctx context.Context, userID uuid.UUID, moduleName modules.EnumModuleNames, permissionName db.PermissionNamesEnum) (bool, error) {
+func (repository *repository) UserHasPermission(ctx context.Context, userID uuid.UUID, moduleName acl_constants.EnumModuleNames, permissionName db.PermissionNamesEnum) (bool, error) {
 	return repository.DB.UserHasPermission(ctx, db.UserHasPermissionParams{
 		UserID: userID,
 		Name:   string(moduleName),

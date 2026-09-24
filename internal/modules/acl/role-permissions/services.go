@@ -11,8 +11,9 @@ import (
 	constants "github.com/max-fletcher/golang_web_server_boilerplate/helpers/const"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/db"
 	common_errors "github.com/max-fletcher/golang_web_server_boilerplate/internal/errors"
-	modules "github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/acl/module-names"
+	acl_constants "github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/acl/constants"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/auth"
+	request_context "github.com/max-fletcher/golang_web_server_boilerplate/internal/request-context"
 )
 
 type Service interface {
@@ -21,7 +22,7 @@ type Service interface {
 	GetByID(ctx context.Context, id uuid.UUID) (db.GetRolePermissionByIDRow, error)
 	GetAllUsersWithRolePermissions(ctx context.Context, filterString string, limit int, offset int) ([]db.GetUsersWithRolesAndPermissionsRow, int, error)
 	GetByUserID(ctx context.Context, id uuid.UUID) ([]db.GetUserWithRolesAndPermissionsByUserIDRow, error)
-	UserHasPermission(ctx context.Context, moduleName modules.EnumModuleNames, permissionName db.PermissionNamesEnum) (bool, error)
+	UserHasPermission(ctx context.Context, moduleName acl_constants.EnumModuleNames, permissionName db.PermissionNamesEnum) (bool, error)
 	Delete(ctx context.Context, id uuid.UUID) (db.GetRolePermissionByIDRow, error)
 	DeleteByRoleIDAndPermissionID(ctx context.Context, roleID uuid.UUID, permissionID uuid.UUID) (db.GetRolePermissionByRoleIDAndPermissionIDRow, error)
 }
@@ -174,8 +175,8 @@ func (service *service) GetByUserID(ctx context.Context, id uuid.UUID) ([]db.Get
 	return usersWithRolesAndPermissions, nil
 }
 
-func (service *service) UserHasPermission(ctx context.Context, moduleName modules.EnumModuleNames, permissionName db.PermissionNamesEnum) (bool, error) {
-	userID, ok := auth.UserIDFromContext(ctx)
+func (service *service) UserHasPermission(ctx context.Context, moduleName acl_constants.EnumModuleNames, permissionName db.PermissionNamesEnum) (bool, error) {
+	userID, ok := request_context.UserIDFromContext(ctx)
 	if !ok {
 		return false, nil
 	}

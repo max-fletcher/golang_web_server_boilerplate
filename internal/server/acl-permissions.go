@@ -3,8 +3,7 @@ package server
 import (
 	"net/http"
 
-	modules "github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/acl/module-names"
-	"github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/acl/permissions"
+	acl_constants "github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/acl/constants"
 	"github.com/max-fletcher/golang_web_server_boilerplate/middleware"
 )
 
@@ -14,8 +13,8 @@ import (
 func (server *Server) GetPostsACL() func(http.Handler) http.Handler {
 	requirements := []middleware.AclRequirement{
 		{
-			Module:     modules.EnumModulePosts,
-			Permission: permissions.PermissionRead,
+			Module:     acl_constants.EnumModulePosts,
+			Permission: acl_constants.PermissionRead,
 		},
 	}
 

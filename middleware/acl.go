@@ -7,17 +7,16 @@ import (
 
 	"github.com/max-fletcher/golang_web_server_boilerplate/helpers/responses"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/db"
-	modules "github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/acl/module-names"
-	"github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/acl/permissions"
+	acl_constants "github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/acl/constants"
 )
 
 type AclRequirement struct {
-	Module     modules.EnumModuleNames
-	Permission permissions.EnumPermission
+	Module     acl_constants.EnumModuleNames
+	Permission acl_constants.EnumPermission
 }
 
 type RolePermissionsService interface { // For DI. Used in validating user in structs.go
-	UserHasPermission(ctx context.Context, moduleName modules.EnumModuleNames, permissionName db.PermissionNamesEnum) (bool, error)
+	UserHasPermission(ctx context.Context, moduleName acl_constants.EnumModuleNames, permissionName db.PermissionNamesEnum) (bool, error)
 }
 
 type ACLMiddleware struct {

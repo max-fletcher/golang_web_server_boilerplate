@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/max-fletcher/golang_web_server_boilerplate/helpers/cryptography"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/db"
+	acl_constants "github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/acl/constants"
 	modules "github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/acl/module-names"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/acl/permissions"
 	role_permissions "github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/acl/role-permissions"
@@ -25,15 +26,15 @@ const (
 )
 
 func Modules(ctx context.Context, database *db.Queries) error {
-	moduleNames := []modules.EnumModuleNames{
-		modules.EnumModuleACL,
-		modules.EnumModuleUsers,
-		modules.EnumModulePosts,
-		modules.EnumModuleRoles,
-		modules.EnumModuleModules,
-		modules.EnumModulePermissions,
-		modules.EnumModuleUserRoles,
-		modules.EnumModuleRolePermissions,
+	moduleNames := []acl_constants.EnumModuleNames{
+		acl_constants.EnumModuleACL,
+		acl_constants.EnumModuleUsers,
+		acl_constants.EnumModulePosts,
+		acl_constants.EnumModuleRoles,
+		acl_constants.EnumModuleModules,
+		acl_constants.EnumModulePermissions,
+		acl_constants.EnumModuleUserRoles,
+		acl_constants.EnumModuleRolePermissions,
 	}
 	moduleRepository := modules.NewRepository(database)
 
@@ -109,67 +110,67 @@ func Permissions(ctx context.Context, database *db.Queries) error {
 func RolePermissions(ctx context.Context, database *db.Queries) error {
 	privileges := [][]string{
 		// SUPERADMIN PRIVILEGES
-		{string(EnumRolesSuperadmin), string(modules.EnumModuleACL), string(db.PermissionNamesEnumCreate)},
-		{string(EnumRolesSuperadmin), string(modules.EnumModuleACL), string(db.PermissionNamesEnumRead)},
-		{string(EnumRolesSuperadmin), string(modules.EnumModuleACL), string(db.PermissionNamesEnumUpdate)},
-		{string(EnumRolesSuperadmin), string(modules.EnumModuleACL), string(db.PermissionNamesEnumDelete)},
+		{string(EnumRolesSuperadmin), string(acl_constants.EnumModuleACL), string(db.PermissionNamesEnumCreate)},
+		{string(EnumRolesSuperadmin), string(acl_constants.EnumModuleACL), string(db.PermissionNamesEnumRead)},
+		{string(EnumRolesSuperadmin), string(acl_constants.EnumModuleACL), string(db.PermissionNamesEnumUpdate)},
+		{string(EnumRolesSuperadmin), string(acl_constants.EnumModuleACL), string(db.PermissionNamesEnumDelete)},
 
-		{string(EnumRolesSuperadmin), string(modules.EnumModuleUsers), string(db.PermissionNamesEnumCreate)},
-		{string(EnumRolesSuperadmin), string(modules.EnumModuleUsers), string(db.PermissionNamesEnumRead)},
-		{string(EnumRolesSuperadmin), string(modules.EnumModuleUsers), string(db.PermissionNamesEnumUpdate)},
-		{string(EnumRolesSuperadmin), string(modules.EnumModuleUsers), string(db.PermissionNamesEnumDelete)},
+		{string(EnumRolesSuperadmin), string(acl_constants.EnumModuleUsers), string(db.PermissionNamesEnumCreate)},
+		{string(EnumRolesSuperadmin), string(acl_constants.EnumModuleUsers), string(db.PermissionNamesEnumRead)},
+		{string(EnumRolesSuperadmin), string(acl_constants.EnumModuleUsers), string(db.PermissionNamesEnumUpdate)},
+		{string(EnumRolesSuperadmin), string(acl_constants.EnumModuleUsers), string(db.PermissionNamesEnumDelete)},
 
-		{string(EnumRolesSuperadmin), string(modules.EnumModulePosts), string(db.PermissionNamesEnumCreate)},
-		{string(EnumRolesSuperadmin), string(modules.EnumModulePosts), string(db.PermissionNamesEnumRead)},
-		{string(EnumRolesSuperadmin), string(modules.EnumModulePosts), string(db.PermissionNamesEnumUpdate)},
-		{string(EnumRolesSuperadmin), string(modules.EnumModulePosts), string(db.PermissionNamesEnumDelete)},
+		{string(EnumRolesSuperadmin), string(acl_constants.EnumModulePosts), string(db.PermissionNamesEnumCreate)},
+		{string(EnumRolesSuperadmin), string(acl_constants.EnumModulePosts), string(db.PermissionNamesEnumRead)},
+		{string(EnumRolesSuperadmin), string(acl_constants.EnumModulePosts), string(db.PermissionNamesEnumUpdate)},
+		{string(EnumRolesSuperadmin), string(acl_constants.EnumModulePosts), string(db.PermissionNamesEnumDelete)},
 
-		{string(EnumRolesSuperadmin), string(modules.EnumModuleRoles), string(db.PermissionNamesEnumCreate)},
-		{string(EnumRolesSuperadmin), string(modules.EnumModuleRoles), string(db.PermissionNamesEnumRead)},
-		{string(EnumRolesSuperadmin), string(modules.EnumModuleRoles), string(db.PermissionNamesEnumUpdate)},
-		{string(EnumRolesSuperadmin), string(modules.EnumModuleRoles), string(db.PermissionNamesEnumDelete)},
+		{string(EnumRolesSuperadmin), string(acl_constants.EnumModuleRoles), string(db.PermissionNamesEnumCreate)},
+		{string(EnumRolesSuperadmin), string(acl_constants.EnumModuleRoles), string(db.PermissionNamesEnumRead)},
+		{string(EnumRolesSuperadmin), string(acl_constants.EnumModuleRoles), string(db.PermissionNamesEnumUpdate)},
+		{string(EnumRolesSuperadmin), string(acl_constants.EnumModuleRoles), string(db.PermissionNamesEnumDelete)},
 
-		{string(EnumRolesSuperadmin), string(modules.EnumModuleModules), string(db.PermissionNamesEnumCreate)},
-		{string(EnumRolesSuperadmin), string(modules.EnumModuleModules), string(db.PermissionNamesEnumRead)},
-		{string(EnumRolesSuperadmin), string(modules.EnumModuleModules), string(db.PermissionNamesEnumUpdate)},
-		{string(EnumRolesSuperadmin), string(modules.EnumModuleModules), string(db.PermissionNamesEnumDelete)},
+		{string(EnumRolesSuperadmin), string(acl_constants.EnumModuleModules), string(db.PermissionNamesEnumCreate)},
+		{string(EnumRolesSuperadmin), string(acl_constants.EnumModuleModules), string(db.PermissionNamesEnumRead)},
+		{string(EnumRolesSuperadmin), string(acl_constants.EnumModuleModules), string(db.PermissionNamesEnumUpdate)},
+		{string(EnumRolesSuperadmin), string(acl_constants.EnumModuleModules), string(db.PermissionNamesEnumDelete)},
 
-		{string(EnumRolesSuperadmin), string(modules.EnumModulePermissions), string(db.PermissionNamesEnumCreate)},
-		{string(EnumRolesSuperadmin), string(modules.EnumModulePermissions), string(db.PermissionNamesEnumRead)},
-		{string(EnumRolesSuperadmin), string(modules.EnumModulePermissions), string(db.PermissionNamesEnumUpdate)},
-		{string(EnumRolesSuperadmin), string(modules.EnumModulePermissions), string(db.PermissionNamesEnumDelete)},
+		{string(EnumRolesSuperadmin), string(acl_constants.EnumModulePermissions), string(db.PermissionNamesEnumCreate)},
+		{string(EnumRolesSuperadmin), string(acl_constants.EnumModulePermissions), string(db.PermissionNamesEnumRead)},
+		{string(EnumRolesSuperadmin), string(acl_constants.EnumModulePermissions), string(db.PermissionNamesEnumUpdate)},
+		{string(EnumRolesSuperadmin), string(acl_constants.EnumModulePermissions), string(db.PermissionNamesEnumDelete)},
 
-		{string(EnumRolesSuperadmin), string(modules.EnumModuleUserRoles), string(db.PermissionNamesEnumCreate)},
-		{string(EnumRolesSuperadmin), string(modules.EnumModuleUserRoles), string(db.PermissionNamesEnumRead)},
-		{string(EnumRolesSuperadmin), string(modules.EnumModuleUserRoles), string(db.PermissionNamesEnumUpdate)},
-		{string(EnumRolesSuperadmin), string(modules.EnumModuleUserRoles), string(db.PermissionNamesEnumDelete)},
+		{string(EnumRolesSuperadmin), string(acl_constants.EnumModuleUserRoles), string(db.PermissionNamesEnumCreate)},
+		{string(EnumRolesSuperadmin), string(acl_constants.EnumModuleUserRoles), string(db.PermissionNamesEnumRead)},
+		{string(EnumRolesSuperadmin), string(acl_constants.EnumModuleUserRoles), string(db.PermissionNamesEnumUpdate)},
+		{string(EnumRolesSuperadmin), string(acl_constants.EnumModuleUserRoles), string(db.PermissionNamesEnumDelete)},
 
-		{string(EnumRolesSuperadmin), string(modules.EnumModuleRolePermissions), string(db.PermissionNamesEnumCreate)},
-		{string(EnumRolesSuperadmin), string(modules.EnumModuleRolePermissions), string(db.PermissionNamesEnumRead)},
-		{string(EnumRolesSuperadmin), string(modules.EnumModuleRolePermissions), string(db.PermissionNamesEnumUpdate)},
-		{string(EnumRolesSuperadmin), string(modules.EnumModuleRolePermissions), string(db.PermissionNamesEnumDelete)},
+		{string(EnumRolesSuperadmin), string(acl_constants.EnumModuleRolePermissions), string(db.PermissionNamesEnumCreate)},
+		{string(EnumRolesSuperadmin), string(acl_constants.EnumModuleRolePermissions), string(db.PermissionNamesEnumRead)},
+		{string(EnumRolesSuperadmin), string(acl_constants.EnumModuleRolePermissions), string(db.PermissionNamesEnumUpdate)},
+		{string(EnumRolesSuperadmin), string(acl_constants.EnumModuleRolePermissions), string(db.PermissionNamesEnumDelete)},
 
 		// ADMIN PRIVILEGES
-		{string(EnumRolesAdmin), string(modules.EnumModuleUsers), string(db.PermissionNamesEnumCreate)},
-		{string(EnumRolesAdmin), string(modules.EnumModuleUsers), string(db.PermissionNamesEnumRead)},
-		{string(EnumRolesAdmin), string(modules.EnumModuleUsers), string(db.PermissionNamesEnumUpdate)},
-		{string(EnumRolesAdmin), string(modules.EnumModuleUsers), string(db.PermissionNamesEnumDelete)},
+		{string(EnumRolesAdmin), string(acl_constants.EnumModuleUsers), string(db.PermissionNamesEnumCreate)},
+		{string(EnumRolesAdmin), string(acl_constants.EnumModuleUsers), string(db.PermissionNamesEnumRead)},
+		{string(EnumRolesAdmin), string(acl_constants.EnumModuleUsers), string(db.PermissionNamesEnumUpdate)},
+		{string(EnumRolesAdmin), string(acl_constants.EnumModuleUsers), string(db.PermissionNamesEnumDelete)},
 
-		{string(EnumRolesAdmin), string(modules.EnumModulePosts), string(db.PermissionNamesEnumCreate)},
-		{string(EnumRolesAdmin), string(modules.EnumModulePosts), string(db.PermissionNamesEnumRead)},
-		{string(EnumRolesAdmin), string(modules.EnumModulePosts), string(db.PermissionNamesEnumUpdate)},
-		{string(EnumRolesAdmin), string(modules.EnumModulePosts), string(db.PermissionNamesEnumDelete)},
+		{string(EnumRolesAdmin), string(acl_constants.EnumModulePosts), string(db.PermissionNamesEnumCreate)},
+		{string(EnumRolesAdmin), string(acl_constants.EnumModulePosts), string(db.PermissionNamesEnumRead)},
+		{string(EnumRolesAdmin), string(acl_constants.EnumModulePosts), string(db.PermissionNamesEnumUpdate)},
+		{string(EnumRolesAdmin), string(acl_constants.EnumModulePosts), string(db.PermissionNamesEnumDelete)},
 
 		// USER PRIVILEGES
-		{string(EnumRolesUser), string(modules.EnumModuleUsers), string(db.PermissionNamesEnumCreate)},
-		{string(EnumRolesUser), string(modules.EnumModuleUsers), string(db.PermissionNamesEnumRead)},
-		{string(EnumRolesUser), string(modules.EnumModuleUsers), string(db.PermissionNamesEnumUpdate)},
-		{string(EnumRolesUser), string(modules.EnumModuleUsers), string(db.PermissionNamesEnumDelete)},
+		{string(EnumRolesUser), string(acl_constants.EnumModuleUsers), string(db.PermissionNamesEnumCreate)},
+		{string(EnumRolesUser), string(acl_constants.EnumModuleUsers), string(db.PermissionNamesEnumRead)},
+		{string(EnumRolesUser), string(acl_constants.EnumModuleUsers), string(db.PermissionNamesEnumUpdate)},
+		{string(EnumRolesUser), string(acl_constants.EnumModuleUsers), string(db.PermissionNamesEnumDelete)},
 
-		{string(EnumRolesUser), string(modules.EnumModulePosts), string(db.PermissionNamesEnumCreate)},
-		{string(EnumRolesUser), string(modules.EnumModulePosts), string(db.PermissionNamesEnumRead)},
-		{string(EnumRolesUser), string(modules.EnumModulePosts), string(db.PermissionNamesEnumUpdate)},
-		{string(EnumRolesUser), string(modules.EnumModulePosts), string(db.PermissionNamesEnumDelete)},
+		{string(EnumRolesUser), string(acl_constants.EnumModulePosts), string(db.PermissionNamesEnumCreate)},
+		{string(EnumRolesUser), string(acl_constants.EnumModulePosts), string(db.PermissionNamesEnumRead)},
+		{string(EnumRolesUser), string(acl_constants.EnumModulePosts), string(db.PermissionNamesEnumUpdate)},
+		{string(EnumRolesUser), string(acl_constants.EnumModulePosts), string(db.PermissionNamesEnumDelete)},
 	}
 
 	roleRepository := roles.NewRepository(database)

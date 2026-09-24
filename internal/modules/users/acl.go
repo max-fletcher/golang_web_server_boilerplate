@@ -1,29 +1,28 @@
 package users
 
 import (
-	modules "github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/acl/module-names"
-	"github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/acl/permissions"
+	acl_constants "github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/acl/constants"
 	"github.com/max-fletcher/golang_web_server_boilerplate/middleware"
 )
 
 var (
 	ACLRead = middleware.AclRequirement{
-		Module:     modules.EnumModuleUsers,
-		Permission: permissions.PermissionRead,
+		Module:     acl_constants.EnumModuleUsers,
+		Permission: acl_constants.PermissionRead,
 	}
 
 	ACLCreate = middleware.AclRequirement{
-		Module:     modules.EnumModulePosts,
-		Permission: permissions.PermissionCreate,
+		Module:     acl_constants.EnumModulePosts,
+		Permission: acl_constants.PermissionCreate,
 	}
 
 	ACLUpdate = middleware.AclRequirement{
-		Module:     modules.EnumModulePosts,
-		Permission: permissions.PermissionUpdate,
+		Module:     acl_constants.EnumModulePosts,
+		Permission: acl_constants.PermissionUpdate,
 	}
 
 	ACLDelete = middleware.AclRequirement{
-		Module:     modules.EnumModulePosts,
-		Permission: permissions.PermissionDelete,
+		Module:     acl_constants.EnumModulePosts,
+		Permission: acl_constants.PermissionDelete,
 	}
 )

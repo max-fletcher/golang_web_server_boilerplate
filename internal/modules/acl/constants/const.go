@@ -1,4 +1,4 @@
-package modules
+package acl_constants
 
 type EnumModuleNames string
 
@@ -23,3 +23,14 @@ var ModulesList = []EnumModuleNames{
 	EnumModuleUserRoles,
 	EnumModuleRolePermissions,
 }
+
+type EnumPermission string
+
+const (
+	PermissionCreate EnumPermission = "create"
+	PermissionRead   EnumPermission = "read"
+	PermissionUpdate EnumPermission = "update"
+	PermissionDelete EnumPermission = "delete"
+)
+
+var PermissionsList = []EnumPermission{PermissionCreate, PermissionRead, PermissionUpdate, PermissionDelete}

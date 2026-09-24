@@ -8,11 +8,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/max-fletcher/golang_web_server_boilerplate/helpers/responses"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/db"
+	request_context "github.com/max-fletcher/golang_web_server_boilerplate/internal/request-context"
 )
-
-type contextKey string
-
-const userIDContextKey contextKey = "userID"
 
 type JWTTokenService interface {
 	ValidateAccessToken(tokenString string) (uuid.UUID, error)
@@ -58,11 +55,7 @@ func (middleware *Middleware) Authenticate(next http.Handler) http.Handler {
 			return
 		}
 
-		ctx := context.WithValue(
-			r.Context(),
-			userIDContextKey,
-			userID,
-		)
+		ctx := request_context.StoreUserIDInContext(r.Context(), userID)
 
 		_, err = middleware.userService.GetByID(ctx, userID)
 		if err != nil {
@@ -72,9 +65,4 @@ func (middleware *Middleware) Authenticate(next http.Handler) http.Handler {
 
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
-}
-
-func UserIDFromContext(ctx context.Context) (uuid.UUID, bool) {
-	userID, ok := ctx.Value(userIDContextKey).(uuid.UUID)
-	return userID, ok
 }

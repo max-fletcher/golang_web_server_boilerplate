@@ -7,6 +7,7 @@ import (
 	id_helpers "github.com/max-fletcher/golang_web_server_boilerplate/helpers/ID"
 	validator "github.com/max-fletcher/golang_web_server_boilerplate/helpers/validation"
 	common_errors "github.com/max-fletcher/golang_web_server_boilerplate/internal/errors"
+	acl_constants "github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/acl/constants"
 )
 
 // Struct to be validated
@@ -16,8 +17,8 @@ type CreatePermissionRequest struct {
 }
 
 type CreatePermissionInput struct {
-	Name     EnumPermission `json:"name"`
-	ModuleId uuid.UUID      `json:"module_id"`
+	Name     acl_constants.EnumPermission `json:"name"`
+	ModuleId uuid.UUID                    `json:"module_id"`
 }
 
 // Rules
@@ -26,7 +27,12 @@ func (params CreatePermissionRequest) ValidateCreatePermissionData() (CreatePerm
 		validation.Field(
 			&params.Name,
 			validation.Required.Error("Name is required"),
-			validation.In(PermissionCreate, PermissionRead, PermissionUpdate, PermissionDelete).Error("Invalid name value"),
+			validation.In(
+				acl_constants.PermissionCreate,
+				acl_constants.PermissionRead,
+				acl_constants.PermissionUpdate,
+				acl_constants.PermissionDelete,
+			).Error("Invalid name value"),
 		),
 		validation.Field(
 			&params.ModuleId,
@@ -48,7 +54,7 @@ func (params CreatePermissionRequest) ValidateCreatePermissionData() (CreatePerm
 	}
 	// Construct an instance of createPermissionInput
 	createPermissionInput := CreatePermissionInput{
-		Name:     EnumPermission(params.Name),
+		Name:     acl_constants.EnumPermission(params.Name),
 		ModuleId: moduleID,
 	}
 

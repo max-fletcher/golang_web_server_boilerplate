@@ -4,6 +4,7 @@ import (
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	validator "github.com/max-fletcher/golang_web_server_boilerplate/helpers/validation"
 	common_errors "github.com/max-fletcher/golang_web_server_boilerplate/internal/errors"
+	acl_constants "github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/acl/constants"
 )
 
 // Struct to be validated
@@ -12,7 +13,7 @@ type CreateModuleRequest struct {
 }
 
 type CreateModuleInput struct {
-	Name EnumModuleNames `json:"name"`
+	Name acl_constants.EnumModuleNames `json:"name"`
 }
 
 // Rules
@@ -33,7 +34,7 @@ func (params CreateModuleRequest) ValidateCreateModuleData() (CreateModuleInput,
 	}
 	// Construct an instance of createModuleInput
 	createModuleInput := CreateModuleInput{
-		Name: EnumModuleNames(params.Name),
+		Name: acl_constants.EnumModuleNames(params.Name),
 	}
 
 	return createModuleInput, nil
