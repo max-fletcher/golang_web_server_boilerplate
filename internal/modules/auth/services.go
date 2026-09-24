@@ -14,7 +14,6 @@ import (
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/db"
 	common_errors "github.com/max-fletcher/golang_web_server_boilerplate/internal/errors"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/events"
-	"github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/users"
 	users_package "github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/users"
 )
 
@@ -82,12 +81,12 @@ func (service *service) UserRegistration(ctx context.Context, params UserRegistr
 	if err != nil {
 		pgErr := common_errors.GetPostgresError(err)
 		if pgErr.Code == constants.PGUniqueViolationCode {
-			return AuthenticatedUser{}, "", "", users.ErrUserWithEmailAlreadyExists{
+			return AuthenticatedUser{}, "", "", users_package.ErrUserWithEmailAlreadyExists{
 				Email: params.Email,
 			}
 		}
 
-		return AuthenticatedUser{}, "", "", users.ErrUserCreateFailed{
+		return AuthenticatedUser{}, "", "", users_package.ErrUserCreateFailed{
 			CreateErr: err,
 		}
 	}
@@ -160,12 +159,12 @@ func (service *service) UserLogin(ctx context.Context, params UserLoginRequest) 
 	user, err := userRepository.GetByEmail(ctx, params.Email)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) { // check if error is of type sql.ErrNoRows
-			return AuthenticatedUser{}, "", "", users.ErrUserWithEmailNotFound{
+			return AuthenticatedUser{}, "", "", users_package.ErrUserWithEmailNotFound{
 				Email: params.Email,
 			}
 		}
 
-		return AuthenticatedUser{}, "", "", users.ErrUserFetchFailed{
+		return AuthenticatedUser{}, "", "", users_package.ErrUserFetchFailed{
 			FetchErr: err,
 		}
 	}

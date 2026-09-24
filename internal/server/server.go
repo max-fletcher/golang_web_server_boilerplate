@@ -10,6 +10,7 @@ import (
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/db"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/events"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/handlers"
+	"github.com/max-fletcher/golang_web_server_boilerplate/internal/httpx"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/logger"
 	modules "github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/acl/module-names"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/acl/permissions"
@@ -28,6 +29,7 @@ import (
 // Struct containing a router instance
 type Server struct {
 	config                 *config.Config
+	HttpxHandler           *httpx.Handler
 	Router                 http.Handler // Reference to router instance
 	CommonHandler          *handlers.Handler
 	Authhandler            *auth.Handler
@@ -103,8 +105,12 @@ func NewServer(database *db.Queries, conn *sql.DB, cfg *config.Config, cache cac
 
 	aclMiddleware := middleware.NewACLMiddleware(rolePermissionsService)
 
+	appLogger := logger.New()
+	httpxHandler := httpx.NewHttpxHandler(appLogger)
+
 	server := &Server{
 		config:                 cfg,
+		HttpxHandler:           httpxHandler,
 		CommonHandler:          handlers.New(database),
 		Authhandler:            authHandler,
 		AuthMiddleware:         authMiddleware,
@@ -116,7 +122,7 @@ func NewServer(database *db.Queries, conn *sql.DB, cfg *config.Config, cache cac
 		PermissionsHandler:     permissionHandler,
 		RolePermissionsHandler: rolePermissionsHandler,
 		UserRoleHandler:        userRoleHandler,
-		Logger:                 logger.New(),
+		Logger:                 appLogger,
 		ACLMiddleware:          aclMiddleware,
 	}
 
