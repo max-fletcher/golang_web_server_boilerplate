@@ -115,6 +115,12 @@ func (handler *Handler) GetByUserID(w http.ResponseWriter, r *http.Request) erro
 		return err
 	}
 
+	if len(rolePermission) == 0 {
+		return ErrUserWRolePermissionWithUserIdNotFound{
+			ID: userID,
+		}
+	}
+
 	// #TODO: SEE HOW TO FORMAT DATA INSIDE SERVICE AND HERE(1 LINE BELOW), AND SEND IT BACK AS RESPONSE
 	fmt.Printf("ACL Handler. Data: %v \n", rolePermission)
 	formattedRolePermission := formatters.DatabaseUserWRolePermissionToUserWRolePermission((rolePermission))

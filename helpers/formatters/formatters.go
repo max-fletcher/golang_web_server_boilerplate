@@ -361,6 +361,27 @@ func DatabasePermissionsToPermissions(dbPermission []db.Permission) []Permission
 	return permissions
 }
 
+type SingleUserWRoles struct {
+	ID        uuid.UUID `json:"id"`
+	Name      string    `json:"name"`
+	Email     string    `json:"email"`
+	RoleName  string    `json:"role"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+func DatabaseUserWRoleToUserWRole(dbUserWRole db.GetUserRoleByIdRow) SingleUserWRoles {
+	return SingleUserWRoles{
+		ID:        dbUserWRole.ID,
+		Name:      dbUserWRole.Name,
+		Email:     dbUserWRole.Email,
+		RoleName:  dbUserWRole.RoleName,
+		CreatedAt: dbUserWRole.CreatedAt,
+		UpdatedAt: dbUserWRole.UpdatedAt,
+	}
+
+}
+
 type UserWRoles struct {
 	ID        uuid.UUID `json:"id"`
 	Name      string    `json:"name"`
@@ -370,7 +391,7 @@ type UserWRoles struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
-func DatabaseUserWRoleToUserWRole(dbUserWRoles []db.GetUserRolesByUserIDRow) []UserWRoles {
+func DatabaseUserWRoleToUserWRoleMerge(dbUserWRoles []db.GetUserRolesByUserIDRow) []UserWRoles {
 	usersMap := make(map[uuid.UUID]int) // key is user-id and val is the index of that user-id's index for results array
 	results := []UserWRoles{}
 

@@ -1,4 +1,4 @@
-package users
+package role_permissions
 
 import (
 	"github.com/go-chi/chi/v5"
@@ -12,11 +12,13 @@ func RegisterRoutes(
 	httpxHandler *httpx.Handler,
 	aclMiddlware *middleware.ACLMiddleware,
 ) {
-	router.Route("/users", func(router chi.Router) {
+	router.Route("/role-permissions", func(router chi.Router) {
 		router.With(aclMiddlware.RequirePermission(ACLRead)).Get("/", httpxHandler.Handle(handler.GetAll))
 		router.With(aclMiddlware.RequirePermission(ACLCreate)).Post("/", httpxHandler.Handle(handler.Create))
 		router.With(aclMiddlware.RequirePermission(ACLRead)).Get("/{id}", httpxHandler.Handle(handler.GetByID))
-		router.With(aclMiddlware.RequirePermission(ACLUpdate)).Patch("/{id}", httpxHandler.Handle(handler.Update))
 		router.With(aclMiddlware.RequirePermission(ACLDelete)).Delete("/{id}", httpxHandler.Handle(handler.Delete))
+		router.With(aclMiddlware.RequirePermission(ACLReadUser, ACLRead)).Get("/users", httpxHandler.Handle(handler.GetAllUsersWithRolePermissions))
+		router.With(aclMiddlware.RequirePermission(ACLReadUser, ACLRead)).Get("/users/{userID}", httpxHandler.Handle(handler.GetByUserID))
+		router.With(aclMiddlware.RequirePermission(ACLDelete)).Delete("/roles/{roleID}/permissions/{permissionID}", httpxHandler.Handle(handler.DeleteByRoleIDAndPermissionID))
 	})
 }

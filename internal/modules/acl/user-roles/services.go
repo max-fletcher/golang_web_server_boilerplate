@@ -9,12 +9,21 @@ import (
 
 	"github.com/google/uuid"
 	constants "github.com/max-fletcher/golang_web_server_boilerplate/helpers/const"
+	"github.com/max-fletcher/golang_web_server_boilerplate/helpers/formatters"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/db"
 	common_errors "github.com/max-fletcher/golang_web_server_boilerplate/internal/errors"
 )
 
+type UserService interface {
+	GetByID(ctx context.Context, id uuid.UUID) (db.User, error)
+}
+
+type RoleService interface {
+	GetByID(ctx context.Context, id uuid.UUID) (db.Role, error)
+}
+
 type Service interface {
-	Create(ctx context.Context, createUserRoleInput CreateUserRoleInput) (db.GetUserRoleByIdRow, error)
+	Create(ctx context.Context, createUserRoleInput CreateUserRoleInput) (formatters.SingleUserWRoles, error)
 	GetAll(ctx context.Context, filterString string, limit int, offset int) ([]db.GetUserRolesRow, int, error)
 	GetByID(ctx context.Context, id uuid.UUID) (db.GetUserRoleByIdRow, error)
 	GetByUserID(ctx context.Context, id uuid.UUID) ([]db.GetUserRolesByUserIDRow, error)
@@ -23,19 +32,28 @@ type Service interface {
 }
 
 type service struct {
-	repository Repository
+	repository  Repository
+	userService UserService
+	roleService RoleService
 }
 
-func NewService(
-	repository Repository,
-) *service {
+func NewService(repository Repository, userService UserService, roleService RoleService) *service {
 	return &service{
-		repository: repository,
+		repository:  repository,
+		userService: userService,
+		roleService: roleService,
 	}
 }
 
-func (service *service) Create(ctx context.Context, createUserRoleInput CreateUserRoleInput) (db.GetUserRoleByIdRow, error) {
-	// #TODO: CHECK IF ROLE AND PERMISSION EXISTS
+func (service *service) Create(ctx context.Context, createUserRoleInput CreateUserRoleInput) (formatters.SingleUserWRoles, error) {
+	_, err := service.userService.GetByID(ctx, createUserRoleInput.UserID)
+	if err != nil {
+		return formatters.SingleUserWRoles{}, err
+	}
+	_, err = service.roleService.GetByID(ctx, createUserRoleInput.RoleID)
+	if err != nil {
+		return formatters.SingleUserWRoles{}, err
+	}
 
 	// 1st param: context for the request
 	// 2nd param: the struct that we want to pass so it saves the underlying data in DB
@@ -49,7 +67,7 @@ func (service *service) Create(ctx context.Context, createUserRoleInput CreateUs
 	if err != nil {
 		pgErr := common_errors.GetPostgresError(err)
 		if pgErr.Code == constants.PGUniqueViolationCode {
-			return db.GetUserRoleByIdRow{}, ErrUserRoleWithUserIdAndRoleIdAlreadyExists{
+			return formatters.SingleUserWRoles{}, ErrUserRoleWithUserIdAndRoleIdAlreadyExists{
 				RoleID: createUserRoleInput.RoleID,
 				UserID: createUserRoleInput.UserID,
 				Err:    err,
@@ -57,26 +75,27 @@ func (service *service) Create(ctx context.Context, createUserRoleInput CreateUs
 		}
 
 		if pgErr.Code == constants.PGForeignKeyViolationCode {
-			return db.GetUserRoleByIdRow{}, ErrUserRoleInvaliduserIdOrRoleId{
+			return formatters.SingleUserWRoles{}, ErrUserRoleInvalidUserIdOrRoleId{
 				RoleID: createUserRoleInput.RoleID,
 				UserID: createUserRoleInput.UserID,
 				Err:    err,
 			}
 		}
 
-		return db.GetUserRoleByIdRow{}, ErrUserRoleCreateFailed{
+		return formatters.SingleUserWRoles{}, ErrUserRoleCreateFailed{
 			CreateErr: err,
 		}
 	}
 
 	userRoleWithDetails, err := service.repository.GetByID(ctx, userRole.ID)
 	if err != nil {
-		return db.GetUserRoleByIdRow{}, ErrUserRoleCreateFailed{
+		return formatters.SingleUserWRoles{}, ErrUserRoleCreateFailed{
 			CreateErr: err,
 		}
 	}
 
-	return userRoleWithDetails, nil
+	formattedData := formatters.DatabaseUserWRoleToUserWRole(userRoleWithDetails)
+	return formattedData, nil
 }
 
 func (service *service) GetAll(ctx context.Context, filterString string, limit int, offset int) ([]db.GetUserRolesRow, int, error) {
@@ -137,12 +156,6 @@ func (service *service) GetByUserID(ctx context.Context, userID uuid.UUID) ([]db
 			FetchErr: err,
 		}
 	}
-
-	// if len(userRoles) == 0 {
-	// 	return []db.GetUserRolesByUserIDRow{}, ErrUserHasNoRoles{
-	// 		ID: userID,
-	// 	}
-	// }
 
 	// #TODO: FORMAT userRoles AND RETURN A UNIFIED STRUCT
 	return userRoles, nil

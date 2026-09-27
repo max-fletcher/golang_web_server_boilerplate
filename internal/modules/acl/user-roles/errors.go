@@ -209,25 +209,25 @@ func (e ErrUserRoleWithUserIdAndRoleIdAlreadyExists) ClientMsg() string {
 
 var _ common_errors.ErrHTTPBaseError = ErrUserRoleWithUserIdAndRoleIdAlreadyExists{}
 
-type ErrUserRoleInvaliduserIdOrRoleId struct {
+type ErrUserRoleInvalidUserIdOrRoleId struct {
 	RoleID uuid.UUID
 	UserID uuid.UUID
 	Err    error
 }
 
-func (e ErrUserRoleInvaliduserIdOrRoleId) Error() string {
-	return fmt.Sprintf("Either role ID %v or permission ID %v is invalid", e.RoleID, e.UserID)
+func (e ErrUserRoleInvalidUserIdOrRoleId) Error() string {
+	return fmt.Sprintf("Either user ID %v or user ID %v is invalid", e.UserID, e.RoleID)
 }
 
-func (e ErrUserRoleInvaliduserIdOrRoleId) StatusCode() int {
+func (e ErrUserRoleInvalidUserIdOrRoleId) StatusCode() int {
 	return http.StatusBadRequest
 }
 
-func (e ErrUserRoleInvaliduserIdOrRoleId) ClientMsg() string {
-	return fmt.Sprintf("Either role ID %v or permission ID %v is invalid", e.RoleID, e.UserID)
+func (e ErrUserRoleInvalidUserIdOrRoleId) ClientMsg() string {
+	return fmt.Sprintf("Either user ID %v or user ID %v is invalid", e.UserID, e.RoleID)
 }
 
-var _ common_errors.ErrHTTPBaseError = ErrUserRoleInvaliduserIdOrRoleId{}
+var _ common_errors.ErrHTTPBaseError = ErrUserRoleInvalidUserIdOrRoleId{}
 
 type ErrUserRoleDeleteFailed struct {
 	DeleteErr error

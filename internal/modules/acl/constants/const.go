@@ -7,7 +7,7 @@ const (
 	EnumModuleUsers           EnumModuleNames = "users"
 	EnumModulePosts           EnumModuleNames = "posts"
 	EnumModuleRoles           EnumModuleNames = "roles"
-	EnumModuleModules         EnumModuleNames = "modules"
+	EnumModuleModuleNames     EnumModuleNames = "modules"
 	EnumModulePermissions     EnumModuleNames = "permissions"
 	EnumModuleUserRoles       EnumModuleNames = "user-roles"
 	EnumModuleRolePermissions EnumModuleNames = "role-permissions"
@@ -18,7 +18,7 @@ var ModulesList = []EnumModuleNames{
 	EnumModuleUsers,
 	EnumModulePosts,
 	EnumModuleRoles,
-	EnumModuleModules,
+	EnumModuleModuleNames,
 	EnumModulePermissions,
 	EnumModuleUserRoles,
 	EnumModuleRolePermissions,

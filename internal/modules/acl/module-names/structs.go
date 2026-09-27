@@ -1,4 +1,4 @@
-package modules
+package modules_names
 
 import (
 	validation "github.com/go-ozzo/ozzo-validation/v4"

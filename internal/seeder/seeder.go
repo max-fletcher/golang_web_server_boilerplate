@@ -31,7 +31,7 @@ func Modules(ctx context.Context, database *db.Queries) error {
 		acl_constants.EnumModuleUsers,
 		acl_constants.EnumModulePosts,
 		acl_constants.EnumModuleRoles,
-		acl_constants.EnumModuleModules,
+		acl_constants.EnumModuleModuleNames,
 		acl_constants.EnumModulePermissions,
 		acl_constants.EnumModuleUserRoles,
 		acl_constants.EnumModuleRolePermissions,
@@ -130,10 +130,10 @@ func RolePermissions(ctx context.Context, database *db.Queries) error {
 		{string(EnumRolesSuperadmin), string(acl_constants.EnumModuleRoles), string(db.PermissionNamesEnumUpdate)},
 		{string(EnumRolesSuperadmin), string(acl_constants.EnumModuleRoles), string(db.PermissionNamesEnumDelete)},
 
-		{string(EnumRolesSuperadmin), string(acl_constants.EnumModuleModules), string(db.PermissionNamesEnumCreate)},
-		{string(EnumRolesSuperadmin), string(acl_constants.EnumModuleModules), string(db.PermissionNamesEnumRead)},
-		{string(EnumRolesSuperadmin), string(acl_constants.EnumModuleModules), string(db.PermissionNamesEnumUpdate)},
-		{string(EnumRolesSuperadmin), string(acl_constants.EnumModuleModules), string(db.PermissionNamesEnumDelete)},
+		{string(EnumRolesSuperadmin), string(acl_constants.EnumModuleModuleNames), string(db.PermissionNamesEnumCreate)},
+		{string(EnumRolesSuperadmin), string(acl_constants.EnumModuleModuleNames), string(db.PermissionNamesEnumRead)},
+		{string(EnumRolesSuperadmin), string(acl_constants.EnumModuleModuleNames), string(db.PermissionNamesEnumUpdate)},
+		{string(EnumRolesSuperadmin), string(acl_constants.EnumModuleModuleNames), string(db.PermissionNamesEnumDelete)},
 
 		{string(EnumRolesSuperadmin), string(acl_constants.EnumModulePermissions), string(db.PermissionNamesEnumCreate)},
 		{string(EnumRolesSuperadmin), string(acl_constants.EnumModulePermissions), string(db.PermissionNamesEnumRead)},

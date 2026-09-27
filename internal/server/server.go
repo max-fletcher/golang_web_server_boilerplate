@@ -100,7 +100,7 @@ func NewServer(database *db.Queries, conn *sql.DB, cfg *config.Config, cache cac
 	rolePermissionsHandler := role_permissions.NewHandler(rolePermissionsService)
 
 	userRoleRepository := user_roles.NewRepository(database)
-	userRoleService := user_roles.NewService(userRoleRepository)
+	userRoleService := user_roles.NewService(userRoleRepository, userService, roleService)
 	userRoleHandler := user_roles.NewHandler(userRoleService)
 
 	aclMiddleware := middleware.NewACLMiddleware(rolePermissionsService)

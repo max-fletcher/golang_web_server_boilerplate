@@ -42,12 +42,11 @@ func (handler *Handler) Create(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	// #TODO: SEE HOW TO FORMAT DATA INSIDE SERVICE AND HERE, AND SEND IT BACK AS RESPONSE
 	responses.RespondWithSuccess(w, http.StatusCreated, "Role assigned to permission successfully.", userRole)
 	return nil
 }
 
-func (handler *Handler) GetAll(w http.ResponseWriter, r *http.Request) error {
+func (handler *Handler) GetAllUsersWithRoles(w http.ResponseWriter, r *http.Request) error {
 	validatedQSData, err := validator.ValidatePaginationQS(r.URL.Query())
 	if err != nil {
 		return err
@@ -59,7 +58,8 @@ func (handler *Handler) GetAll(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	paginatedData := pagination.GeneratePaginationFormat(validatedQSData, total, userRoles)
+	formattedUserRoleData := formatters.DatabaseUserWRolesToUserWRoles(userRoles)
+	paginatedData := pagination.GeneratePaginationFormat(validatedQSData, total, formattedUserRoleData)
 	responses.RespondWithSuccess(w, http.StatusOK, "Fetched successfully", paginatedData)
 	return nil
 }
@@ -82,25 +82,6 @@ func (handler *Handler) GetByID(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-func (handler *Handler) GetAllUsersWithUserRoles(w http.ResponseWriter, r *http.Request) error {
-	validatedQSData, err := validator.ValidatePaginationQS(r.URL.Query())
-	if err != nil {
-		return err
-	}
-
-	// 1st param: context for the request
-	userRoles, total, err := handler.service.GetAll(r.Context(), validatedQSData.FilterString, validatedQSData.Limit, validatedQSData.Offset)
-	if err != nil {
-		return err
-	}
-
-	formattedUserWithRolesData := formatters.DatabaseUserWRolesToUserWRoles(userRoles)
-	paginatedData := pagination.GeneratePaginationFormat(validatedQSData, total, formattedUserWithRolesData)
-
-	responses.RespondWithSuccess(w, http.StatusOK, "Fetched successfully", paginatedData)
-	return nil
-}
-
 func (handler *Handler) GetByUserID(w http.ResponseWriter, r *http.Request) error {
 	userID, err := id_helpers.ParseUUID(chi.URLParam(r, "userID"), "user ID")
 	if err != nil {
@@ -114,7 +95,7 @@ func (handler *Handler) GetByUserID(w http.ResponseWriter, r *http.Request) erro
 		return err
 	}
 
-	formattedUserRoles := formatters.DatabaseUserWRoleToUserWRole(userRoles)
+	formattedUserRoles := formatters.DatabaseUserWRoleToUserWRoleMerge(userRoles)
 	responses.RespondWithSuccess(w, http.StatusOK, "Fetched successfully", formattedUserRoles)
 	return nil
 }

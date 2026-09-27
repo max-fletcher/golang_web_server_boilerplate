@@ -31,9 +31,7 @@ type service struct {
 	repository Repository
 }
 
-func NewService(
-	repository Repository,
-) *service {
+func NewService(repository Repository) *service {
 	return &service{
 		repository: repository,
 	}
@@ -166,17 +164,12 @@ func (service *service) GetByUserID(ctx context.Context, id uuid.UUID) ([]db.Get
 			FetchErr: err,
 		}
 	}
-	// if len(usersWithRolesAndPermissions) == 0 {
-	// 	return []db.GetUserWithRolesAndPermissionsByUserIDRow{}, ErrRolePermissionWithUserIdNotFound{
-	// 		ID: id,
-	// 	}
-	// }
 
 	return usersWithRolesAndPermissions, nil
 }
 
 func (service *service) UserHasPermission(ctx context.Context, moduleName acl_constants.EnumModuleNames, permissionName db.PermissionNamesEnum) (bool, error) {
-	userID, ok := request_context.UserIDFromContext(ctx)
+	userID, ok := request_context.GetUserIDFromContext(ctx)
 	if !ok {
 		return false, nil
 	}

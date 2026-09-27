@@ -46,6 +46,24 @@ func (e ErrRolePermissionWithIdNotFound) ClientMsg() string {
 
 var _ common_errors.ErrHTTPBaseError = ErrRolePermissionWithIdNotFound{}
 
+type ErrUserWRolePermissionWithUserIdNotFound struct {
+	ID uuid.UUID
+}
+
+func (e ErrUserWRolePermissionWithUserIdNotFound) Error() string {
+	return fmt.Sprintf("User with id %s not found", e.ID)
+}
+
+func (e ErrUserWRolePermissionWithUserIdNotFound) StatusCode() int {
+	return http.StatusNotFound
+}
+
+func (e ErrUserWRolePermissionWithUserIdNotFound) ClientMsg() string {
+	return fmt.Sprintf("User with id %s not found", e.ID)
+}
+
+var _ common_errors.ErrHTTPBaseError = ErrUserWRolePermissionWithUserIdNotFound{}
+
 type ErrRolePermissionWithRoleIdAndPermissionIdNotFound struct {
 	RoleID       uuid.UUID
 	PermissionID uuid.UUID

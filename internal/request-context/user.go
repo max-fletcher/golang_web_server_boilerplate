@@ -15,7 +15,7 @@ func StoreUserIDInContext(reqCtx context.Context, userID uuid.UUID) context.Cont
 	return ctx
 }
 
-func UserIDFromContext(ctx context.Context) (uuid.UUID, bool) {
+func GetUserIDFromContext(ctx context.Context) (uuid.UUID, bool) {
 	userID, ok := ctx.Value(UserIDContextKey).(uuid.UUID)
 	return userID, ok
 }

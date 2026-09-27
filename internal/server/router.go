@@ -5,7 +5,15 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/max-fletcher/golang_web_server_boilerplate/helpers/responses"
+	modules_names "github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/acl/module-names"
+	"github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/acl/permissions"
+	role_permissions "github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/acl/role-permissions"
+	"github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/acl/roles"
+	user_roles "github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/acl/user-roles"
+	"github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/auth"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/posts"
+	posts_with_users "github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/posts-with-users"
+	"github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/users"
 	"github.com/max-fletcher/golang_web_server_boilerplate/middleware"
 )
 
@@ -48,71 +56,28 @@ func (server *Server) routes() http.Handler {
 		router.Get("/healthz", server.HttpxHandler.Handle(server.CommonHandler.HealthCheck))
 		router.Get("/error", server.HttpxHandler.Handle(server.CommonHandler.ErrorResponse))
 
-		router.Route("/auth", func(router chi.Router) {
-			router.Post("/register", server.HttpxHandler.Handle(server.Authhandler.UserRegistration))
-			router.Post("/login", server.HttpxHandler.Handle(server.Authhandler.UserLogin))
-			router.Get("/refresh-token", server.HttpxHandler.Handle(server.Authhandler.RefreshToken))
-		})
+		auth.RegisterRoutes(router, server.Authhandler, server.HttpxHandler)
+		// The line above is condensed/grouped, but you can use the lines below(kept as example) if you need simplicity instead since these
+		// are public routes and don't need ACL
+		// router.Route("/auth", func(router chi.Router) {
+		// 	router.Post("/register", server.HttpxHandler.Handle(server.Authhandler.UserRegistration))
+		// 	router.Post("/login", server.HttpxHandler.Handle(server.Authhandler.UserLogin))
+		// 	router.Get("/refresh-token", server.HttpxHandler.Handle(server.Authhandler.RefreshToken))
+		// })
 
 		router.Group(func(router chi.Router) {
 			router.Use(server.AuthMiddleware.Authenticate)
 
-			router.Route("/users", func(router chi.Router) {
-				router.Get("/", server.HttpxHandler.Handle(server.UsersHandler.GetAll))
-				router.Post("/", server.HttpxHandler.Handle(server.UsersHandler.Create))
-				router.Get("/{id}", server.HttpxHandler.Handle(server.UsersHandler.GetByID))
-				router.Patch("/{id}", server.HttpxHandler.Handle(server.UsersHandler.Update))
-				router.Delete("/{id}", server.HttpxHandler.Handle(server.UsersHandler.Delete))
-			})
-
+			users.RegisterRoutes(router, server.UsersHandler, server.HttpxHandler, server.ACLMiddleware)
 			posts.RegisterRoutes(router, server.PostsHandler, server.HttpxHandler, server.ACLMiddleware)
-
-			router.Route("/posts-with-user", func(router chi.Router) {
-				router.Get("/", server.HttpxHandler.Handle(server.PostsWithUserHandler.GetAll))
-				router.Post("/", server.HttpxHandler.Handle(server.PostsWithUserHandler.Create))
-				router.Get("/{id}", server.HttpxHandler.Handle(server.PostsWithUserHandler.GetByID))
-			})
+			posts_with_users.RegisterRoutes(router, server.PostsWithUserHandler, server.HttpxHandler, server.ACLMiddleware)
 
 			router.Route("/acl", func(router chi.Router) {
-				router.Route("/roles", func(router chi.Router) {
-					router.Get("/", server.HttpxHandler.Handle(server.RolesHandler.GetAll))
-					router.Post("/", server.HttpxHandler.Handle(server.RolesHandler.Create))
-					router.Get("/{id}", server.HttpxHandler.Handle(server.RolesHandler.GetByID))
-					router.Patch("/{id}", server.HttpxHandler.Handle(server.RolesHandler.Update))
-					router.Delete("/{id}", server.HttpxHandler.Handle(server.RolesHandler.Delete))
-				})
-
-				router.Route("/modules", func(router chi.Router) {
-					router.Get("/", server.HttpxHandler.Handle(server.ModulesHandler.GetAll))
-					router.Post("/", server.HttpxHandler.Handle(server.ModulesHandler.Create))
-					router.Get("/{id}", server.HttpxHandler.Handle(server.ModulesHandler.GetByID))
-				})
-
-				router.Route("/permissions", func(router chi.Router) {
-					router.Get("/", server.HttpxHandler.Handle(server.PermissionsHandler.GetAll))
-					router.Post("/", server.HttpxHandler.Handle(server.PermissionsHandler.Create))
-					router.Get("/{id}", server.HttpxHandler.Handle(server.PermissionsHandler.GetByID))
-				})
-
-				router.Route("/user-roles", func(router chi.Router) {
-					router.Get("/", server.HttpxHandler.Handle(server.UserRoleHandler.GetAll))
-					router.Get("/{id}", server.HttpxHandler.Handle(server.UserRoleHandler.GetByID))
-					router.Post("/", server.HttpxHandler.Handle(server.UserRoleHandler.Create))
-					router.Get("/users", server.HttpxHandler.Handle(server.UserRoleHandler.GetAllUsersWithUserRoles))
-					router.Get("/users/{userID}", server.HttpxHandler.Handle(server.UserRoleHandler.GetByUserID))
-					router.Delete("/{id}", server.HttpxHandler.Handle(server.UserRoleHandler.Delete))
-					router.Delete("/roles/{roleID}/permissions/{permissionID}", server.HttpxHandler.Handle(server.UserRoleHandler.DeleteByUserIDAndRoleID))
-				})
-
-				router.Route("/role-permissions", func(router chi.Router) {
-					router.Get("/", server.HttpxHandler.Handle(server.RolePermissionsHandler.GetAll))
-					router.Get("/{id}", server.HttpxHandler.Handle(server.RolePermissionsHandler.GetByID))
-					router.Post("/", server.HttpxHandler.Handle(server.RolePermissionsHandler.Create))
-					router.Get("/users", server.HttpxHandler.Handle(server.RolePermissionsHandler.GetAllUsersWithRolePermissions))
-					router.Get("/users/{userID}", server.HttpxHandler.Handle(server.RolePermissionsHandler.GetByUserID))
-					router.Delete("/{id}", server.HttpxHandler.Handle(server.RolePermissionsHandler.Delete))
-					router.Delete("/roles/{roleID}/permissions/{permissionID}", server.HttpxHandler.Handle(server.RolePermissionsHandler.DeleteByRoleIDAndPermissionID))
-				})
+				roles.RegisterRoutes(router, server.RolesHandler, server.HttpxHandler, server.ACLMiddleware)
+				modules_names.RegisterRoutes(router, server.ModulesHandler, server.HttpxHandler, server.ACLMiddleware)
+				permissions.RegisterRoutes(router, server.PermissionsHandler, server.HttpxHandler, server.ACLMiddleware)
+				user_roles.RegisterRoutes(router, server.UserRoleHandler, server.HttpxHandler, server.ACLMiddleware)
+				role_permissions.RegisterRoutes(router, server.RolePermissionsHandler, server.HttpxHandler, server.ACLMiddleware)
 			})
 		})
 	})
