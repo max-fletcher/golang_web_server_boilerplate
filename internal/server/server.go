@@ -11,7 +11,6 @@ import (
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/events"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/handlers"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/httpx"
-	"github.com/max-fletcher/golang_web_server_boilerplate/internal/logger"
 	modules "github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/acl/module-names"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/acl/permissions"
 	role_permissions "github.com/max-fletcher/golang_web_server_boilerplate/internal/modules/acl/role-permissions"
@@ -49,7 +48,7 @@ type Server struct {
 // The name "NewServer" is a naming convention for functions that behave like a constructor. This func will create a new server.
 // It is creating and passing a pointer to a server struct because remember, functions that return structs actually return copies of the struct
 // and not the object itself
-func NewServer(database *db.Queries, conn *sql.DB, cfg *config.Config, cache cache.Cache, events events.Publisher) *Server {
+func NewServer(database *db.Queries, conn *sql.DB, cfg *config.Config, cache cache.Cache, events events.Publisher, appLogger *slog.Logger) *Server {
 	// we will be sending baseUrl to handlers where we can in turn send it to LocalFileUpload for storing files with full paths to serve as static assets
 	var baseUrl string
 
@@ -105,7 +104,6 @@ func NewServer(database *db.Queries, conn *sql.DB, cfg *config.Config, cache cac
 
 	aclMiddleware := middleware.NewACLMiddleware(rolePermissionsService)
 
-	appLogger := logger.New()
 	httpxHandler := httpx.NewHttpxHandler(appLogger)
 
 	server := &Server{

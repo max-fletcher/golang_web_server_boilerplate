@@ -31,8 +31,11 @@ import (
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/config"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/db"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/events"
+	"github.com/max-fletcher/golang_web_server_boilerplate/internal/jobs"
+	"github.com/max-fletcher/golang_web_server_boilerplate/internal/logger"
 	redis_queue "github.com/max-fletcher/golang_web_server_boilerplate/internal/queue/redis"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/redis"
+	"github.com/max-fletcher/golang_web_server_boilerplate/internal/scheduler"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/server"
 	"github.com/max-fletcher/golang_web_server_boilerplate/internal/workers"
 )
@@ -102,8 +105,9 @@ func main() {
 	// ------ End create a queue client and event publisher ------
 
 	// ------ Create server ------
-	database := db.New(conn)                                                  // connecting database to sqlc's queries. "database" contains all sqlc queries.
-	srv := server.NewServer(database, conn, cfg, cacheClient, eventPublisher) // Server struct coming from server.go. Create a new server instance
+	appLogger := logger.New()
+	database := db.New(conn)                                                             // connecting database to sqlc's queries. "database" contains all sqlc queries.
+	srv := server.NewServer(database, conn, cfg, cacheClient, eventPublisher, appLogger) // Server struct coming from server.go. Create a new server instance
 	// ------ End create server ------
 
 	// ------ Background workers ------
@@ -127,7 +131,26 @@ func main() {
 			cancel()
 		}
 	}()
-	// ------ Background workers ------
+	// ------ End Background workers ------
+
+	// ------ CRON Jobs ------
+	scheduler := scheduler.New() // create new scheduler struct that contains the cron.Cron struct
+	testJob := jobs.NewTestJob(appLogger)
+	// * * * * *       every minute
+	// */5 * * * *     every 5 minutes
+	// 0 * * * *       every hour
+	// 0 0 * * *       every day at midnight
+	// 0 2 * * *       every day at 2 AM
+	// 0 0 * * 0       every Sunday at midnight
+	_, err = scheduler.Add("* * * * *", testJob.Run) // Register/start CRON job.
+	if err != nil {
+		appLogger.Error("Failed to register cron job:", "error", err)
+		os.Exit(1)
+	}
+
+	scheduler.Start()      // Start CRON job
+	defer scheduler.Stop() // Stop on exit
+	// ------ End CRON Jobs ------
 
 	// Server options like router and port
 	// On windows, to run without compiling the server, use "go run ."

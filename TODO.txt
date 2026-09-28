@@ -25,9 +25,10 @@
 # Pagination for getAll calls(DONE)
 # DB Transactions when disjointing relational data(DONE)
 # Add seeders for roles, modules, permissions and superadmin account(DONE)
-# Authorization and Access Control
+# Authorization and Access Control(DONE)
+# Better abstraction for router(DONE)
 # PDF/Invoice generation
-# Scheduled Tasks/ CRON job
+# Scheduled Tasks/ CRON job(DONE)
 # Formatted responses(DONE to a greater extent)
 # Redis(DONE but needs to be implemented on all methods and modules)
 # Queue(Redis)(e.g for email delivery)(DONE No practical use currently)
